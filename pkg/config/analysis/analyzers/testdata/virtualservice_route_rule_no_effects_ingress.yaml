@@ -8,12 +8,12 @@ spec:
   selector:
     istio: ingressgateway
   servers:
-  - hosts:
-    - testing-01.com
-    port:
-      name: http
-      number: 80
-      protocol: HTTP
+    - hosts:
+        - testing-01.com
+      port:
+        name: http
+        number: 80
+        protocol: HTTP
 ---
 apiVersion: networking.istio.io/v1
 kind: VirtualService
@@ -22,13 +22,13 @@ metadata:
   namespace: default
 spec:
   gateways:
-  - istio-system/testing-gateway-01-test-01
+    - istio-system/testing-gateway-01-test-01
   hosts:
-  - testing-01.com
+    - testing-01.com
   http:
-  - route:
-    - destination:
-        host: ratings # Expected: validation error since destination don't have subset
+    - route:
+        - destination:
+            host: ratings # Expected: validation error since destination don't have subset
 ---
 apiVersion: networking.istio.io/v1
 kind: Gateway
@@ -39,12 +39,12 @@ spec:
   selector:
     istio: ingressgateway
   servers:
-  - hosts:
-    - testing-02.com
-    port:
-      name: http
-      number: 80
-      protocol: HTTP
+    - hosts:
+        - testing-02.com
+      port:
+        name: http
+        number: 80
+        protocol: HTTP
 ---
 apiVersion: networking.istio.io/v1
 kind: VirtualService
@@ -53,14 +53,14 @@ metadata:
   namespace: default
 spec:
   gateways:
-  - istio-system/testing-gateway-02-test-02
+    - istio-system/testing-gateway-02-test-02
   hosts:
-  - testing-02.com
+    - testing-02.com
   http:
-  - route:
-    - destination:
-        host: ratings # Expected: no validation error
-        subset: v1
+    - route:
+        - destination:
+            host: ratings # Expected: no validation error
+            subset: v1
 ---
 apiVersion: v1
 kind: Service
@@ -69,10 +69,10 @@ metadata:
   namespace: default
 spec:
   ports:
-  - port: 80
-    name: http-ratings
-    protocol: HTTP
---- 
+    - port: 80
+      name: http-ratings
+      protocol: HTTP
+---
 apiVersion: networking.istio.io/v1
 kind: VirtualService
 metadata:
@@ -80,12 +80,12 @@ metadata:
   namespace: default
 spec:
   hosts:
-  - ratings
+    - ratings
   http:
-  - route:
-    - destination:
-        host: ratings
-        subset: v1
+    - route:
+        - destination:
+            host: ratings
+            subset: v1
 ---
 apiVersion: networking.istio.io/v1
 kind: DestinationRule
@@ -95,6 +95,6 @@ metadata:
 spec:
   host: ratings
   subsets:
-  - name: v1
-    labels:
-      version: v1
+    - name: v1
+      labels:
+        version: v1

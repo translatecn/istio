@@ -4,14 +4,14 @@ metadata:
   name: websocket-extsvc
   namespace: testns
 spec:
-   hosts:
-   - websocket.test.istio.io
-   ports:
-   - number: 9002
-     name: http
-     protocol: HTTP
-   resolution: STATIC
-   endpoints:
+  hosts:
+    - websocket.test.istio.io
+  ports:
+    - number: 9002
+      name: http
+      protocol: HTTP
+  resolution: STATIC
+  endpoints:
     - address: 127.0.0.2
       ports:
         http: 7072
@@ -44,15 +44,15 @@ spec:
     - websocket.test.istio.io
   http:
     - match:
-      - headers:
-          testwebsocket:
-            exact: enabled
+        - headers:
+            testwebsocket:
+              exact: enabled
       route:
-      - destination:
-          host: websocket.test.istio.io
-          subset: v1
-          port:
-            number: 9002
+        - destination:
+            host: websocket.test.istio.io
+            subset: v1
+            port:
+              number: 9002
       websocketUpgrade: true
 
 ---
@@ -67,13 +67,13 @@ spec:
     - websocket2.extsvc.com
   http:
     - match:
-      - headers:
-          testwebsocket:
-            exact: enabled
+        - headers:
+            testwebsocket:
+              exact: enabled
       route:
-      - destination:
-          host: websocket.test.istio.io
-          subset: v1
-          port:
-            number: 9002
+        - destination:
+            host: websocket.test.istio.io
+            subset: v1
+            port:
+              number: 9002
       websocketUpgrade: true

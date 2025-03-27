@@ -56,14 +56,6 @@ type installer struct {
 	mu        sync.Mutex
 }
 
-func newInstaller(ctx resource.Context, workDir string) *installer {
-	return &installer{
-		ctx:       ctx,
-		workDir:   workDir,
-		manifests: make(map[string][]string),
-	}
-}
-
 func (i *installer) Install(c cluster.Cluster, args installArgs) error {
 	kubeConfigFile, err := kubeConfigFileForCluster(c)
 	if err != nil {

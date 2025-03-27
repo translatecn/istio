@@ -33,12 +33,13 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/tools/clientcmd/api"
+	"k8s.io/klog/v2"
 
 	"istio.io/istio/pilot/pkg/config/kube/crd"
 	"istio.io/istio/pilot/pkg/features"
 	"istio.io/istio/pkg/config"
 	"istio.io/istio/pkg/util/sets"
-	istioversion "istio.io/istio/pkg/version"
+	istioversion "istio.io/istio/pkg/version_over"
 )
 
 var cronJobNameRegexp = regexp.MustCompile(`(.+)-\d{8,10}$`)
@@ -125,39 +126,11 @@ func NewUntrustedRestConfig(kubeConfig []byte, configOverrides ...func(*rest.Con
 	return SetRestDefaults(restConfig), nil
 }
 
-// InClusterConfig returns the rest.Config for in cluster usage.
-// Typically, DefaultRestConfig is used and this is auto detected; usage directly allows explicitly overriding to use in-cluster.
-func InClusterConfig(fns ...func(*rest.Config)) (*rest.Config, error) {
-	config, err := rest.InClusterConfig()
-	if err != nil {
-		return nil, err
-	}
-
-	for _, fn := range fns {
-		fn(config)
-	}
-
-	return SetRestDefaults(config), nil
-}
-
-// DefaultRestConfig returns the rest.Config for the given kube config file and context.
-func DefaultRestConfig(kubeconfig, configContext string, fns ...func(*rest.Config)) (*rest.Config, error) {
-	config, err := BuildClientConfig(kubeconfig, configContext)
-	if err != nil {
-		return nil, err
-	}
-
-	for _, fn := range fns {
-		fn(config)
-	}
-
-	return config, nil
-}
-
 // adjustCommand returns the last component of the
 // OS-specific command path for use in User-Agent.
 func adjustCommand(p string) string {
 	// Unlikely, but better than returning "".
+
 	if len(p) == 0 {
 		return "unknown"
 	}
@@ -171,9 +144,21 @@ func IstioUserAgent() string {
 	return adjustCommand(os.Args[0]) + "/" + istioversion.Info.Version
 }
 
+type LoggingTransport struct {
+	rt http.RoundTripper
+}
+
+func (l *LoggingTransport) RoundTrip(request *http.Request) (*http.Response, error) {
+	klog.Infoln(request.URL.String(), request.Method)
+	return l.rt.RoundTrip(request)
+}
+
 // SetRestDefaults is a helper function that sets default values for the given rest.Config.
 // This function is idempotent.
 func SetRestDefaults(config *rest.Config) *rest.Config {
+	config.WrapTransport = func(rt http.RoundTripper) http.RoundTripper {
+		return &LoggingTransport{rt: rt}
+	}
 	if config.GroupVersion == nil || config.GroupVersion.Empty() {
 		config.GroupVersion = &corev1.SchemeGroupVersion
 	}
@@ -256,103 +241,11 @@ func CheckPodReady(pod *corev1.Pod) error {
 	}
 }
 
-// GetDeployMetaFromPod heuristically derives deployment metadata from the pod spec.
-func GetDeployMetaFromPod(pod *corev1.Pod) (types.NamespacedName, metav1.TypeMeta) {
-	if pod == nil {
-		return types.NamespacedName{}, metav1.TypeMeta{}
-	}
-	// try to capture more useful namespace/name info for deployments, etc.
-	// TODO(dougreid): expand to enable lookup of OWNERs recursively a la kubernetesenv
-
-	deployMeta := types.NamespacedName{Name: pod.Name, Namespace: pod.Namespace}
-
-	typeMetadata := metav1.TypeMeta{
-		Kind:       "Pod",
-		APIVersion: "v1",
-	}
-	if len(pod.GenerateName) > 0 {
-		// if the pod name was generated (or is scheduled for generation), we can begin an investigation into the controlling reference for the pod.
-		var controllerRef metav1.OwnerReference
-		controllerFound := false
-		for _, ref := range pod.GetOwnerReferences() {
-			if ref.Controller != nil && *ref.Controller {
-				controllerRef = ref
-				controllerFound = true
-				break
-			}
-		}
-		if controllerFound {
-			typeMetadata.APIVersion = controllerRef.APIVersion
-			typeMetadata.Kind = controllerRef.Kind
-
-			// heuristic for deployment detection
-			deployMeta.Name = controllerRef.Name
-			if typeMetadata.Kind == "ReplicaSet" && pod.Labels["pod-template-hash"] != "" && strings.HasSuffix(controllerRef.Name, pod.Labels["pod-template-hash"]) {
-				name := strings.TrimSuffix(controllerRef.Name, "-"+pod.Labels["pod-template-hash"])
-				deployMeta.Name = name
-				typeMetadata.Kind = "Deployment"
-			} else if typeMetadata.Kind == "ReplicaSet" && pod.Labels["rollouts-pod-template-hash"] != "" &&
-				strings.HasSuffix(controllerRef.Name, pod.Labels["rollouts-pod-template-hash"]) {
-				// Heuristic for ArgoCD Rollout
-				name := strings.TrimSuffix(controllerRef.Name, "-"+pod.Labels["rollouts-pod-template-hash"])
-				deployMeta.Name = name
-				typeMetadata.Kind = "Rollout"
-				typeMetadata.APIVersion = "v1alpha1"
-			} else if typeMetadata.Kind == "ReplicationController" && pod.Labels["deploymentconfig"] != "" {
-				// If the pod is controlled by the replication controller, which is created by the DeploymentConfig resource in
-				// Openshift platform, set the deploy name to the deployment config's name, and the kind to 'DeploymentConfig'.
-				//
-				// nolint: lll
-				// For DeploymentConfig details, refer to
-				// https://docs.openshift.com/container-platform/4.1/applications/deployments/what-deployments-are.html#deployments-and-deploymentconfigs_what-deployments-are
-				//
-				// For the reference to the pod label 'deploymentconfig', refer to
-				// https://github.com/openshift/library-go/blob/7a65fdb398e28782ee1650959a5e0419121e97ae/pkg/apps/appsutil/const.go#L25
-				deployMeta.Name = pod.Labels["deploymentconfig"]
-				typeMetadata.Kind = "DeploymentConfig"
-			} else if typeMetadata.Kind == "Job" {
-				// If job name suffixed with `-<digit-timestamp>`, where the length of digit timestamp is 8~10,
-				// trim the suffix and set kind to cron job.
-				if jn := cronJobNameRegexp.FindStringSubmatch(controllerRef.Name); len(jn) == 2 {
-					deployMeta.Name = jn[1]
-					typeMetadata.Kind = "CronJob"
-					// heuristically set cron job api version to v1 as it cannot be derived from pod metadata.
-					typeMetadata.APIVersion = "batch/v1"
-				}
-			}
-		}
-	}
-
-	if deployMeta.Name == "" {
-		// if we haven't been able to extract a deployment name, then just give it the pod name
-		deployMeta.Name = pod.Name
-	}
-
-	return deployMeta, typeMetadata
-}
-
 // MaxRequestBodyBytes represents the max size of Kubernetes objects we read. Kubernetes allows a 2x
 // buffer on the max etcd size
 // (https://github.com/kubernetes/kubernetes/blob/0afa569499d480df4977568454a50790891860f5/staging/src/k8s.io/apiserver/pkg/server/config.go#L362).
 // We allow an additional 2x buffer, as it is still fairly cheap (6mb)
 const MaxRequestBodyBytes = int64(6 * 1024 * 1024)
-
-// HTTPConfigReader is reads an HTTP request, imposing size restrictions aligned with Kubernetes limits
-func HTTPConfigReader(req *http.Request) ([]byte, error) {
-	defer req.Body.Close()
-	lr := &io.LimitedReader{
-		R: req.Body,
-		N: MaxRequestBodyBytes + 1,
-	}
-	data, err := io.ReadAll(lr)
-	if err != nil {
-		return nil, err
-	}
-	if lr.N <= 0 {
-		return nil, errors.NewRequestEntityTooLargeError(fmt.Sprintf("limit is %d", MaxRequestBodyBytes))
-	}
-	return data, nil
-}
 
 // StripNodeUnusedFields is the transform function for shared node informers,
 // it removes unused fields from objects before they are stored in the cache to save memory.
@@ -377,55 +270,6 @@ func StripNodeUnusedFields(obj any) (any, error) {
 	}
 
 	return obj, nil
-}
-
-// StripPodUnusedFields is the transform function for shared pod informers,
-// it removes unused fields from objects before they are stored in the cache to save memory.
-func StripPodUnusedFields(obj any) (any, error) {
-	t, ok := obj.(metav1.ObjectMetaAccessor)
-	if !ok {
-		// shouldn't happen
-		return obj, nil
-	}
-	// ManagedFields is large and we never use it
-	t.GetObjectMeta().SetManagedFields(nil)
-	// only container ports can be used
-	if pod := obj.(*corev1.Pod); pod != nil {
-		containers := []corev1.Container{}
-		for _, c := range pod.Spec.Containers {
-			if len(c.Ports) > 0 {
-				containers = append(containers, corev1.Container{
-					Ports: c.Ports,
-				})
-			}
-		}
-		oldSpec := pod.Spec
-		newSpec := corev1.PodSpec{
-			Containers:         containers,
-			ServiceAccountName: oldSpec.ServiceAccountName,
-			NodeName:           oldSpec.NodeName,
-			HostNetwork:        oldSpec.HostNetwork,
-			Hostname:           oldSpec.Hostname,
-			Subdomain:          oldSpec.Subdomain,
-		}
-		pod.Spec = newSpec
-		pod.Status.InitContainerStatuses = nil
-		pod.Status.ContainerStatuses = nil
-	}
-
-	return obj, nil
-}
-
-func SlowConvertKindsToRuntimeObjects(in []crd.IstioKind) ([]runtime.Object, error) {
-	res := make([]runtime.Object, 0, len(in))
-	for _, o := range in {
-		r, err := SlowConvertToRuntimeObject(&o)
-		if err != nil {
-			return nil, err
-		}
-		res = append(res, r)
-	}
-	return res, nil
 }
 
 // SlowConvertToRuntimeObject converts an IstioKind to a runtime.Object.
@@ -514,4 +358,160 @@ func AllSynced[T Syncer](syncers []T) bool {
 		}
 	}
 	return true
+}
+
+// DefaultRestConfig returns the rest.Config for the given kube config file and context.
+func DefaultRestConfig(kubeconfig, configContext string, fns ...func(*rest.Config)) (*rest.Config, error) {
+	config, err := BuildClientConfig(kubeconfig, configContext)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, fn := range fns {
+		fn(config)
+	}
+
+	return config, nil
+}
+
+// InClusterConfig returns the rest.Config for in cluster usage.
+// Typically, DefaultRestConfig is used and this is auto detected; usage directly allows explicitly overriding to use in-cluster.
+func InClusterConfig(fns ...func(*rest.Config)) (*rest.Config, error) {
+	config, err := rest.InClusterConfig()
+	if err != nil {
+		return nil, err
+	}
+
+	for _, fn := range fns {
+		fn(config)
+	}
+
+	return SetRestDefaults(config), nil
+}
+
+func HTTPConfigReader(req *http.Request) ([]byte, error) {
+	defer req.Body.Close()
+	lr := &io.LimitedReader{
+		R: req.Body,
+		N: MaxRequestBodyBytes + 1,
+	}
+	data, err := io.ReadAll(lr)
+	if err != nil {
+		return nil, err
+	}
+	if lr.N <= 0 {
+		return nil, errors.NewRequestEntityTooLargeError(fmt.Sprintf("limit is %d", MaxRequestBodyBytes))
+	}
+	return data, nil
+}
+
+func GetDeployMetaFromPod(pod *corev1.Pod) (types.NamespacedName, metav1.TypeMeta) {
+	if pod == nil {
+		return types.NamespacedName{}, metav1.TypeMeta{}
+	}
+	// try to capture more useful namespace/name info for deployments, etc.
+	// TODO(dougreid): expand to enable lookup of OWNERs recursively a la kubernetesenv
+
+	deployMeta := types.NamespacedName{Name: pod.Name, Namespace: pod.Namespace}
+
+	typeMetadata := metav1.TypeMeta{
+		Kind:       "Pod",
+		APIVersion: "v1",
+	}
+	if len(pod.GenerateName) > 0 {
+		// if the pod name was generated (or is scheduled for generation), we can begin an investigation into the controlling reference for the pod.
+		var controllerRef metav1.OwnerReference
+		controllerFound := false
+		for _, ref := range pod.GetOwnerReferences() {
+			if ref.Controller != nil && *ref.Controller {
+				controllerRef = ref
+				controllerFound = true
+				break
+			}
+		}
+		if controllerFound {
+			typeMetadata.APIVersion = controllerRef.APIVersion
+			typeMetadata.Kind = controllerRef.Kind
+
+			// heuristic for deployment detection
+			deployMeta.Name = controllerRef.Name
+			if typeMetadata.Kind == "ReplicaSet" && pod.Labels["pod-template-hash"] != "" && strings.HasSuffix(controllerRef.Name, pod.Labels["pod-template-hash"]) {
+				name := strings.TrimSuffix(controllerRef.Name, "-"+pod.Labels["pod-template-hash"])
+				deployMeta.Name = name
+				typeMetadata.Kind = "Deployment"
+			} else if typeMetadata.Kind == "ReplicaSet" && pod.Labels["rollouts-pod-template-hash"] != "" &&
+				strings.HasSuffix(controllerRef.Name, pod.Labels["rollouts-pod-template-hash"]) {
+				// Heuristic for ArgoCD Rollout
+				name := strings.TrimSuffix(controllerRef.Name, "-"+pod.Labels["rollouts-pod-template-hash"])
+				deployMeta.Name = name
+				typeMetadata.Kind = "Rollout"
+				typeMetadata.APIVersion = "v1alpha1"
+			} else if typeMetadata.Kind == "ReplicationController" && pod.Labels["deploymentconfig"] != "" {
+				// If the pod is controlled by the replication controller, which is created by the DeploymentConfig resource in
+				// Openshift platform, set the deploy name to the deployment config's name, and the kind to 'DeploymentConfig'.
+				//
+				// nolint: lll
+				// For DeploymentConfig details, refer to
+				// https://docs.openshift.com/container-platform/4.1/applications/deployments/what-deployments-are.html#deployments-and-deploymentconfigs_what-deployments-are
+				//
+				// For the reference to the pod label 'deploymentconfig', refer to
+				// https://github.com/openshift/library-go/blob/7a65fdb398e28782ee1650959a5e0419121e97ae/pkg/apps/appsutil/const.go#L25
+				deployMeta.Name = pod.Labels["deploymentconfig"]
+				typeMetadata.Kind = "DeploymentConfig"
+			} else if typeMetadata.Kind == "Job" {
+				// If job name suffixed with `-<digit-timestamp>`, where the length of digit timestamp is 8~10,
+				// trim the suffix and set kind to cron job.
+				if jn := cronJobNameRegexp.FindStringSubmatch(controllerRef.Name); len(jn) == 2 {
+					deployMeta.Name = jn[1]
+					typeMetadata.Kind = "CronJob"
+					// heuristically set cron job api version to v1 as it cannot be derived from pod metadata.
+					typeMetadata.APIVersion = "batch/v1"
+				}
+			}
+		}
+	}
+
+	if deployMeta.Name == "" {
+		// if we haven't been able to extract a deployment name, then just give it the pod name
+		deployMeta.Name = pod.Name
+	}
+
+	return deployMeta, typeMetadata
+}
+
+// StripPodUnusedFields is the transform function for shared pod informers,
+// it removes unused fields from objects before they are stored in the cache to save memory.
+func StripPodUnusedFields(obj any) (any, error) {
+	t, ok := obj.(metav1.ObjectMetaAccessor)
+	if !ok {
+		// shouldn't happen
+		return obj, nil
+	}
+	// ManagedFields is large and we never use it
+	t.GetObjectMeta().SetManagedFields(nil)
+	// only container ports can be used
+	if pod := obj.(*corev1.Pod); pod != nil {
+		var containers []corev1.Container
+		for _, c := range pod.Spec.Containers {
+			if len(c.Ports) > 0 {
+				containers = append(containers, corev1.Container{
+					Ports: c.Ports,
+				})
+			}
+		}
+		oldSpec := pod.Spec
+		newSpec := corev1.PodSpec{
+			Containers:         containers,
+			ServiceAccountName: oldSpec.ServiceAccountName,
+			NodeName:           oldSpec.NodeName,
+			HostNetwork:        oldSpec.HostNetwork,
+			Hostname:           oldSpec.Hostname,
+			Subdomain:          oldSpec.Subdomain,
+		}
+		pod.Spec = newSpec
+		pod.Status.InitContainerStatuses = nil
+		pod.Status.ContainerStatuses = nil
+	}
+
+	return obj, nil
 }

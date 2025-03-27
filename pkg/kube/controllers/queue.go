@@ -41,11 +41,6 @@ type Queue struct {
 }
 
 // WithName sets a name for the queue. This is used for logging
-func WithName(name string) func(q *Queue) {
-	return func(q *Queue) {
-		q.name = name
-	}
-}
 
 // WithRateLimiter allows defining a custom rate limiter for the queue
 func WithRateLimiter(r workqueue.TypedRateLimiter[any]) func(q *Queue) {
@@ -61,7 +56,6 @@ func WithMaxAttempts(n int) func(q *Queue) {
 	}
 }
 
-// WithReconciler defines the handler function to handle items in the queue.
 func WithReconciler(f ReconcilerFn) func(q *Queue) {
 	return func(q *Queue) {
 		q.workFn = func(key any) error {
@@ -140,12 +134,14 @@ func (q Queue) HasSynced() bool {
 
 // Closed returns a chan that will be signaled when the Instance has stopped processing tasks.
 func (q Queue) Closed() <-chan struct{} {
+	// processNextItem is the main workFn loop for the queue
+
 	return q.closed
 }
 
-// processNextItem is the main workFn loop for the queue
 func (q Queue) processNextItem() bool {
 	// Wait until there is a new item in the working queue
+
 	key, quit := q.queue.Get()
 	if quit {
 		// We are done, signal to exit the queue

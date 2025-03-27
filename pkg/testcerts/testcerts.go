@@ -20,7 +20,7 @@ limitations under the License.
 package testcerts
 
 // CACert is a test cert for dynamic admission controller.
-var CACert = []byte(`-----BEGIN CERTIFICATE-----
+var _ = []byte(`-----BEGIN CERTIFICATE-----
 MIIC9DCCAdygAwIBAgIJAIFe3lWPaalKMA0GCSqGSIb3DQEBCwUAMA4xDDAKBgNV
 BAMMA19jYTAgFw0xNzEyMjIxODA0MjRaGA8yMjkxMTAwNzE4MDQyNFowDjEMMAoG
 A1UEAwwDX2NhMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAuBdxj+Hi
@@ -40,7 +40,7 @@ Fg72WnHeojDUhqEz4UyFZbnRJ4x6leQhnrIcVjWX4FFFktiO9rqqfw==
 -----END CERTIFICATE-----`)
 
 // BadCert is a abd x509 cert. Copied from crypto/x509/x509_test.go:1628
-var BadCert = []byte(`
+var _ = []byte(`
 -----BEGIN CERTIFICATE-----
 MIIC1jCCAb6gAwIBAgICEjQwDQYJKoZIhvcNAQELBQAwKDEmMCQGA1UEAxMdRW1w
 dHkgbmFtZSBjb25zdHJhaW50cyBpc3N1ZXIwHhcNMTMwMjAxMDAwMDAwWhcNMjAw
@@ -61,7 +61,7 @@ o+WoY6IsCKXV/g==
 -----END CERTIFICATE-----`)
 
 // ServerKey is a test cert for dynamic admission controller.
-var ServerKey = []byte(`-----BEGIN RSA PRIVATE KEY-----
+var _ = []byte(`-----BEGIN RSA PRIVATE KEY-----
 MIIEpAIBAAKCAQEAqZ9WyVOdHCM3ToIKnYeo8EvbuZKglfhjee7yZ5ZQ4atboHmb
 n9q0GhkE780ezNuyMVllr/5tha1iUjSGdCPip/l3GdfLVt719Iw5gsCPxRKHMnoJ
 O5PcejMxzXFa4vRpIKF/fbJ/ZYDKpIJtOGlaIR4M4ZQb3661SftEO7DnqElfOo7D
@@ -90,7 +90,7 @@ DYyKQ0uRkAvNVAT2WD87ZiK8IGgn+U7qWc+LlmvVVPJRiKbuxdjtGeH+2PFc9uFD
 -----END RSA PRIVATE KEY-----`)
 
 // ServerCert is a test cert for dynamic admission controller.
-var ServerCert = []byte(`-----BEGIN CERTIFICATE-----
+var _ = []byte(`-----BEGIN CERTIFICATE-----
 MIIDATCCAemgAwIBAgIJAIaY2+s9cKkgMA0GCSqGSIb3DQEBCwUAMA4xDDAKBgNV
 BAMMA19jYTAgFw0xNzEyMjIxODA0MjRaGA8yMjkxMTAwNzE4MDQyNFowEjEQMA4G
 A1UEAwwHX3NlcnZlcjCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAKmf
@@ -111,7 +111,7 @@ p3vBDAM=
 -----END CERTIFICATE-----`)
 
 // RotatedKey is a test cert for dynamic admission controller.
-var RotatedKey = []byte(`-----BEGIN RSA PRIVATE KEY-----
+var _ = []byte(`-----BEGIN RSA PRIVATE KEY-----
 MIIEpAIBAAKCAQEA3Tr24CaBegyfkdDGWckqMHEWvpJBThjXlMz/FKcg1bgq57OD
 oNHXN4dcyPCHWWEY3Eo3YG1es4pqTkvzK0+1JoY6/K88Lu1ePj5PeSFuWfPWi1BW
 9oyWJW+AAzqqGkZmSo4z26N+E7N8ht5bTBMNVD3jqz9+MaqCTVmQ6dAgdFKH07wd
@@ -140,7 +140,7 @@ mz+dlU3j/BY19RLmYeg4jFV4W66CnkDqpneOJs5WdmFFoWnHn7gRBw==
 -----END RSA PRIVATE KEY-----`)
 
 // RotatedCert is a test cert for dynamic admission controller.
-var RotatedCert = []byte(`-----BEGIN CERTIFICATE-----
+var _ = []byte(`-----BEGIN CERTIFICATE-----
 MIIDATCCAemgAwIBAgIJAJwGb32Zn8sDMA0GCSqGSIb3DQEBCwUAMA4xDDAKBgNV
 BAMMA19jYTAgFw0xODAzMTYxNzI0NDJaGA8yMjkxMTIzMDE3MjQ0MlowEjEQMA4G
 A1UEAwwHX3NlcnZlcjCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAN06
@@ -161,7 +161,7 @@ ZOQ5UvU=
 -----END CERTIFICATE-----`)
 
 // ExpiredServerCert is a test expired cert for testing certificate renewal upon expiry.
-var ExpiredServerCert = []byte(`-----BEGIN CERTIFICATE-----
+var _ = []byte(`-----BEGIN CERTIFICATE-----
 MIIF5TCCA82gAwIBAgIUEooicnB1HsRaXq2wqC7XwNiTZ4cwDQYJKoZIhvcNAQEL
 BQAwgYExCzAJBgNVBAYTAklOMQ4wDAYDVQQIDAVkdW1teTEOMAwGA1UEBwwFZHVt
 bXkxDjAMBgNVBAoMBWR1bW15MQ4wDAYDVQQLDAVkdW1teTESMBAGA1UEAwwJZHVt

@@ -155,6 +155,7 @@ func (wk *worker) drainRetiringTrackers() {
 	// cleanup any trackers that were in the process
 	// of being retired, but didn't get processed due
 	// to termination
+
 	for {
 		select {
 		case ft := <-wk.retireTrackerCh:
@@ -228,17 +229,6 @@ func (wk *worker) removePath(path string) error {
 	return nil
 }
 
-func (wk *worker) eventChannel(path string) chan fsnotify.Event {
-	wk.mu.RLock()
-	defer wk.mu.RUnlock()
-
-	if ft := wk.watchedFiles[path]; ft != nil {
-		return ft.events
-	}
-
-	return nil
-}
-
 func (wk *worker) errorChannel(path string) chan error {
 	wk.mu.RLock()
 	defer wk.mu.RUnlock()
@@ -262,4 +252,15 @@ func getHashSum(file string) []byte {
 	h := sha256.New()
 	_, _ = io.Copy(h, r)
 	return h.Sum(nil)
+}
+
+func (wk *worker) eventChannel(path string) chan fsnotify.Event {
+	wk.mu.RLock()
+	defer wk.mu.RUnlock()
+
+	if ft := wk.watchedFiles[path]; ft != nil {
+		return ft.events
+	}
+
+	return nil
 }

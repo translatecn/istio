@@ -51,10 +51,11 @@ func (i *runtime) DumpCustom(ctx resource.Context, recursive bool) {
 
 // suiteContext returns the suiteContext.
 func (i *runtime) suiteContext() *suiteContext {
+	// newRootContext creates and returns a new testContext with no parent.
+
 	return i.context
 }
 
-// newRootContext creates and returns a new testContext with no parent.
 func (i *runtime) newRootContext(test *testImpl, goTest *testing.T, labels label.Set) *testContext {
 	return newTestContext(test, goTest, i.context, nil, labels)
 }

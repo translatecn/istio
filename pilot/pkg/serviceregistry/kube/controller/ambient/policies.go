@@ -21,8 +21,8 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 
-	networkingclient "istio.io/client-go/pkg/apis/networking/v1"
-	securityclient "istio.io/client-go/pkg/apis/security/v1"
+	networkingclient "istio.io/istio/istio.io/client-go/pkg/apis/networking/v1"
+	securityclient "istio.io/istio/istio.io/client-go/pkg/apis/security/v1"
 	"istio.io/istio/pilot/pkg/model"
 	"istio.io/istio/pkg/config/schema/gvk"
 	"istio.io/istio/pkg/kube/krt"

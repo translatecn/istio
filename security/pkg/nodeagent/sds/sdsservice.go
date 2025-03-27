@@ -36,7 +36,7 @@ import (
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/durationpb"
 
-	mesh "istio.io/api/mesh/v1alpha1"
+	mesh "istio.io/istio/istio.io/api/mesh/v1alpha1"
 	"istio.io/istio/pilot/pkg/util/protoconv"
 	"istio.io/istio/pkg/backoff"
 	"istio.io/istio/pkg/log"
@@ -224,6 +224,7 @@ func (w *Watch) UpdateWatchedResource(_ string, f func(*xds.WatchedResource) *xd
 
 func (w *Watch) GetID() string {
 	// This always maps to the same local Envoy instance.
+
 	return ""
 }
 
@@ -270,7 +271,7 @@ func (c *Context) Push(ev any) error {
 
 // StreamSecrets serves SDS discovery requests and SDS push requests
 func (s *sdsservice) StreamSecrets(stream sds.SecretDiscoveryService_StreamSecretsServer) error {
-	return xds.Stream(&Context{
+	return xds.Stream(&Context{ //
 		BaseConnection: xds.NewConnection("", stream),
 		s:              s,
 		w:              &Watch{},
@@ -286,10 +287,9 @@ func (s *sdsservice) FetchSecrets(ctx context.Context, discReq *discovery.Discov
 }
 
 func (s *sdsservice) Close() {
-	close(s.stop)
+	// toEnvoySecret converts a security.SecretItem to an Envoy tls.Secret	close(s.stop)
 }
 
-// toEnvoySecret converts a security.SecretItem to an Envoy tls.Secret
 func toEnvoySecret(s *security.SecretItem, caRootPath string, pkpConf *mesh.PrivateKeyProvider) *tls.Secret {
 	secret := &tls.Secret{
 		Name: s.ResourceName,

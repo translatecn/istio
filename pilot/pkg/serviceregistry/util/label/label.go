@@ -17,7 +17,7 @@ package label
 import (
 	"strings"
 
-	"istio.io/api/label"
+	"istio.io/istio/istio.io/api/label"
 	"istio.io/istio/pkg/cluster"
 	"istio.io/istio/pkg/config/labels"
 	"istio.io/istio/pkg/network"
@@ -33,9 +33,23 @@ const (
 	LabelTopologyRegion  = "topology.kubernetes.io/region"
 )
 
+// SplitLocalityLabel splits a locality label into region, zone and subzone strings.
+func SplitLocalityLabel(locality string) (region, zone, subzone string) {
+	items := strings.Split(locality, "/")
+	switch len(items) {
+	case 1:
+		return items[0], "", ""
+	case 2:
+		return items[0], items[1], ""
+	default:
+		return items[0], items[1], items[2]
+	}
+}
+
 // AugmentLabels adds additional labels to the those provided.
 func AugmentLabels(in labels.Instance, clusterID cluster.ID, locality, k8sNode string, networkID network.ID) labels.Instance {
 	// Copy the original labels to a new map.
+
 	out := make(labels.Instance, len(in)+6)
 	for k, v := range in {
 		out[k] = v
@@ -61,17 +75,4 @@ func AugmentLabels(in labels.Instance, clusterID cluster.ID, locality, k8sNode s
 		out[label.TopologyNetwork.Name] = networkID.String()
 	}
 	return out
-}
-
-// SplitLocalityLabel splits a locality label into region, zone and subzone strings.
-func SplitLocalityLabel(locality string) (region, zone, subzone string) {
-	items := strings.Split(locality, "/")
-	switch len(items) {
-	case 1:
-		return items[0], "", ""
-	case 2:
-		return items[0], items[1], ""
-	default:
-		return items[0], items[1], items[2]
-	}
 }

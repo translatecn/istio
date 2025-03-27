@@ -3,7 +3,7 @@ global:
   # ImagePullSecrets for control plane ServiceAccount, list of secrets in the same namespace
   # to use for pulling any images in pods that reference this ServiceAccount.
   # Must be set for any cluster configured with private docker registry.
-  imagePullSecrets: []
+  imagePullSecrets: [ ]
 
   # Used to locate istiod.
   istioNamespace: istio-system
@@ -38,4 +38,4 @@ base:
   # Note that the revision tag "default" has additional semantic meaning as it
   # controls the revision that performs validation and the revision that handles
   # injection for default selectors ("istio-injection=enabled" and "sidecar.istio.io/inject").
-  tags: {}
+  tags: { }

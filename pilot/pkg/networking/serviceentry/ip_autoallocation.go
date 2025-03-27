@@ -20,15 +20,11 @@ import (
 
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"istio.io/api/label"
-	apiv1 "istio.io/api/networking/v1"
-	networkingv1 "istio.io/client-go/pkg/apis/networking/v1"
+	"istio.io/istio/istio.io/api/label"
+	apiv1 "istio.io/istio/istio.io/api/networking/v1"
+	networkingv1 "istio.io/istio/istio.io/client-go/pkg/apis/networking/v1"
 	"istio.io/istio/pilot/pkg/features"
 	"istio.io/istio/pkg/config"
-)
-
-const (
-	IPAutoallocateStatusType = "ip-autoallocate"
 )
 
 func GetHostAddressesFromServiceEntry(se *networkingv1.ServiceEntry) map[string][]netip.Addr {
@@ -85,6 +81,7 @@ func ShouldV2AutoAllocateIPFromConfig(cfg config.Config) bool {
 
 func shouldV2AutoAllocateIPFromPieces(meta v1.ObjectMeta, spec *apiv1.ServiceEntry) bool {
 	// if the feature is off we should not assign/use addresses
+
 	if !features.EnableIPAutoallocate {
 		return false
 	}

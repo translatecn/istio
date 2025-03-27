@@ -15,6 +15,4 @@
  *******************************************************************************/ 
 package test;
 
-public class TestApplication {
-
-}
+public class TestApplication {}

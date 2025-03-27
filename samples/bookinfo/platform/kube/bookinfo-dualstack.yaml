@@ -38,10 +38,10 @@ metadata:
     service: details
 spec:
   ipFamilyPolicy: RequireDualStack
-  ipFamilies: [IPv6, IPv4]
+  ipFamilies: [ IPv6, IPv4 ]
   ports:
-  - port: 9080
-    name: http
+    - port: 9080
+      name: http
   selector:
     app: details
 ---
@@ -73,11 +73,11 @@ spec:
     spec:
       serviceAccountName: bookinfo-details
       containers:
-      - name: details
-        image: docker.io/istio/examples-bookinfo-details-v1:1.20.2
-        imagePullPolicy: IfNotPresent
-        ports:
-        - containerPort: 9080
+        - name: details
+          image: registry.cn-hangzhou.aliyuncs.com/acejilam/examples-bookinfo-details-v1:1.20.2
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 9080
 ---
 ##################################################################################################
 # Ratings service
@@ -91,10 +91,10 @@ metadata:
     service: ratings
 spec:
   ipFamilyPolicy: RequireDualStack
-  ipFamilies: [IPv6, IPv4]
+  ipFamilies: [ IPv6, IPv4 ]
   ports:
-  - port: 9080
-    name: http
+    - port: 9080
+      name: http
   selector:
     app: ratings
 ---
@@ -126,11 +126,11 @@ spec:
     spec:
       serviceAccountName: bookinfo-ratings
       containers:
-      - name: ratings
-        image: docker.io/istio/examples-bookinfo-ratings-v1:1.20.2
-        imagePullPolicy: IfNotPresent
-        ports:
-        - containerPort: 9080
+        - name: ratings
+          image: registry.cn-hangzhou.aliyuncs.com/acejilam/examples-bookinfo-ratings-v1:1.20.2
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 9080
 ---
 ##################################################################################################
 # Reviews service
@@ -144,10 +144,10 @@ metadata:
     service: reviews
 spec:
   ipFamilyPolicy: RequireDualStack
-  ipFamilies: [IPv4, IPv6]
+  ipFamilies: [ IPv4, IPv6 ]
   ports:
-  - port: 9080
-    name: http
+    - port: 9080
+      name: http
   selector:
     app: reviews
 ---
@@ -179,24 +179,24 @@ spec:
     spec:
       serviceAccountName: bookinfo-reviews
       containers:
-      - name: reviews
-        image: docker.io/istio/examples-bookinfo-reviews-v1:1.20.2
-        imagePullPolicy: IfNotPresent
-        env:
-        - name: LOG_DIR
-          value: "/tmp/logs"
-        ports:
-        - containerPort: 9080
-        volumeMounts:
-        - name: tmp
-          mountPath: /tmp
-        - name: wlp-output
-          mountPath: /opt/ibm/wlp/output
+        - name: reviews
+          image: registry.cn-hangzhou.aliyuncs.com/acejilam/examples-bookinfo-reviews-v1:1.20.2
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: LOG_DIR
+              value: "/tmp/logs"
+          ports:
+            - containerPort: 9080
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+            - name: wlp-output
+              mountPath: /opt/ibm/wlp/output
       volumes:
-      - name: wlp-output
-        emptyDir: {}
-      - name: tmp
-        emptyDir: {}
+        - name: wlp-output
+          emptyDir: { }
+        - name: tmp
+          emptyDir: { }
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -219,24 +219,24 @@ spec:
     spec:
       serviceAccountName: bookinfo-reviews
       containers:
-      - name: reviews
-        image: docker.io/istio/examples-bookinfo-reviews-v2:1.20.2
-        imagePullPolicy: IfNotPresent
-        env:
-        - name: LOG_DIR
-          value: "/tmp/logs"
-        ports:
-        - containerPort: 9080
-        volumeMounts:
-        - name: tmp
-          mountPath: /tmp
-        - name: wlp-output
-          mountPath: /opt/ibm/wlp/output
+        - name: reviews
+          image: registry.cn-hangzhou.aliyuncs.com/acejilam/examples-bookinfo-reviews-v2:1.20.2
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: LOG_DIR
+              value: "/tmp/logs"
+          ports:
+            - containerPort: 9080
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+            - name: wlp-output
+              mountPath: /opt/ibm/wlp/output
       volumes:
-      - name: wlp-output
-        emptyDir: {}
-      - name: tmp
-        emptyDir: {}
+        - name: wlp-output
+          emptyDir: { }
+        - name: tmp
+          emptyDir: { }
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -259,24 +259,24 @@ spec:
     spec:
       serviceAccountName: bookinfo-reviews
       containers:
-      - name: reviews
-        image: docker.io/istio/examples-bookinfo-reviews-v3:1.20.2
-        imagePullPolicy: IfNotPresent
-        env:
-        - name: LOG_DIR
-          value: "/tmp/logs"
-        ports:
-        - containerPort: 9080
-        volumeMounts:
-        - name: tmp
-          mountPath: /tmp
-        - name: wlp-output
-          mountPath: /opt/ibm/wlp/output
+        - name: reviews
+          image: registry.cn-hangzhou.aliyuncs.com/acejilam/examples-bookinfo-reviews-v3:1.20.2
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: LOG_DIR
+              value: "/tmp/logs"
+          ports:
+            - containerPort: 9080
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+            - name: wlp-output
+              mountPath: /opt/ibm/wlp/output
       volumes:
-      - name: wlp-output
-        emptyDir: {}
-      - name: tmp
-        emptyDir: {}
+        - name: wlp-output
+          emptyDir: { }
+        - name: tmp
+          emptyDir: { }
 ---
 ##################################################################################################
 # Productpage services
@@ -290,10 +290,10 @@ metadata:
     service: productpage
 spec:
   ipFamilyPolicy: RequireDualStack
-  ipFamilies: [IPv4, IPv6]
+  ipFamilies: [ IPv4, IPv6 ]
   ports:
-  - port: 9080
-    name: http
+    - port: 9080
+      name: http
   selector:
     app: productpage
 ---
@@ -329,15 +329,15 @@ spec:
     spec:
       serviceAccountName: bookinfo-productpage
       containers:
-      - name: productpage
-        image: docker.io/istio/examples-bookinfo-productpage-v1:1.20.2
-        imagePullPolicy: IfNotPresent
-        ports:
-        - containerPort: 9080
-        volumeMounts:
-        - name: tmp
-          mountPath: /tmp
+        - name: productpage
+          image: registry.cn-hangzhou.aliyuncs.com/acejilam/examples-bookinfo-productpage-v1:1.20.2
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 9080
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
       volumes:
-      - name: tmp
-        emptyDir: {}
+        - name: tmp
+          emptyDir: { }
 ---

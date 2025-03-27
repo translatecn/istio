@@ -22,12 +22,12 @@ metadata:
     app: ext-authz
 spec:
   ports:
-  - name: http
-    port: 8000
-    targetPort: 8000
-  - name: grpc
-    port: 9000
-    targetPort: 9000
+    - name: http
+      port: 8000
+      targetPort: 8000
+    - name: grpc
+      port: 9000
+      targetPort: 9000
   selector:
     app: ext-authz
 ---
@@ -46,10 +46,10 @@ spec:
         app: ext-authz
     spec:
       containers:
-      - image: gcr.io/istio-testing/ext-authz:latest
-        imagePullPolicy: IfNotPresent
-        name: ext-authz
-        ports:
-        - containerPort: 8000
-        - containerPort: 9000
+        - image: gcr.io/istio-testing/ext-authz:latest
+          imagePullPolicy: IfNotPresent
+          name: ext-authz
+          ports:
+            - containerPort: 8000
+            - containerPort: 9000
 ---

@@ -12,23 +12,23 @@ spec:
   failurePolicy: Fail
   matchConstraints:
     resourceRules:
-    - apiGroups:
-        - security.istio.io
-        - networking.istio.io
-        - telemetry.istio.io
-        - extensions.istio.io
-      apiVersions: ["*"]
-      operations:  ["CREATE", "UPDATE"]
-      resources:   ["*"]
+      - apiGroups:
+          - security.istio.io
+          - networking.istio.io
+          - telemetry.istio.io
+          - extensions.istio.io
+        apiVersions: [ "*" ]
+        operations: [ "CREATE", "UPDATE" ]
+        resources: [ "*" ]
     objectSelector:
       matchExpressions:
         - key: istio.io/rev
           operator: In
           values:
           {{- if (eq .Values.revision "") }}
-          - "default"
+            - "default"
           {{- else }}
-          - "{{ .Values.revision }}"
+            - "{{ .Values.revision }}"
           {{- end }}
   variables:
     - name: isEnvoyFilter
@@ -58,6 +58,6 @@ metadata:
   name: "stable-channel-policy-binding{{- if not (eq .Values.revision "") }}-{{ .Values.revision }}{{- end }}-{{ .Values.global.istioNamespace }}.istio.io"
 spec:
   policyName: "stable-channel-policy{{- if not (eq .Values.revision "") }}-{{ .Values.revision }}{{- end }}-{{ .Values.global.istioNamespace }}.istio.io"
-  validationActions: [Deny]
+  validationActions: [ Deny ]
 {{- end }}
 {{- end }}

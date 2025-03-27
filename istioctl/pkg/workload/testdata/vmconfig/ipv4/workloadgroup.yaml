@@ -9,9 +9,9 @@ spec:
         proxyMetadata:
           # this should override the value from the global meshconfig
           PROXY_CONFIG_ANNOT_VALUE: bar
-    labels: {}
+    labels: { }
   template:
-    ports: {}
+    ports: { }
     serviceAccount: vm-serviceaccount
   probe:
     httpGet:

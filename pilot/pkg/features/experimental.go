@@ -25,10 +25,6 @@ import (
 
 // Define experimental features here.
 var (
-	// FilterGatewayClusterConfig controls if a subset of clusters(only those required) should be pushed to gateways
-	FilterGatewayClusterConfig = env.Register("PILOT_FILTER_GATEWAY_CLUSTER_CONFIG", false,
-		"If enabled, Pilot will send only clusters that referenced in gateway virtual services attached to gateway").Get()
-
 	SendUnhealthyEndpoints = atomic.NewBool(env.Register(
 		"PILOT_SEND_UNHEALTHY_ENDPOINTS",
 		false,
@@ -43,18 +39,6 @@ var (
 		"If enabled, Istiod sets up persistent session filter for listeners, if services have 'PILOT_PERSISTENT_SESSION_LABEL' set.",
 	).Get())
 
-	PersistentSessionLabel = env.Register(
-		"PILOT_PERSISTENT_SESSION_LABEL",
-		"istio.io/persistent-session",
-		"If not empty, services with this label will use cookie based persistent sessions",
-	).Get()
-
-	PersistentSessionHeaderLabel = env.Register(
-		"PILOT_PERSISTENT_SESSION_HEADER_LABEL",
-		"istio.io/persistent-session-header",
-		"If not empty, services with this label will use header based persistent sessions",
-	).Get()
-
 	DrainingLabel = env.Register(
 		"PILOT_DRAINING_LABEL",
 		"istio.io/draining",
@@ -67,53 +51,16 @@ var (
 	MCSAPIVersion = env.Register("MCS_API_VERSION", "v1alpha1",
 		"The version to be used for the Kubernetes Multi-Cluster Services (MCS) API.").Get()
 
-	EnableMCSAutoExport = env.Register(
-		"ENABLE_MCS_AUTO_EXPORT",
-		false,
-		"If enabled, istiod will automatically generate Kubernetes "+
-			"Multi-Cluster Services (MCS) ServiceExport resources for every "+
-			"service in the mesh. Services defined to be cluster-local in "+
-			"MeshConfig are excluded.",
-	).Get()
-
-	EnableMCSServiceDiscovery = env.Register(
-		"ENABLE_MCS_SERVICE_DISCOVERY",
-		false,
-		"If enabled, istiod will enable Kubernetes Multi-Cluster "+
-			"Services (MCS) service discovery mode. In this mode, service "+
-			"endpoints in a cluster will only be discoverable within the "+
-			"same cluster unless explicitly exported via ServiceExport.").Get()
-
-	EnableMCSHost = env.Register(
-		"ENABLE_MCS_HOST",
-		false,
-		"If enabled, istiod will configure a Kubernetes Multi-Cluster "+
-			"Services (MCS) host (<svc>.<namespace>.svc.clusterset.local) "+
-			"for each service exported (via ServiceExport) in at least one "+
-			"cluster. Clients must, however, be able to successfully lookup "+
-			"these DNS hosts. That means that either Istio DNS interception "+
-			"must be enabled or an MCS controller must be used. Requires "+
-			"that ENABLE_MCS_SERVICE_DISCOVERY also be enabled.").Get() &&
+	EnableMCSServiceDiscovery = env.Register("ENABLE_MCS_SERVICE_DISCOVERY", false, "如果启用，istiod将启用Kubernetes多集群服务（MCS）服务发现模式。在这种模式下，除非通过ServiceExport显式导出，否则集群中的服务端点只能在同一集群中被发现。").Get()
+	EnableMCSHost             = env.Register("ENABLE_MCS_HOST", false,
+		"如果启用，istiod将为至少一个集群中的每个导出服务（通过ServiceExport）配置Kubernetes多集群服务（MCS）主机（<svc>.<namespace>.svc.clusterset.local）."+
+			"但是，客户端必须能够成功地查找这些DNS主机。这意味着必须启用Istio DNS拦截，或者必须使用MCS控制器。要求 ENABLE_MCS_SERVICE_DISCOVERY 也被启用。").Get() &&
 		EnableMCSServiceDiscovery
 
-	EnableMCSClusterLocal = env.Register(
-		"ENABLE_MCS_CLUSTER_LOCAL",
-		false,
-		"If enabled, istiod will treat the host "+
-			"`<svc>.<namespace>.svc.cluster.local` as defined by the "+
-			"Kubernetes Multi-Cluster Services (MCS) spec. In this mode, "+
-			"requests to `cluster.local` will be routed to only those "+
-			"endpoints residing within the same cluster as the client. "+
-			"Requires that both ENABLE_MCS_SERVICE_DISCOVERY and "+
-			"ENABLE_MCS_HOST also be enabled.").Get() &&
+	EnableMCSClusterLocal = env.Register("ENABLE_MCS_CLUSTER_LOCAL", false,
+		"如果启用，istiod将处理主机<svc>.<namespace>.svc.cluster。Kubernetes Multi-Cluster Services （MCS）规范中定义的“local”模式。"+
+			"“本地”将只路由到与客户端位于同一集群中的那些端点。要求ENABLE_MCS_SERVICE_DISCOVERY和ENABLE_MCS_HOST也被启用。").Get() &&
 		EnableMCSHost
-
-	EnableAnalysis = env.Register(
-		"PILOT_ENABLE_ANALYSIS",
-		false,
-		"If enabled, pilot will run istio analyzers and write analysis errors to the Status field of any "+
-			"Istio Resources",
-	).Get()
 
 	AnalysisInterval = func() time.Duration {
 		val, _ := env.Register(
@@ -128,17 +75,6 @@ var (
 		}
 		return val
 	}()
-
-	EnableGatewayAPI = env.Register("PILOT_ENABLE_GATEWAY_API", true,
-		"If this is set to true, support for Kubernetes gateway-api (github.com/kubernetes-sigs/gateway-api) will "+
-			" be enabled. In addition to this being enabled, the gateway-api CRDs need to be installed.").Get()
-
-	EnableAlphaGatewayAPI = env.Register("PILOT_ENABLE_ALPHA_GATEWAY_API", false,
-		"If this is set to true, support for alpha APIs in the Kubernetes gateway-api (github.com/kubernetes-sigs/gateway-api) will "+
-			" be enabled. In addition to this being enabled, the gateway-api CRDs need to be installed.").Get()
-
-	EnableGatewayAPIStatus = env.Register("PILOT_ENABLE_GATEWAY_API_STATUS", true,
-		"If this is set to true, gateway-api resources will have status written to them").Get()
 
 	EnableGatewayAPIDeploymentController = env.Register("PILOT_ENABLE_GATEWAY_API_DEPLOYMENT_CONTROLLER", true,
 		"If this is set to true, gateway-api resources will automatically provision in cluster deployment, services, etc").Get()
@@ -160,14 +96,6 @@ var (
 	EnableHCMInternalNetworks = env.Register("ENABLE_HCM_INTERNAL_NETWORKS", false,
 		"If enable, endpoints defined in mesh networks will be configured as internal addresses in Http Connection Manager").Get()
 
-	EnableEnhancedResourceScoping = env.Register("ENABLE_ENHANCED_RESOURCE_SCOPING", true,
-		"If enabled, meshConfig.discoverySelectors will limit the CustomResource configurations(like Gateway,VirtualService,DestinationRule,Ingress, etc)"+
-			"that can be processed by pilot. This will also restrict the root-ca certificate distribution.").Get()
-
-	EnableLeaderElection = env.Register("ENABLE_LEADER_ELECTION", true,
-		"If enabled (default), starts a leader election client and gains leadership before executing controllers. "+
-			"If false, it assumes that only one instance of istiod is running and skips leader election.").Get()
-
 	EnableSidecarServiceInboundListenerMerge = env.Register(
 		"PILOT_ALLOW_SIDECAR_SERVICE_INBOUND_LISTENER_MERGE",
 		false,
@@ -178,8 +106,7 @@ var (
 		"If true, Istio will enable the Dual Stack feature.").Get()
 
 	// This is used in injection templates, it is not unused.
-	EnableNativeSidecars = env.Register("ENABLE_NATIVE_SIDECARS", false,
-		"If set, used Kubernetes native Sidecar container support. Requires SidecarContainer feature flag.")
+	EnableNativeSidecars = env.Register("ENABLE_NATIVE_SIDECARS", false, "If set, used Kubernetes native Sidecar container support. Requires SidecarContainer feature flag.")
 
 	PassthroughTargetPort = env.Register("ENABLE_RESOLUTION_NONE_TARGET_PORT", true,
 		"If enabled, targetPort will be supported for resolution=NONE ServiceEntry").Get()
@@ -207,4 +134,22 @@ var (
 
 	UnifiedSidecarScoping = env.Register("PILOT_UNIFIED_SIDECAR_SCOPE", true,
 		"If true, unified SidecarScope creation will be used. This is only intended as a temporary feature flag for backwards compatibility.").Get()
+	EnableEnhancedResourceScoping = env.Register("ENABLE_ENHANCED_RESOURCE_SCOPING", true, "如果启用,meshConfig.discoverySelectors将限制可由pilot处理的CustomResource配置（如Gateway、VirtualService、DestinationRule、Ingress等）。这也将限制根ca证书的分发。").Get()
+
+	EnableGatewayAPI = env.Register("PILOT_ENABLE_GATEWAY_API", true, "If this is set to true, support for Kubernetes gateway-api (github.com/kubernetes-sigs/gateway-api) will be enabled. In addition to this being enabled, the gateway-api CRDs need to be installed.").Get()
+
+	EnableAlphaGatewayAPI = env.Register("PILOT_ENABLE_ALPHA_GATEWAY_API", false, "If this is set to true, support for alpha APIs in the Kubernetes gateway-api (github.com/kubernetes-sigs/gateway-api) will be enabled. In addition to this being enabled, the gateway-api CRDs need to be installed.").Get()
+
+	EnableAnalysis = env.Register("PILOT_ENABLE_ANALYSIS", false, "If enabled, pilot will run istio analyzers and write analysis errors to the Status field of any Istio Resources").Get()
+
+	EnableGatewayAPIStatus = env.Register("PILOT_ENABLE_GATEWAY_API_STATUS", true, "If this is set to true, gateway-api resources will have status written to them").Get()
+
+	EnableLeaderElection = env.Register("ENABLE_LEADER_ELECTION", true, "If enabled (default), starts a leader election client and gains leadership before executing controllers. If false, it assumes that only one instance of istiod is running and skips leader election.").Get()
+
+	EnableMCSAutoExport = env.Register("ENABLE_MCS_AUTO_EXPORT", false, "如果启用，istiod将自动为网格中的每个服务生成Kubernetes Multi-Cluster Services (MCS) ServiceExport资源。在MeshConfig中定义为集群本地的服务被排除在外。").Get()
+
+	FilterGatewayClusterConfig = env.Register("PILOT_FILTER_GATEWAY_CLUSTER_CONFIG", false, "如果启用，Pilot将只发送附加到网关的网关虚拟服务中引用的集群").Get()
+
+	PersistentSessionHeaderLabel = env.Register("PILOT_PERSISTENT_SESSION_HEADER_LABEL", "istio.io/persistent-session-header", "If not empty, services with this label will use header based persistent sessions").Get()
+	PersistentSessionLabel       = env.Register("PILOT_PERSISTENT_SESSION_LABEL", "istio.io/persistent-session", "If not empty, services with this label will use cookie based persistent sessions").Get()
 )

@@ -17,7 +17,7 @@ package virtualservice
 import (
 	"fmt"
 
-	"istio.io/api/networking/v1alpha3"
+	"istio.io/istio/istio.io/api/networking/v1alpha3"
 	"istio.io/istio/pkg/config"
 	"istio.io/istio/pkg/config/analysis"
 	"istio.io/istio/pkg/config/analysis/analyzers/util"
@@ -46,6 +46,7 @@ func (d *DestinationRuleAnalyzer) Metadata() analysis.Metadata {
 // Analyze implements Analyzer
 func (d *DestinationRuleAnalyzer) Analyze(ctx analysis.Context) {
 	// To avoid repeated iteration, precompute the set of existing destination host+subset combinations
+
 	destHostsAndSubsets := initDestHostsAndSubsets(ctx)
 
 	ctx.ForEach(gvk.VirtualService, func(r *resource.Instance) bool {
@@ -62,7 +63,6 @@ func (d *DestinationRuleAnalyzer) analyzeVirtualService(r *resource.Instance, ct
 
 	for _, ad := range getRouteDestinations(vs) {
 		if !d.checkDestinationSubset(ns, ad.Destination, destHostsAndSubsets) {
-
 			m := msg.NewReferencedResourceNotFound(r, "host+subset in destinationrule",
 				fmt.Sprintf("%s+%s", ad.Destination.GetHost(), ad.Destination.GetSubset()))
 
@@ -77,7 +77,6 @@ func (d *DestinationRuleAnalyzer) analyzeVirtualService(r *resource.Instance, ct
 
 	for _, ad := range getHTTPMirrorDestinations(vs) {
 		if !d.checkDestinationSubset(ns, ad.Destination, destHostsAndSubsets) {
-
 			m := msg.NewReferencedResourceNotFound(r, "mirror+subset in destinationrule",
 				fmt.Sprintf("%s+%s", ad.Destination.GetHost(), ad.Destination.GetSubset()))
 

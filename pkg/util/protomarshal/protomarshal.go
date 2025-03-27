@@ -45,10 +45,6 @@ func Unmarshal(b []byte, m proto.Message) error {
 	return strictUnmarshaler.Unmarshal(bytes.NewReader(b), legacyproto.MessageV1(m))
 }
 
-func UnmarshalString(s string, m proto.Message) error {
-	return Unmarshal([]byte(s), m)
-}
-
 func UnmarshalAllowUnknown(b []byte, m proto.Message) error {
 	return unmarshaler.Unmarshal(bytes.NewReader(b), legacyproto.MessageV1(m))
 }
@@ -202,13 +198,6 @@ func ApplyYAML(yml string, pb proto.Message) error {
 
 // ApplyYAMLStrict unmarshals a YAML string into a proto message.
 // Unknown fields are not allowed.
-func ApplyYAMLStrict(yml string, pb proto.Message) error {
-	js, err := yaml.YAMLToJSON([]byte(yml))
-	if err != nil {
-		return err
-	}
-	return ApplyJSONStrict(string(js), pb)
-}
 
 type ComparableMessage interface {
 	comparable

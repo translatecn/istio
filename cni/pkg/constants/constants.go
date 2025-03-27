@@ -14,22 +14,21 @@
 
 package constants
 
-// Command line arguments
 const (
 	// Install
-	MountedCNINetDir         = "mounted-cni-net-dir"
-	CNIConfName              = "cni-conf-name"
-	ChainedCNIPlugin         = "chained-cni-plugin"
-	CNINetworkConfigFile     = "cni-network-config-file"
-	CNINetworkConfig         = "cni-network-config"
-	LogLevel                 = "log-level"
-	KubeconfigMode           = "kubeconfig-mode"
-	KubeCAFile               = "kube-ca-file"
-	SkipTLSVerify            = "skip-tls-verify"
-	MonitoringPort           = "monitoring-port"
-	LogUDSSocket             = "log-uds-socket"
-	ZtunnelUDSAddress        = "ztunnel-uds-address"
-	CNIEventSocket           = "cni-event-address"
+	MountedCNINetDir     = "mounted-cni-net-dir"
+	CNIConfName          = "cni-conf-name"
+	ChainedCNIPlugin     = "chained-cni-plugin"
+	CNINetworkConfigFile = "cni-network-config-file"
+	CNINetworkConfig     = "cni-network-config"
+	LogLevel             = "log-level"
+	KubeconfigMode       = "kubeconfig-mode"
+	KubeCAFile           = "kube-ca-file"
+	SkipTLSVerify        = "skip-tls-verify"
+	MonitoringPort       = "monitoring-port"
+
+	ZtunnelUDSAddress = "ztunnel-uds-address"
+
 	CNIAgentRunDir           = "cni-agent-run-dir"
 	ExcludeNamespaces        = "exclude-namespaces"
 	AmbientEnabled           = "ambient-enabled"

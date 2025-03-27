@@ -88,6 +88,7 @@ func (i *informer[I]) GetKey(k Key[I]) *I {
 	// We also have a key in this format.
 	// Rather than split and rejoin it later, just pass it as the name
 	// This is depending on "unstable" implementation details, but we own both libraries and tests would catch any issues.
+
 	if got := i.inf.Get(string(k), ""); !controllers.IsNil(got) {
 		return &got
 	}
@@ -103,6 +104,7 @@ func (i *informer[I]) RegisterBatch(f func(o []Event[I], initialSync bool), runE
 	// Informer doesn't expose a way to do that. However, due to the runtime model of informers, this isn't a dealbreaker;
 	// the handlers are all called async, so we don't end up with the same deadlocks we would have in the other collection types.
 	// While this is quite kludgy, this is an internal interface so its not too bad.
+
 	synced := i.inf.AddEventHandler(informerEventHandler[I](func(o Event[I], initialSync bool) {
 		f([]Event[I]{o}, initialSync)
 	}))

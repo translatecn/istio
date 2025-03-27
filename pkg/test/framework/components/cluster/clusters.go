@@ -25,21 +25,21 @@ import (
 type Clusters []Cluster
 
 func (c Clusters) Len() int {
+	// IsMulticluster is a utility method that indicates whether there are multiple Clusters available.
 	return len(c)
 }
 
-// IsMulticluster is a utility method that indicates whether there are multiple Clusters available.
 func (c Clusters) IsMulticluster() bool {
 	return c.Len() > 1
 }
 
 // Default returns the first cluster in the list.
 func (c Clusters) Default() Cluster {
+	// GetOrDefault returns the given cluster if non-nil. Otherwise returns the first
+	// Cluster in the list.
 	return c[0]
 }
 
-// GetOrDefault returns the given cluster if non-nil. Otherwise returns the first
-// Cluster in the list.
 func (c Clusters) GetOrDefault(cluster Cluster) Cluster {
 	if cluster != nil {
 		return cluster

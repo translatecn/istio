@@ -20,31 +20,24 @@ import (
 	"istio.io/istio/pkg/cluster"
 )
 
-// Instance of a service registry. A single service registry combines the capabilities of service discovery
-// and the controller for managing asynchronous events.
+// Instance 服务注册中心的实例。单个服务注册中心结合了服务发现功能和用于管理异步事件的控制器。
 type Instance interface {
 	model.Controller
 	model.ServiceDiscovery
-
 	// Provider backing this service registry (i.e. Kubernetes etc.)
 	Provider() provider.ID
-
 	// Cluster for which the service registry applies. Only needed for multicluster systems.
 	Cluster() cluster.ID
 }
-
-var _ Instance = &Simple{}
 
 type DiscoveryController interface {
 	model.Controller
 	model.ServiceDiscovery
 }
 
-// Simple Instance implementation, where fields are set individually.
 type Simple struct {
 	ProviderID provider.ID
 	ClusterID  cluster.ID
-
 	DiscoveryController
 }
 

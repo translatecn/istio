@@ -11,16 +11,16 @@ spec:
   rules:
     - from:
         - source:
-            principals: ["cluster.local/ns/rule[0]/sa/from[0]-principal[0]"]
+            principals: [ "cluster.local/ns/rule[0]/sa/from[0]-principal[0]" ]
         - source:
-            principals: ["cluster.local/ns/rule[0]/sa/from[1]-principal[0]", "cluster.local/ns/rule[0]/sa/from[1]-principal[1]"]
-            namespaces: ["rule[0]-from[1]-ns[0]"]
+            principals: [ "cluster.local/ns/rule[0]/sa/from[1]-principal[0]", "cluster.local/ns/rule[0]/sa/from[1]-principal[1]" ]
+            namespaces: [ "rule[0]-from[1]-ns[0]" ]
       to:
         - operation:
-            methods: ["rule[0]-to[0]-method[0]"]
+            methods: [ "rule[0]-to[0]-method[0]" ]
     - from:
         - source:
-            principals: ["cluster.local/ns/rule[1]/sa/from[0]-principal[0]"]
+            principals: [ "cluster.local/ns/rule[1]/sa/from[0]-principal[0]" ]
       to:
         - operation:
-            methods: ["rule[1]-to[0]-method[0]"]
+            methods: [ "rule[1]-to[0]-method[0]" ]

@@ -32,7 +32,6 @@ import (
 	"google.golang.org/protobuf/reflect/protoregistry"
 
 	v3 "istio.io/istio/pilot/pkg/xds/v3"
-	"istio.io/istio/pkg/backoff"
 	"istio.io/istio/pkg/log"
 	"istio.io/istio/pkg/ptr"
 	"istio.io/istio/pkg/sleep"
@@ -119,10 +118,11 @@ func (h *handlerContext) RegisterDependency(typeURL string, resourceName ...stri
 }
 
 func (h *handlerContext) Reject(reason error) {
+	// DeltaADSConfig for delta ADS connection.
+
 	h.nack = reason
 }
 
-// DeltaADSConfig for delta ADS connection.
 type DeltaADSConfig struct {
 	Config
 }
@@ -337,63 +337,9 @@ func NewDelta(discoveryAddr string, config *DeltaADSConfig, opts ...Option) *Cli
 	return c
 }
 
-func NewDeltaWithBackoffPolicy(discoveryAddr string, config *DeltaADSConfig, backoffPolicy backoff.BackOff, opts ...Option) *Client {
-	if config == nil {
-		config = &DeltaADSConfig{}
-	}
-	delta := NewDelta(discoveryAddr, config, opts...)
-	delta.cfg.BackoffPolicy = backoffPolicy
-	return delta
-}
-
-func typeName[T proto.Message]() string {
-	ft := new(T)
-	return resource.APITypePrefix + string((*ft).ProtoReflect().Descriptor().FullName())
-}
-
 // Register registers a handler for a type which is reflected by the proto message.
-func Register[T proto.Message](f func(ctx HandlerContext, resourceName string, resourceVersion string, resourceEntity T, event Event)) Option {
-	return func(c *Client) {
-		c.handlers[typeName[T]()] = func(ctx HandlerContext, res *Resource, event Event) {
-			if res.Entity == nil {
-				var nilEntity T
-				f(ctx, res.Name, res.Version, nilEntity, event)
-			} else {
-				f(ctx, res.Name, res.Version, res.Entity.(T), event)
-			}
-		}
-	}
-}
 
 // Watch registers an initial watch for a type based on the type reflected by the proto message.
-func Watch[T proto.Message](resourceName string) Option {
-	return initWatch(typeName[T](), resourceName)
-}
-
-func initWatch(typeURL string, resourceName string) Option {
-	return func(c *Client) {
-		if resourceName == "*" {
-			// Normalize to allow both forms
-			resourceName = ""
-		}
-		key := resourceKey{
-			Name:    resourceName,
-			TypeURL: typeURL,
-		}
-		existing, f := c.tree[key]
-		if f {
-			// We are watching directly now, so erase any parents
-			existing.Parents = nil
-			existing.Children = nil
-		} else {
-			c.tree[key] = resourceNode{
-				Parents:  make(keySet),
-				Children: make(keySet),
-			}
-		}
-		c.initialWatches = append(c.initialWatches, key)
-	}
-}
 
 func (c *Client) handleRecv() error {
 	hasSucceeded := false
@@ -504,6 +450,7 @@ func joinError(rejects []error) error {
 // establishResource sets up the relationship for a resource we received.
 func (c *Client) establishResource(key resourceKey) {
 	// Check if we have a watch for this resource
+
 	parentNode, f := c.tree[key]
 	if !f {
 		parentNode = resourceNode{

@@ -39,8 +39,11 @@ func DefaultConfig() *Config {
 		InboundTunnelPort:       "15008",
 		InboundTProxyMark:       "1337",
 		InboundTProxyRouteTable: "133",
-		IptablesProbePort:       constants.DefaultIptablesProbePortUint,
-		ProbeTimeout:            constants.DefaultProbeTimeout,
+		TraceLogging:            true,
+		RedirectDNS:             true,
+		CaptureAllDNS:           true,
+		IptablesProbePort:       constants.DefaultIptablesProbePortUint, // 15020
+		ProbeTimeout:            constants.DefaultProbeTimeout,          // 5s
 		OwnerGroupsInclude:      constants.OwnerGroupsInclude.DefaultValue,
 		OwnerGroupsExclude:      constants.OwnerGroupsExclude.DefaultValue,
 		HostIPv4LoopbackCidr:    constants.HostIPv4LoopbackCidr.DefaultValue,
@@ -101,45 +104,6 @@ func (c *Config) String() string {
 	return string(output)
 }
 
-func (c *Config) Print() {
-	var b strings.Builder
-	b.WriteString(fmt.Sprintf("PROXY_PORT=%s\n", c.ProxyPort))
-	b.WriteString(fmt.Sprintf("PROXY_INBOUND_CAPTURE_PORT=%s\n", c.InboundCapturePort))
-	b.WriteString(fmt.Sprintf("PROXY_TUNNEL_PORT=%s\n", c.InboundTunnelPort))
-	b.WriteString(fmt.Sprintf("PROXY_UID=%s\n", c.ProxyUID))
-	b.WriteString(fmt.Sprintf("PROXY_GID=%s\n", c.ProxyGID))
-	b.WriteString(fmt.Sprintf("INBOUND_INTERCEPTION_MODE=%s\n", c.InboundInterceptionMode))
-	b.WriteString(fmt.Sprintf("INBOUND_TPROXY_MARK=%s\n", c.InboundTProxyMark))
-	b.WriteString(fmt.Sprintf("INBOUND_TPROXY_ROUTE_TABLE=%s\n", c.InboundTProxyRouteTable))
-	b.WriteString(fmt.Sprintf("INBOUND_PORTS_INCLUDE=%s\n", c.InboundPortsInclude))
-	b.WriteString(fmt.Sprintf("INBOUND_PORTS_EXCLUDE=%s\n", c.InboundPortsExclude))
-	b.WriteString(fmt.Sprintf("OUTBOUND_OWNER_GROUPS_INCLUDE=%s\n", c.OwnerGroupsInclude))
-	b.WriteString(fmt.Sprintf("OUTBOUND_OWNER_GROUPS_EXCLUDE=%s\n", c.OwnerGroupsExclude))
-	b.WriteString(fmt.Sprintf("OUTBOUND_IP_RANGES_INCLUDE=%s\n", c.OutboundIPRangesInclude))
-	b.WriteString(fmt.Sprintf("OUTBOUND_IP_RANGES_EXCLUDE=%s\n", c.OutboundIPRangesExclude))
-	b.WriteString(fmt.Sprintf("OUTBOUND_PORTS_INCLUDE=%s\n", c.OutboundPortsInclude))
-	b.WriteString(fmt.Sprintf("OUTBOUND_PORTS_EXCLUDE=%s\n", c.OutboundPortsExclude))
-	b.WriteString(fmt.Sprintf("KUBE_VIRT_INTERFACES=%s\n", c.KubeVirtInterfaces))
-	// TODO consider renaming this env var to ENABLE_IPV6 - nothing about it is specific to "INBOUND"
-	b.WriteString(fmt.Sprintf("ENABLE_INBOUND_IPV6=%t\n", c.EnableIPv6))
-	// TODO remove this flag - "dual stack" should just mean
-	// - supports IPv6
-	// - supports pods with more than one podIP
-	// The former already has a flag, the latter is something we should do by default and is a bug where we do not
-	b.WriteString(fmt.Sprintf("DUAL_STACK=%t\n", c.DualStack))
-	b.WriteString(fmt.Sprintf("DNS_CAPTURE=%t\n", c.RedirectDNS))
-	b.WriteString(fmt.Sprintf("DROP_INVALID=%t\n", c.DropInvalid))
-	b.WriteString(fmt.Sprintf("CAPTURE_ALL_DNS=%t\n", c.CaptureAllDNS))
-	b.WriteString(fmt.Sprintf("DNS_SERVERS=%s,%s\n", c.DNSServersV4, c.DNSServersV6))
-	b.WriteString(fmt.Sprintf("NETWORK_NAMESPACE=%s\n", c.NetworkNamespace))
-	b.WriteString(fmt.Sprintf("CNI_MODE=%s\n", strconv.FormatBool(c.HostFilesystemPodNetwork)))
-	b.WriteString(fmt.Sprintf("EXCLUDE_INTERFACES=%s\n", c.ExcludeInterfaces))
-	b.WriteString(fmt.Sprintf("RECONCILE=%t\n", c.Reconcile))
-	b.WriteString(fmt.Sprintf("CLEANUP_ONLY=%t\n", c.CleanupOnly))
-	b.WriteString(fmt.Sprintf("FORCE_APPLY=%t\n", c.ForceApply))
-	log.Infof("Istio iptables variables:\n%s", b.String())
-}
-
 func (c *Config) Validate() error {
 	if err := ValidateOwnerGroups(c.OwnerGroupsInclude, c.OwnerGroupsExclude); err != nil {
 		return err
@@ -148,54 +112,6 @@ func (c *Config) Validate() error {
 }
 
 var envoyUserVar = env.Register(constants.EnvoyUser, "istio-proxy", "Envoy proxy username")
-
-func (c *Config) FillConfigFromEnvironment() error {
-	// Fill in env-var only options
-	c.OwnerGroupsInclude = constants.OwnerGroupsInclude.Get()
-	c.OwnerGroupsExclude = constants.OwnerGroupsExclude.Get()
-
-	c.HostIPv4LoopbackCidr = constants.HostIPv4LoopbackCidr.Get()
-
-	// TODO: Make this more configurable, maybe with an allowlist of users to be captured for output instead of a denylist.
-	if c.ProxyUID == "" {
-		usr, err := user.Lookup(envoyUserVar.Get())
-		var userID string
-		// Default to the UID of ENVOY_USER
-		if err != nil {
-			userID = constants.DefaultProxyUID
-		} else {
-			userID = usr.Uid
-		}
-		c.ProxyUID = userID
-	}
-
-	// For TPROXY as its uid and gid are same.
-	if c.ProxyGID == "" {
-		c.ProxyGID = c.ProxyUID
-	}
-	// Detect whether IPv6 is enabled by checking if the pod's IP address is IPv4 or IPv6.
-	// TODO remove this check, it will break with more than one pod IP
-	hostIP, isIPv6, err := getLocalIP(c.DualStack)
-	if err != nil {
-		return err
-	}
-
-	c.HostIP = hostIP
-	c.EnableIPv6 = isIPv6
-
-	// Lookup DNS nameservers. We only do this if DNS is enabled in case of some obscure theoretical
-	// case where reading /etc/resolv.conf could fail.
-	// If capture all DNS option is enabled, we don't need to read from the dns resolve conf. All
-	// traffic to port 53 will be captured.
-	if c.RedirectDNS && !c.CaptureAllDNS {
-		dnsConfig, err := dns.ClientConfigFromFile("/etc/resolv.conf")
-		if err != nil {
-			return fmt.Errorf("failed to load /etc/resolv.conf: %v", err)
-		}
-		c.DNSServersV4, c.DNSServersV6 = netutil.IPsSplitV4V6(dnsConfig.Servers)
-	}
-	return nil
-}
 
 // mock net.InterfaceAddrs to make its unit test become available
 var (
@@ -238,4 +154,88 @@ func getLocalIP(dualStack bool) (netip.Addr, bool, error) {
 	}
 
 	return netip.Addr{}, isIPv6, fmt.Errorf("no valid local IP address found")
+}
+
+func (c *Config) FillConfigFromEnvironment() error {
+	// Fill in env-var only options
+	c.OwnerGroupsInclude = constants.OwnerGroupsInclude.Get()
+	c.OwnerGroupsExclude = constants.OwnerGroupsExclude.Get()
+	c.HostIPv4LoopbackCidr = constants.HostIPv4LoopbackCidr.Get()
+
+	// TODO: Make this more configurable, maybe with an allowlist of users to be captured for output instead of a denylist.
+	if c.ProxyUID == "" {
+		usr, err := user.Lookup(envoyUserVar.Get())
+		var userID string
+		// Default to the UID of ENVOY_USER
+		if err != nil {
+			userID = constants.DefaultProxyUID
+		} else {
+			userID = usr.Uid
+		}
+		c.ProxyUID = userID
+	}
+
+	// For TPROXY as its uid and gid are same.
+	if c.ProxyGID == "" {
+		c.ProxyGID = c.ProxyUID
+	}
+	// Detect whether IPv6 is enabled by checking if the pod's IP address is IPv4 or IPv6.
+	// TODO remove this check, it will break with more than one pod IP
+	hostIP, isIPv6, err := getLocalIP(c.DualStack)
+	if err != nil {
+		return err
+	}
+
+	c.HostIP = hostIP
+	c.EnableIPv6 = isIPv6
+
+	// 查找DNS名称服务器。我们只在启用DNS的情况下才这样做，因为在某些模糊的理论情况下，读取/etc/resolv.conf可能会失败。
+	// 如果capture all DNS选项被启用，我们不需要从DNS resolve conf中读取，所有到端口53的流量将被捕获。
+	if c.RedirectDNS && !c.CaptureAllDNS {
+		dnsConfig, err := dns.ClientConfigFromFile("/etc/resolv.conf")
+		if err != nil {
+			return fmt.Errorf("failed to load /etc/resolv.conf: %v", err)
+		}
+		c.DNSServersV4, c.DNSServersV6 = netutil.IPsSplitV4V6(dnsConfig.Servers)
+	}
+	return nil
+}
+
+func (c *Config) Print() {
+	var b strings.Builder
+	b.WriteString(fmt.Sprintf("PROXY_PORT=%s\n", c.ProxyPort))
+	b.WriteString(fmt.Sprintf("PROXY_INBOUND_CAPTURE_PORT=%s\n", c.InboundCapturePort))
+	b.WriteString(fmt.Sprintf("PROXY_TUNNEL_PORT=%s\n", c.InboundTunnelPort))
+	b.WriteString(fmt.Sprintf("PROXY_UID=%s\n", c.ProxyUID))
+	b.WriteString(fmt.Sprintf("PROXY_GID=%s\n", c.ProxyGID))
+	b.WriteString(fmt.Sprintf("INBOUND_INTERCEPTION_MODE=%s\n", c.InboundInterceptionMode))
+	b.WriteString(fmt.Sprintf("INBOUND_TPROXY_MARK=%s\n", c.InboundTProxyMark))
+	b.WriteString(fmt.Sprintf("INBOUND_TPROXY_ROUTE_TABLE=%s\n", c.InboundTProxyRouteTable))
+	b.WriteString(fmt.Sprintf("INBOUND_PORTS_INCLUDE=%s\n", c.InboundPortsInclude))
+	b.WriteString(fmt.Sprintf("INBOUND_PORTS_EXCLUDE=%s\n", c.InboundPortsExclude))
+	b.WriteString(fmt.Sprintf("OUTBOUND_OWNER_GROUPS_INCLUDE=%s\n", c.OwnerGroupsInclude))
+	b.WriteString(fmt.Sprintf("OUTBOUND_OWNER_GROUPS_EXCLUDE=%s\n", c.OwnerGroupsExclude))
+	b.WriteString(fmt.Sprintf("OUTBOUND_IP_RANGES_INCLUDE=%s\n", c.OutboundIPRangesInclude))
+	b.WriteString(fmt.Sprintf("OUTBOUND_IP_RANGES_EXCLUDE=%s\n", c.OutboundIPRangesExclude))
+	b.WriteString(fmt.Sprintf("OUTBOUND_PORTS_INCLUDE=%s\n", c.OutboundPortsInclude))
+	b.WriteString(fmt.Sprintf("OUTBOUND_PORTS_EXCLUDE=%s\n", c.OutboundPortsExclude))
+	b.WriteString(fmt.Sprintf("KUBE_VIRT_INTERFACES=%s\n", c.KubeVirtInterfaces))
+	// TODO consider renaming this env var to ENABLE_IPV6 - nothing about it is specific to "INBOUND"
+	b.WriteString(fmt.Sprintf("ENABLE_INBOUND_IPV6=%t\n", c.EnableIPv6))
+	// TODO remove this flag - "dual stack" should just mean
+	// - supports IPv6
+	// - supports pods with more than one podIP
+	// The former already has a flag, the latter is something we should do by default and is a bug where we do not
+	b.WriteString(fmt.Sprintf("DUAL_STACK=%t\n", c.DualStack))
+	b.WriteString(fmt.Sprintf("DNS_CAPTURE=%t\n", c.RedirectDNS))
+	b.WriteString(fmt.Sprintf("DROP_INVALID=%t\n", c.DropInvalid))
+	b.WriteString(fmt.Sprintf("CAPTURE_ALL_DNS=%t\n", c.CaptureAllDNS))
+	b.WriteString(fmt.Sprintf("DNS_SERVERS=%s,%s\n", c.DNSServersV4, c.DNSServersV6))
+	b.WriteString(fmt.Sprintf("NETWORK_NAMESPACE=%s\n", c.NetworkNamespace))
+	b.WriteString(fmt.Sprintf("CNI_MODE=%s\n", strconv.FormatBool(c.HostFilesystemPodNetwork)))
+	b.WriteString(fmt.Sprintf("EXCLUDE_INTERFACES=%s\n", c.ExcludeInterfaces))
+	b.WriteString(fmt.Sprintf("RECONCILE=%t\n", c.Reconcile))
+	b.WriteString(fmt.Sprintf("CLEANUP_ONLY=%t\n", c.CleanupOnly))
+	b.WriteString(fmt.Sprintf("FORCE_APPLY=%t\n", c.ForceApply))
+	log.Infof("Istio iptables variables:\n%s", b.String())
 }

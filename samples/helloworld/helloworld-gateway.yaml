@@ -6,12 +6,12 @@ spec:
   selector:
     istio: ingressgateway # use istio default controller
   servers:
-  - port:
-      number: 80
-      name: http
-      protocol: HTTP
-    hosts:
-    - "*"
+    - port:
+        number: 80
+        name: http
+        protocol: HTTP
+      hosts:
+        - "*"
 ---
 apiVersion: networking.istio.io/v1
 kind: VirtualService
@@ -19,15 +19,15 @@ metadata:
   name: helloworld
 spec:
   hosts:
-  - "*"
+    - "*"
   gateways:
-  - helloworld-gateway
+    - helloworld-gateway
   http:
-  - match:
-    - uri:
-        exact: /hello
-    route:
-    - destination:
-        host: helloworld
-        port:
-          number: 5000
+    - match:
+        - uri:
+            exact: /hello
+      route:
+        - destination:
+            host: helloworld
+            port:
+              number: 5000

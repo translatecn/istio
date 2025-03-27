@@ -48,6 +48,7 @@ var (
 // deployEastWestGateway will create a separate gateway deployment for cross-cluster discovery or cross-network services.
 func (i *istioImpl) deployEastWestGateway(cluster cluster.Cluster, revision string, customSettings string) error {
 	// generate istio operator yaml
+
 	args := []string{
 		"--cluster", cluster.Name(),
 		"--network", cluster.NetworkName(),

@@ -55,6 +55,7 @@ type JWTServer struct {
 // ServeHTTP serves the JWT Keys.
 func (s *JWTServer) ServeHTTP(response http.ResponseWriter, request *http.Request) {
 	// Add artificious delay based on delay query
+
 	delayParam := request.URL.Query().Get("delay")
 	if delayParam != "" {
 		delayDuration, err := time.ParseDuration(delayParam)

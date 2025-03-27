@@ -10,14 +10,14 @@ spec:
     namespace: argocd
     server: ''
   sources:
-  - path: istio
-    repoURL: '{repo-placeholder}'
-    targetRevision: HEAD
-  - path: application
-    repoURL: '{repo-placeholder}'
-    targetRevision: HEAD
-    directory:
-      include: application.yaml
+    - path: istio
+      repoURL: '{repo-placeholder}'
+      targetRevision: HEAD
+    - path: application
+      repoURL: '{repo-placeholder}'
+      targetRevision: HEAD
+      directory:
+        include: application.yaml
   project: default
   syncPolicy:
     automated:

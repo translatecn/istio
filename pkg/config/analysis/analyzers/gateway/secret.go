@@ -20,7 +20,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/labels"
 
-	"istio.io/api/networking/v1alpha3"
+	"istio.io/istio/istio.io/api/networking/v1alpha3"
 	"istio.io/istio/pilot/pkg/credentials/kube"
 	"istio.io/istio/pilot/pkg/xds"
 	"istio.io/istio/pkg/config"
@@ -58,7 +58,6 @@ func (a *SecretAnalyzer) Analyze(ctx analysis.Context) {
 
 		// If we can't find a namespace for the gateway, it's because there's no matching selector. Exit early with a different message.
 		if gwNs == "" {
-
 			gwSelector := labels.SelectorFromSet(gw.Selector)
 			m := msg.NewReferencedResourceNotFound(r, "selector", labels.SelectorFromSet(gw.Selector).String())
 

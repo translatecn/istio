@@ -21,11 +21,11 @@ spec:
     kind: Deployment
     name: {{ $gateway.name }}
   metrics:
-  - type: Resource
-    resource:
-      name: cpu
-      target:
-        type: Utilization
-        averageUtilization: {{ $gateway.cpu.targetAverageUtilization }}
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ $gateway.cpu.targetAverageUtilization }}
 ---
 {{- end }}

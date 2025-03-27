@@ -89,34 +89,12 @@ func (o Options) String() string {
 }
 
 // DefaultArgs allocates an Options struct initialized with Webhook's default configuration.
-func DefaultArgs() Options {
-	return Options{
-		Port: 9443,
-	}
-}
 
 // Webhook implements the validating admission webhook for validating Istio configuration.
 type Webhook struct {
 	// pilot
 	schemas      collection.Schemas
 	domainSuffix string
-}
-
-// New creates a new instance of the admission webhook server.
-func New(o Options) (*Webhook, error) {
-	if o.Mux == nil {
-		scope.Error("mux not set correctly")
-		return nil, errors.New("expected mux to be passed, but was not passed")
-	}
-	wh := &Webhook{
-		schemas:      o.Schemas,
-		domainSuffix: o.DomainSuffix,
-	}
-
-	o.Mux.HandleFunc("/validate", wh.serveValidate)
-	o.Mux.HandleFunc("/validate/", wh.serveValidate)
-
-	return wh, nil
 }
 
 func toAdmissionResponse(err error) *kube.AdmissionResponse {
@@ -187,10 +165,6 @@ func serve(w http.ResponseWriter, r *http.Request, admit admitFunc) {
 		reportValidationHTTPError(http.StatusInternalServerError)
 		http.Error(w, fmt.Sprintf("could write response: %v", err), http.StatusInternalServerError)
 	}
-}
-
-func (wh *Webhook) serveValidate(w http.ResponseWriter, r *http.Request) {
-	serve(w, r, wh.validate)
 }
 
 func (wh *Webhook) validate(request *kube.AdmissionRequest) *kube.AdmissionResponse {
@@ -303,4 +277,24 @@ func (o Options) Validate() error {
 		errs = multierror.Append(errs, err)
 	}
 	return errs.ErrorOrNil()
+}
+
+func New(o Options) (*Webhook, error) {
+	if o.Mux == nil {
+		scope.Error("mux not set correctly")
+		return nil, errors.New("expected mux to be passed, but was not passed")
+	}
+	wh := &Webhook{
+		schemas:      o.Schemas,
+		domainSuffix: o.DomainSuffix,
+	}
+
+	o.Mux.HandleFunc("/validate", wh.serveValidate)
+	o.Mux.HandleFunc("/validate/", wh.serveValidate)
+
+	return wh, nil
+}
+
+func (wh *Webhook) serveValidate(w http.ResponseWriter, r *http.Request) {
+	serve(w, r, wh.validate)
 }

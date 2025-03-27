@@ -27,6 +27,7 @@ import (
 // roundTripperFor creates a SPDY upgrader that will work over custom transports.
 func roundTripperFor(restConfig *rest.Config) (http.RoundTripper, spdy.Upgrader, error) {
 	// Get the TLS config.
+
 	tlsConfig, err := rest.TLSConfigFor(restConfig)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed getting TLS config: %w", err)

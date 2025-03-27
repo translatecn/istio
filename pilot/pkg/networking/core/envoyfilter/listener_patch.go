@@ -23,7 +23,7 @@ import (
 	"google.golang.org/protobuf/proto"
 	anypb "google.golang.org/protobuf/types/known/anypb"
 
-	networking "istio.io/api/networking/v1alpha3"
+	networking "istio.io/istio/istio.io/api/networking/v1alpha3"
 	"istio.io/istio/pilot/pkg/model"
 	"istio.io/istio/pilot/pkg/networking/util"
 	"istio.io/istio/pilot/pkg/util/protoconv"
@@ -288,7 +288,6 @@ func mergeTransportSocketListener(fc *listener.FilterChain, lp *model.EnvoyFilte
 		srcPatch := lpValueCast.GetTransportSocket().GetTypedConfig()
 
 		if dstListener != nil && srcPatch != nil {
-
 			retVal, errMerge := util.MergeAnyWithAny(dstListener, srcPatch)
 			if errMerge != nil {
 				return false, fmt.Errorf("function mergeAnyWithAny failed for doFilterChainOperation: %v", errMerge)

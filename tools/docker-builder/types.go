@@ -171,6 +171,7 @@ const (
 
 func DefaultArgs() Args {
 	// By default, we build all targets
+
 	var targets []string
 	_, nonBaseImages, err := ReadPlanTargets()
 	if err == nil {

@@ -1,6 +1,7 @@
 apiVersion: install.istio.io/v1alpha1
 kind: IstioOperator
 spec:
+  hub: registry.cn-hangzhou.aliyuncs.com/acejilam
   components:
     base:
       enabled: true
@@ -18,3 +19,4 @@ spec:
         namespace: istio-system
     pilot:
       enabled: true
+

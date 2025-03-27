@@ -33,7 +33,7 @@ import (
 	"istio.io/istio/operator/pkg/util/clog"
 	"istio.io/istio/operator/pkg/values"
 	"istio.io/istio/pkg/kube"
-	pkgversion "istio.io/istio/pkg/version"
+	pkgversion "istio.io/istio/pkg/version_over"
 )
 
 // GenerateManifest produces fully rendered Kubernetes objects from rendering Helm charts.
@@ -43,6 +43,7 @@ import (
 func GenerateManifest(files []string, setFlags []string, force bool, client kube.Client, logger clog.Logger) ([]manifest.ManifestSet, values.Map, error) {
 	// First, compute our final configuration input. This will be in the form of an IstioOperator, but as an unstructured values.Map.
 	// This allows safe access to get/fetch values dynamically, and avoids issues are typing and whether we should emit empty fields.
+
 	merged, err := MergeInputs(files, setFlags, client)
 	if err != nil {
 		return nil, nil, fmt.Errorf("merge inputs: %v", err)
@@ -250,6 +251,7 @@ func MergeInputs(filenames []string, flags []string, client kube.Client) (values
 	// The tricky bit is we don't know where to read the profile from until we read the files/--set flags.
 	// To handle this, we will build up these first, then apply it on top of the base once we know what base to use.
 	// Initial base values
+
 	userConfigBase, err := values.MapFromJSON([]byte(`{
   "apiVersion": "install.istio.io/v1alpha1",
   "kind": "IstioOperator",

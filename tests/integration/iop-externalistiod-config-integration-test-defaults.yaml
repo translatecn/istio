@@ -4,17 +4,18 @@ kind: IstioOperator
 metadata:
   name: install
 spec:
+  hub: registry.cn-hangzhou.aliyuncs.com/acejilam
   components:
     base:
       enabled: true
     pilot:
       enabled: true
     ingressGateways:
-    - name: istio-ingressgateway
-      enabled: false
+      - name: istio-ingressgateway
+        enabled: false
     egressGateways:
-    - name: istio-egressgateway
-      enabled: false
+      - name: istio-egressgateway
+        enabled: false
   values:
     profile: remote
     # Test overrides of the remote profile
@@ -25,3 +26,4 @@ spec:
       configMap: true
     telemetry:
       enabled: true
+

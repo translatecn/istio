@@ -10,4 +10,4 @@ spec:
       app: httpbin
       version: v1
   rules:
-  - {}
+    - { }

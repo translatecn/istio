@@ -19,6 +19,7 @@ package ipset
 
 import (
 	"errors"
+
 	"net/netip"
 )
 

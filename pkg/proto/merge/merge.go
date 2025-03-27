@@ -80,6 +80,7 @@ func merge(dst, src proto.Message, opts ...OptionFn) {
 func (o mergeOptions) mergeMessage(dst, src protoreflect.Message) {
 	// The regular proto.mergeMessage would have a fast path method option here.
 	// As we want to have exceptions we always use the slow path.
+
 	if !dst.IsValid() {
 		panic(fmt.Sprintf("cannot merge into invalid %v message", dst.Descriptor().FullName()))
 	}
@@ -113,6 +114,7 @@ func (o mergeOptions) mergeMessage(dst, src protoreflect.Message) {
 
 func (o mergeOptions) mergeList(dst, src protoreflect.List, fd protoreflect.FieldDescriptor) {
 	// Merge semantics appends to the end of the existing list.
+
 	for i, n := 0, src.Len(); i < n; i++ {
 		switch v := src.Get(i); {
 		case fd.Message() != nil:
@@ -129,6 +131,7 @@ func (o mergeOptions) mergeList(dst, src protoreflect.List, fd protoreflect.Fiel
 
 func (o mergeOptions) mergeMap(dst, src protoreflect.Map, fd protoreflect.FieldDescriptor) {
 	// Merge semantics replaces, rather than merges into existing entries.
+
 	src.Range(func(k protoreflect.MapKey, v protoreflect.Value) bool {
 		switch {
 		case fd.Message() != nil:

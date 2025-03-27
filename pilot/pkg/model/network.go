@@ -35,7 +35,6 @@ import (
 	"istio.io/istio/pkg/util/sets"
 )
 
-// NetworkGateway is the gateway of a network
 type NetworkGateway struct {
 	// Network is the ID of the network where this Gateway resides.
 	Network network.ID
@@ -56,19 +55,8 @@ type NetworkGatewaysWatcher interface {
 	AppendNetworkGatewayHandler(h func())
 }
 
-// NetworkGatewaysHandler can be embedded to easily implement NetworkGatewaysWatcher.
 type NetworkGatewaysHandler struct {
 	handlers []func()
-}
-
-func (ngh *NetworkGatewaysHandler) AppendNetworkGatewayHandler(h func()) {
-	ngh.handlers = append(ngh.handlers, h)
-}
-
-func (ngh *NetworkGatewaysHandler) NotifyGatewayHandlers() {
-	for _, handler := range ngh.handlers {
-		handler()
-	}
 }
 
 type NetworkGateways struct {
@@ -79,7 +67,6 @@ type NetworkGateways struct {
 	byNetworkAndCluster map[networkAndCluster][]NetworkGateway
 }
 
-// NetworkManager provides gateway details for accessing remote networks.
 type NetworkManager struct {
 	env *Environment
 	// exported for test
@@ -95,8 +82,6 @@ type NetworkManager struct {
 	Unresolved *NetworkGateways
 }
 
-// NewNetworkManager creates a new NetworkManager from the Environment by merging
-// together the MeshNetworks and ServiceRegistry-specific gateways.
 func NewNetworkManager(env *Environment, xdsUpdater XDSUpdater) (*NetworkManager, error) {
 	nameCache, err := newNetworkGatewayNameCache()
 	if err != nil {
@@ -114,64 +99,13 @@ func NewNetworkManager(env *Environment, xdsUpdater XDSUpdater) (*NetworkManager
 	mgr.NetworkGateways.mu = &mgr.mu
 	mgr.Unresolved.mu = &mgr.mu
 
-	env.AddNetworksHandler(mgr.reloadGateways)
-	// register to per registry, will be called when gateway service changed
-	env.AppendNetworkGatewayHandler(mgr.reloadGateways)
-	nameCache.AppendNetworkGatewayHandler(mgr.reloadGateways)
+	env.AddNetworksHandler(mgr.reloadGateways)                           // ✅
+	env.ServiceDiscovery.AppendNetworkGatewayHandler(mgr.reloadGateways) //  ✅
+	nameCache.AppendNetworkGatewayHandler(mgr.reloadGateways)            // ✅
 	mgr.reload()
 	return mgr, nil
 }
 
-// reloadGateways reloads NetworkGateways and triggers a push if they change.
-func (mgr *NetworkManager) reloadGateways() {
-	changed := mgr.reload()
-
-	if changed && mgr.xdsUpdater != nil {
-		log.Infof("gateways changed, triggering push")
-		mgr.xdsUpdater.ConfigUpdate(&PushRequest{Full: true, Reason: NewReasonStats(NetworksTrigger)})
-	}
-}
-
-func (mgr *NetworkManager) reload() bool {
-	mgr.mu.Lock()
-	defer mgr.mu.Unlock()
-	log.Infof("reloading network gateways")
-
-	// Generate a snapshot of the state of gateways by merging the contents of
-	// MeshNetworks and the ServiceRegistries.
-
-	// Store all gateways in a set initially to eliminate duplicates.
-	gatewaySet := make(NetworkGatewaySet)
-
-	// First, load gateways from the static MeshNetworks config.
-	meshNetworks := mgr.env.NetworksWatcher.Networks()
-	if meshNetworks != nil {
-		for nw, networkConf := range meshNetworks.Networks {
-			for _, gw := range networkConf.Gateways {
-				if gw.GetAddress() == "" {
-					// registryServiceName addresses will be populated via kube service registry
-					continue
-				}
-				gatewaySet.Insert(NetworkGateway{
-					Cluster: "", /* TODO(nmittler): Add Cluster to the API */
-					Network: network.ID(nw),
-					Addr:    gw.GetAddress(),
-					Port:    gw.Port,
-				})
-			}
-		}
-	}
-
-	// Second, load registry-specific gateways.
-	// - the internal map of label gateways - these get deleted if the service is deleted, updated if the ip changes etc.
-	// - the computed map from meshNetworks (triggered by reloadNetworkLookup, the ported logic from getGatewayAddresses)
-	gatewaySet.InsertAll(mgr.env.NetworkGateways()...)
-	resolvedGatewaySet := mgr.resolveHostnameGateways(gatewaySet)
-
-	return mgr.NetworkGateways.update(resolvedGatewaySet) || mgr.Unresolved.update(gatewaySet)
-}
-
-// update calls should with the lock held
 func (gws *NetworkGateways) update(gatewaySet NetworkGatewaySet) bool {
 	if gatewaySet.Equals(sets.New(gws.allGateways()...)) {
 		return false
@@ -213,49 +147,6 @@ func (gws *NetworkGateways) update(gatewaySet NetworkGatewaySet) bool {
 	return true
 }
 
-// resolveHostnameGateway either resolves or removes gateways that use a non-IP Address
-func (mgr *NetworkManager) resolveHostnameGateways(gatewaySet NetworkGatewaySet) NetworkGatewaySet {
-	resolvedGatewaySet := make(NetworkGatewaySet, len(gatewaySet))
-	// filter the list of gateways to resolve
-	hostnameGateways := map[string][]NetworkGateway{}
-	names := sets.New[string]()
-	for gw := range gatewaySet {
-		if netutil.IsValidIPAddress(gw.Addr) {
-			resolvedGatewaySet.Insert(gw)
-			continue
-		}
-		if !features.ResolveHostnameGateways {
-			log.Warnf("Failed parsing gateway address %s from Service Registry. "+
-				"Set RESOLVE_HOSTNAME_GATEWAYS on istiod to enable resolving hostnames in the control plane.",
-				gw.Addr)
-			continue
-		}
-		hostnameGateways[gw.Addr] = append(hostnameGateways[gw.Addr], gw)
-		names.Insert(gw.Addr)
-	}
-
-	if !features.ResolveHostnameGateways {
-		return resolvedGatewaySet
-	}
-	// resolve each hostname
-	for host, addrs := range mgr.NameCache.Resolve(names) {
-		gwsForHost := hostnameGateways[host]
-		if len(addrs) == 0 {
-			log.Warnf("could not resolve hostname %q for %d gateways", host, len(gwsForHost))
-		}
-		// expand each resolved address into a NetworkGateway
-		for _, gw := range gwsForHost {
-			for _, resolved := range addrs {
-				// copy the base gateway to preserve the port/network, but update with the resolved IP
-				resolvedGw := gw
-				resolvedGw.Addr = resolved
-				resolvedGatewaySet.Insert(resolvedGw)
-			}
-		}
-	}
-	return resolvedGatewaySet
-}
-
 func (gws *NetworkGateways) IsMultiNetworkEnabled() bool {
 	if gws == nil {
 		return false
@@ -265,7 +156,6 @@ func (gws *NetworkGateways) IsMultiNetworkEnabled() bool {
 	return len(gws.byNetwork) > 0
 }
 
-// GetLBWeightScaleFactor returns the least common multiple of the number of gateways per network.
 func (gws *NetworkGateways) GetLBWeightScaleFactor() uint32 {
 	gws.mu.RLock()
 	defer gws.mu.RUnlock()
@@ -323,16 +213,6 @@ func networkAndClusterFor(nw network.ID, c cluster.ID) networkAndCluster {
 	}
 }
 
-// SortGateways sorts the array so that it's stable.
-func SortGateways(gws []NetworkGateway) []NetworkGateway {
-	return slices.SortFunc(gws, func(a, b NetworkGateway) int {
-		if r := cmp.Compare(a.Addr, b.Addr); r != 0 {
-			return r
-		}
-		return cmp.Compare(a.Port, b.Port)
-	})
-}
-
 // greatest common divisor of x and y
 func gcd(x, y int) int {
 	var tmp int
@@ -377,6 +257,166 @@ type nameCacheEntry struct {
 	timer  *time.Timer
 }
 
+// https://github.com/coredns/coredns/blob/v1.10.1/plugin/pkg/dnsutil/ttl.go
+func minimalTTL(m *dns.Msg) time.Duration {
+	// No records or OPT is the only record, return a short ttl as a fail safe.
+
+	if len(m.Answer)+len(m.Ns) == 0 &&
+		(len(m.Extra) == 0 || (len(m.Extra) == 1 && m.Extra[0].Header().Rrtype == dns.TypeOPT)) {
+		return MinGatewayTTL
+	}
+
+	minTTL := MaxGatewayTTL
+	for _, r := range m.Answer {
+		if r.Header().Ttl < uint32(minTTL.Seconds()) {
+			minTTL = time.Duration(r.Header().Ttl) * time.Second
+		}
+	}
+	for _, r := range m.Ns {
+		if r.Header().Ttl < uint32(minTTL.Seconds()) {
+			minTTL = time.Duration(r.Header().Ttl) * time.Second
+		}
+	}
+
+	for _, r := range m.Extra {
+		if r.Header().Rrtype == dns.TypeOPT {
+			// OPT records use TTL field for extended rcode and flags
+			continue
+		}
+		if r.Header().Ttl < uint32(minTTL.Seconds()) {
+			minTTL = time.Duration(r.Header().Ttl) * time.Second
+		}
+	}
+	return minTTL
+}
+
+// TODO share code with pkg/dns
+type dnsClient struct {
+	*dns.Client
+	resolvConfServers []string
+}
+
+var NetworkGatewayTestDNSServers []string
+
+func getReqNames(req *dns.Msg) []string {
+	names := make([]string, 0, 1)
+	for _, qq := range req.Question {
+		names = append(names, qq.Name)
+	}
+	return names
+}
+
+func (c *dnsClient) Query(req *dns.Msg) *dns.Msg {
+	var response *dns.Msg
+	for _, upstream := range c.resolvConfServers {
+		cResponse, _, err := c.Exchange(req, upstream)
+		rcode := dns.RcodeServerFailure
+		if err == nil && cResponse != nil {
+			rcode = cResponse.Rcode
+		}
+		if rcode == dns.RcodeServerFailure {
+			// RcodeServerFailure means the upstream cannot serve the request
+			// https://github.com/coredns/coredns/blob/v1.10.1/plugin/forward/forward.go#L193
+			log.Infof("upstream dns failure: %v: %v: %v", upstream, getReqNames(req), err)
+			continue
+		}
+		response = cResponse
+		if rcode == dns.RcodeSuccess {
+			break
+		}
+		codeString := dns.RcodeToString[rcode]
+		log.Debugf("upstream dns error: %v: %v: %v", upstream, getReqNames(req), codeString)
+	}
+	if response == nil {
+		response = new(dns.Msg)
+		response.SetReply(req)
+		response.Rcode = dns.RcodeServerFailure
+	}
+	return response
+}
+
+func (mgr *NetworkManager) reloadGateways() {
+	changed := mgr.reload()
+
+	if changed && mgr.xdsUpdater != nil {
+		log.Infof("gateways changed, triggering push")
+		mgr.xdsUpdater.ConfigUpdate(&PushRequest{Full: true, Reason: NewReasonStats(NetworksTrigger)}) // ✅
+	}
+}
+
+func (mgr *NetworkManager) reload() bool {
+	mgr.mu.Lock()
+	defer mgr.mu.Unlock()
+	log.Infof("reloading network gateways")
+
+	// Generate a snapshot of the state of gateways by merging the contents of
+	// MeshNetworks and the ServiceRegistries.
+
+	// Store all gateways in a set initially to eliminate duplicates.
+	gatewaySet := make(NetworkGatewaySet)
+
+	// First, load gateways from the static MeshNetworks config.
+	meshNetworks := mgr.env.NetworksWatcher.Networks()
+	if meshNetworks != nil {
+		for nw, networkConf := range meshNetworks.Networks {
+			for _, gw := range networkConf.Gateways {
+				if gw.GetAddress() == "" {
+					// registryServiceName addresses will be populated via kube service registry
+					continue
+				}
+				gatewaySet.Insert(NetworkGateway{
+					Cluster: "", /* TODO(nmittler): Add Cluster to the API */
+					Network: network.ID(nw),
+					Addr:    gw.GetAddress(),
+					Port:    gw.Port,
+				})
+			}
+		}
+	}
+
+	// Second, load registry-specific gateways.
+	// - the internal map of label gateways - these get deleted if the service is deleted, updated if the ip changes etc.
+	// - the computed map from meshNetworks (triggered by reloadNetworkLookup, the ported logic from getGatewayAddresses)
+	gatewaySet.InsertAll(mgr.env.ServiceDiscovery.NetworkGateways()...)
+
+	resolvedGatewaySet := mgr.resolveHostnameGateways(gatewaySet)
+
+	return mgr.NetworkGateways.update(resolvedGatewaySet) || mgr.Unresolved.update(gatewaySet)
+}
+
+func (ngh *NetworkGatewaysHandler) NotifyGatewayHandlers() {
+	for _, handler := range ngh.handlers {
+		handler()
+	}
+}
+
+func newClient() (*dnsClient, error) {
+	servers := NetworkGatewayTestDNSServers
+	if len(servers) == 0 {
+		dnsConfig, err := dns.ClientConfigFromFile("/etc/resolv.conf")
+		if err != nil {
+			return nil, err
+		}
+		if dnsConfig != nil {
+			for _, s := range dnsConfig.Servers {
+				servers = append(servers, net.JoinHostPort(s, dnsConfig.Port))
+			}
+		}
+		// TODO take search namespaces into account
+		// TODO what about /etc/hosts?
+	}
+
+	c := &dnsClient{
+		Client: &dns.Client{
+			DialTimeout:  5 * time.Second,
+			ReadTimeout:  5 * time.Second,
+			WriteTimeout: 5 * time.Second,
+		},
+	}
+	c.resolvConfServers = append(c.resolvConfServers, servers...)
+	return c, nil
+}
+
 func newNetworkGatewayNameCache() (*networkGatewayNameCache, error) {
 	c, err := newClient()
 	if err != nil {
@@ -385,12 +425,10 @@ func newNetworkGatewayNameCache() (*networkGatewayNameCache, error) {
 	return newNetworkGatewayNameCacheWithClient(c), nil
 }
 
-// newNetworkGatewayNameCacheWithClient exported for test
 func newNetworkGatewayNameCacheWithClient(c *dnsClient) *networkGatewayNameCache {
 	return &networkGatewayNameCache{client: c, cache: map[string]nameCacheEntry{}}
 }
 
-// Resolve takes a list of hostnames and returns a map of names to addresses
 func (n *networkGatewayNameCache) Resolve(names sets.String) map[string][]string {
 	n.Lock()
 	defer n.Unlock()
@@ -405,7 +443,6 @@ func (n *networkGatewayNameCache) Resolve(names sets.String) map[string][]string
 	return out
 }
 
-// cleanupWatches cancels any scheduled re-resolve for names we no longer care about
 func (n *networkGatewayNameCache) cleanupWatches(names sets.String) {
 	for name, entry := range n.cache {
 		if names.Contains(name) {
@@ -425,50 +462,6 @@ func (n *networkGatewayNameCache) resolveFromCache(name string) []string {
 	return n.resolveAndCache(name)
 }
 
-func (n *networkGatewayNameCache) resolveAndCache(name string) []string {
-	entry, ok := n.cache[name]
-	if ok {
-		entry.timer.Stop()
-	}
-	delete(n.cache, name)
-	addrs, ttl, err := n.resolve(name)
-	// avoid excessive pushes due to small TTL
-	if ttl < MinGatewayTTL {
-		ttl = MinGatewayTTL
-	}
-	expiry := time.Now().Add(ttl)
-	if err != nil {
-		// gracefully retain old addresses in case the DNS server is unavailable
-		addrs = entry.value
-	}
-	n.cache[name] = nameCacheEntry{
-		value:  addrs,
-		expiry: expiry,
-		// TTL expires, try to refresh TODO should this be < ttl?
-		timer: time.AfterFunc(ttl, n.refreshAndNotify(name)),
-	}
-
-	return addrs
-}
-
-// refreshAndNotify is triggered via time.AfterFunc and will recursively schedule itself that way until timer is cleaned
-// up via cleanupWatches.
-func (n *networkGatewayNameCache) refreshAndNotify(name string) func() {
-	return func() {
-		log.Debugf("network gateways: refreshing DNS for %s", name)
-		n.Lock()
-		old := n.cache[name]
-		addrs := n.resolveAndCache(name)
-		n.Unlock()
-
-		if !slices.Equal(old.value, addrs) {
-			log.Debugf("network gateways: DNS for %s changed: %v -> %v", name, old.value, addrs)
-			n.NotifyGatewayHandlers()
-		}
-	}
-}
-
-// resolve gets all the A and AAAA records for the given name
 func (n *networkGatewayNameCache) resolve(name string) ([]string, time.Duration, error) {
 	ttl := MaxGatewayTTL
 	var out []string
@@ -513,108 +506,98 @@ func (n *networkGatewayNameCache) resolve(name string) ([]string, time.Duration,
 	return out, ttl, nil
 }
 
-// https://github.com/coredns/coredns/blob/v1.10.1/plugin/pkg/dnsutil/ttl.go
-func minimalTTL(m *dns.Msg) time.Duration {
-	// No records or OPT is the only record, return a short ttl as a fail safe.
-	if len(m.Answer)+len(m.Ns) == 0 &&
-		(len(m.Extra) == 0 || (len(m.Extra) == 1 && m.Extra[0].Header().Rrtype == dns.TypeOPT)) {
-		return MinGatewayTTL
+func (n *networkGatewayNameCache) resolveAndCache(name string) []string {
+	entry, ok := n.cache[name]
+	if ok {
+		entry.timer.Stop()
+	}
+	delete(n.cache, name)
+	addrs, ttl, err := n.resolve(name)
+	// avoid excessive pushes due to small TTL
+	if ttl < MinGatewayTTL {
+		ttl = MinGatewayTTL
+	}
+	expiry := time.Now().Add(ttl)
+	if err != nil {
+		// gracefully retain old addresses in case the DNS server is unavailable
+		addrs = entry.value
+	}
+	n.cache[name] = nameCacheEntry{
+		value:  addrs,
+		expiry: expiry,
+		// TTL expires, try to refresh TODO should this be < ttl?
+		timer: time.AfterFunc(ttl, n.refreshAndNotify(name)),
 	}
 
-	minTTL := MaxGatewayTTL
-	for _, r := range m.Answer {
-		if r.Header().Ttl < uint32(minTTL.Seconds()) {
-			minTTL = time.Duration(r.Header().Ttl) * time.Second
-		}
-	}
-	for _, r := range m.Ns {
-		if r.Header().Ttl < uint32(minTTL.Seconds()) {
-			minTTL = time.Duration(r.Header().Ttl) * time.Second
-		}
-	}
+	return addrs
+}
 
-	for _, r := range m.Extra {
-		if r.Header().Rrtype == dns.TypeOPT {
-			// OPT records use TTL field for extended rcode and flags
+func (mgr *NetworkManager) resolveHostnameGateways(gatewaySet NetworkGatewaySet) NetworkGatewaySet {
+	resolvedGatewaySet := make(NetworkGatewaySet, len(gatewaySet))
+	// filter the list of gateways to resolve
+	hostnameGateways := map[string][]NetworkGateway{}
+	names := sets.New[string]()
+	for gw := range gatewaySet {
+		if netutil.IsValidIPAddress(gw.Addr) {
+			resolvedGatewaySet.Insert(gw)
 			continue
 		}
-		if r.Header().Ttl < uint32(minTTL.Seconds()) {
-			minTTL = time.Duration(r.Header().Ttl) * time.Second
+		if !features.ResolveHostnameGateways {
+			log.Warnf("Failed parsing gateway address %s from Service Registry. "+
+				"Set RESOLVE_HOSTNAME_GATEWAYS on istiod to enable resolving hostnames in the control plane.",
+				gw.Addr)
+			continue
 		}
+		hostnameGateways[gw.Addr] = append(hostnameGateways[gw.Addr], gw)
+		names.Insert(gw.Addr)
 	}
-	return minTTL
-}
 
-// TODO share code with pkg/dns
-type dnsClient struct {
-	*dns.Client
-	resolvConfServers []string
-}
-
-// NetworkGatewayTestDNSServers if set will ignore resolv.conf and use the given DNS servers for tests.
-var NetworkGatewayTestDNSServers []string
-
-func newClient() (*dnsClient, error) {
-	servers := NetworkGatewayTestDNSServers
-	if len(servers) == 0 {
-		dnsConfig, err := dns.ClientConfigFromFile("/etc/resolv.conf")
-		if err != nil {
-			return nil, err
+	if !features.ResolveHostnameGateways {
+		return resolvedGatewaySet
+	}
+	// resolve each hostname
+	for host, addrs := range mgr.NameCache.Resolve(names) {
+		gwsForHost := hostnameGateways[host]
+		if len(addrs) == 0 {
+			log.Warnf("could not resolve hostname %q for %d gateways", host, len(gwsForHost))
 		}
-		if dnsConfig != nil {
-			for _, s := range dnsConfig.Servers {
-				servers = append(servers, net.JoinHostPort(s, dnsConfig.Port))
+		// expand each resolved address into a NetworkGateway
+		for _, gw := range gwsForHost {
+			for _, resolved := range addrs {
+				// copy the base gateway to preserve the port/network, but update with the resolved IP
+				resolvedGw := gw
+				resolvedGw.Addr = resolved
+				resolvedGatewaySet.Insert(resolvedGw)
 			}
 		}
-		// TODO take search namespaces into account
-		// TODO what about /etc/hosts?
 	}
-
-	c := &dnsClient{
-		Client: &dns.Client{
-			DialTimeout:  5 * time.Second,
-			ReadTimeout:  5 * time.Second,
-			WriteTimeout: 5 * time.Second,
-		},
-	}
-	c.resolvConfServers = append(c.resolvConfServers, servers...)
-	return c, nil
+	return resolvedGatewaySet
 }
 
-// for more informative logging of dns errors
-func getReqNames(req *dns.Msg) []string {
-	names := make([]string, 0, 1)
-	for _, qq := range req.Question {
-		names = append(names, qq.Name)
-	}
-	return names
+func (ngh *NetworkGatewaysHandler) AppendNetworkGatewayHandler(h func()) {
+	ngh.handlers = append(ngh.handlers, h)
 }
 
-func (c *dnsClient) Query(req *dns.Msg) *dns.Msg {
-	var response *dns.Msg
-	for _, upstream := range c.resolvConfServers {
-		cResponse, _, err := c.Exchange(req, upstream)
-		rcode := dns.RcodeServerFailure
-		if err == nil && cResponse != nil {
-			rcode = cResponse.Rcode
+func SortGateways(gws []NetworkGateway) []NetworkGateway {
+	return slices.SortFunc(gws, func(a, b NetworkGateway) int {
+		if r := cmp.Compare(a.Addr, b.Addr); r != 0 {
+			return r
 		}
-		if rcode == dns.RcodeServerFailure {
-			// RcodeServerFailure means the upstream cannot serve the request
-			// https://github.com/coredns/coredns/blob/v1.10.1/plugin/forward/forward.go#L193
-			log.Infof("upstream dns failure: %v: %v: %v", upstream, getReqNames(req), err)
-			continue
+		return cmp.Compare(a.Port, b.Port)
+	})
+}
+
+func (n *networkGatewayNameCache) refreshAndNotify(name string) func() {
+	return func() {
+		log.Debugf("network gateways: refreshing DNS for %s", name)
+		n.Lock()
+		old := n.cache[name]
+		addrs := n.resolveAndCache(name)
+		n.Unlock()
+
+		if !slices.Equal(old.value, addrs) {
+			log.Debugf("network gateways: DNS for %s changed: %v -> %v", name, old.value, addrs)
+			n.NotifyGatewayHandlers()
 		}
-		response = cResponse
-		if rcode == dns.RcodeSuccess {
-			break
-		}
-		codeString := dns.RcodeToString[rcode]
-		log.Debugf("upstream dns error: %v: %v: %v", upstream, getReqNames(req), codeString)
 	}
-	if response == nil {
-		response = new(dns.Msg)
-		response.SetReply(req)
-		response.Rcode = dns.RcodeServerFailure
-	}
-	return response
 }

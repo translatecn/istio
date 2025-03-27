@@ -1,0 +1,20 @@
+# cds.yaml
+resources:
+  - "@type": type.googleapis.com/envoy.config.cluster.v3.Cluster
+    name: targetCluster
+    connect_timeout: 0.25s
+    lb_policy: ROUND_ROBIN
+    type: EDS
+    eds_cluster_config:
+      service_name: localservices
+      eds_config:
+        path: /etc/envoy/eds.yaml
+  - "@type": type.googleapis.com/envoy.config.cluster.v3.Cluster
+    name: newTargetCluster
+    connect_timeout: 0.25s
+    lb_policy: ROUND_ROBIN
+    type: EDS
+    eds_cluster_config:
+      service_name: localservices
+      eds_config:
+        path: /etc/envoy/eds-1.yaml

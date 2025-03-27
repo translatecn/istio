@@ -191,6 +191,7 @@ func (s *sidecar) ListenersOrFail(t test.Failer) *admin.Listeners {
 
 func (s *sidecar) adminRequest(path string, out proto.Message) error {
 	// Exec onto the pod and make a curl request to the admin port, writing
+
 	command := fmt.Sprintf("pilot-agent request GET %s", path)
 	stdout, stderr, err := s.cluster.PodExec(s.podName, s.podNamespace, proxyContainerName, command)
 	if err != nil {

@@ -1,0 +1,56 @@
+# podinfo-ab.yaml
+apiVersion: flagger.app/v1beta1
+kind: Canary
+metadata:
+  name: podinfo
+  namespace: test
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: podinfo
+  progressDeadlineSeconds: 60
+  autoscalerRef:
+    apiVersion: autoscaling/v2
+    kind: HorizontalPodAutoscaler
+    name: podinfo
+  service:
+    port: 9898
+    gateways:
+      - istio-system/public-gateway
+    hosts:
+      - podinfo.k8s.local
+    trafficPolicy:
+      tls:
+        mode: DISABLE
+  analysis:
+    interval: 1m
+    iterations: 10
+    # 回滚前的最大失败迭代次数
+    threshold: 2
+    # 金丝雀匹配条件
+    match:
+      - headers:
+          user-agent:
+            regex: ".*Chrome.*"
+      - headers:
+          cookie:
+            regex: "^(.*?;)?(type=insider)(;.*)?$"
+    metrics:
+      - name: request-success-rate
+        thresholdRange:
+          min: 99
+        interval: 1m
+      - name: request-duration
+        thresholdRange:
+          max: 500
+        interval: 30s
+    webhooks: # 金丝雀分析期间生成流量
+      - name: load-test
+        url: http://flagger-loadtester.test/
+        timeout: 15s
+        metadata:
+          cmd: "hey -z 1m -q 10 -c 2 -H 'Cookie: type=insider' http://podinfo.test:9898/"
+
+
+#  kubectl describe canary podinfo -ntest

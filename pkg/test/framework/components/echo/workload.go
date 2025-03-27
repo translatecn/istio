@@ -66,10 +66,9 @@ type Workload interface {
 type Workloads []Workload
 
 func (ws Workloads) Len() int {
-	return len(ws)
+	// Addresses returns the list of addresses for all workloads.	return len(ws)
 }
 
-// Addresses returns the list of addresses for all workloads.
 func (ws Workloads) Addresses() []string {
 	out := make([]string, 0, len(ws))
 	for _, w := range ws {

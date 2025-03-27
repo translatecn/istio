@@ -45,7 +45,7 @@ import (
 	"google.golang.org/protobuf/proto"
 	k8sUtilIo "k8s.io/utils/io"
 
-	"istio.io/istio/pilot/cmd/pilot-agent/metrics"
+	"istio.io/istio/pilot/cmd/pilot-agent/metrics_over"
 	"istio.io/istio/pilot/cmd/pilot-agent/status/grpcready"
 	"istio.io/istio/pilot/cmd/pilot-agent/status/ready"
 	dnsProto "istio.io/istio/pkg/dns/proto"
@@ -511,7 +511,7 @@ func (s *Server) handleStats(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Only requests from localhost are allowed", http.StatusForbidden)
 		return
 	}
-	metrics.ScrapeTotals.Increment()
+	metrics_over.ScrapeTotals.Increment()
 	var err error
 	var envoy, application io.ReadCloser
 	var envoyCancel, appCancel context.CancelFunc
@@ -544,7 +544,7 @@ func (s *Server) handleStats(w http.ResponseWriter, r *http.Request) {
 		}
 		if envoy, envoyCancel, _, err = s.scrape(scrapeURL, r.Header); err != nil {
 			log.Errorf("failed scraping envoy metrics: %v", err)
-			metrics.EnvoyScrapeErrors.Increment()
+			metrics_over.EnvoyScrapeErrors.Increment()
 		}
 	}
 
@@ -555,7 +555,7 @@ func (s *Server) handleStats(w http.ResponseWriter, r *http.Request) {
 		url := fmt.Sprintf("http://localhost:%s%s", s.prometheus.Port, s.prometheus.Path)
 		if application, appCancel, contentType, err = s.scrape(url, r.Header); err != nil {
 			log.Errorf("failed scraping application metrics: %v", err)
-			metrics.AppScrapeErrors.Increment()
+			metrics_over.AppScrapeErrors.Increment()
 		}
 		format = negotiateMetricsFormat(contentType)
 	} else {
@@ -568,14 +568,14 @@ func (s *Server) handleStats(w http.ResponseWriter, r *http.Request) {
 	// Write out the metrics
 	if err = scrapeAndWriteAgentMetrics(s.registry, io.Writer(w)); err != nil {
 		log.Errorf("failed scraping and writing agent metrics: %v", err)
-		metrics.AgentScrapeErrors.Increment()
+		metrics_over.AgentScrapeErrors.Increment()
 	}
 
 	if envoy != nil {
 		_, err = io.Copy(w, envoy)
 		if err != nil {
 			log.Errorf("failed to scraping and writing envoy metrics: %v", err)
-			metrics.EnvoyScrapeErrors.Increment()
+			metrics_over.EnvoyScrapeErrors.Increment()
 		}
 	}
 
@@ -585,7 +585,7 @@ func (s *Server) handleStats(w http.ResponseWriter, r *http.Request) {
 		_, err = io.Copy(w, application)
 		if err != nil {
 			log.Errorf("failed to scraping and writing application metrics: %v", err)
-			metrics.AppScrapeErrors.Increment()
+			metrics_over.AppScrapeErrors.Increment()
 		}
 	}
 }
@@ -712,6 +712,7 @@ func (s *Server) handleDrain(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) handleAppProbe(w http.ResponseWriter, req *http.Request) {
 	// Validate the request first.
+
 	path := req.URL.Path
 	if !strings.HasPrefix(path, "/") {
 		path = "/" + req.URL.Path

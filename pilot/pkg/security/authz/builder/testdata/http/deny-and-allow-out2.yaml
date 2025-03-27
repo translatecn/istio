@@ -5,15 +5,15 @@ typedConfig:
     policies:
       ns[foo]-policy[httpbin-allow]-rule[0]:
         permissions:
-        - andRules:
-            rules:
-            - any: true
+          - andRules:
+              rules:
+                - any: true
         principals:
-        - andIds:
-            ids:
-            - orIds:
-                ids:
-                - authenticated:
-                    principalName:
-                      exact: spiffe://allow
+          - andIds:
+              ids:
+                - orIds:
+                    ids:
+                      - authenticated:
+                          principalName:
+                            exact: spiffe://allow
   shadowRulesStatPrefix: istio_dry_run_allow_

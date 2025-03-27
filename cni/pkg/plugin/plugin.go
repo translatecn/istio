@@ -33,10 +33,10 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 
-	"istio.io/api/annotation"
-	"istio.io/api/label"
 	"istio.io/istio/cni/pkg/constants"
 	"istio.io/istio/cni/pkg/util"
+	"istio.io/istio/istio.io/api/annotation"
+	"istio.io/istio/istio.io/api/label"
 	"istio.io/istio/pkg/file"
 	"istio.io/istio/pkg/log"
 	"istio.io/istio/pkg/util/sets"
@@ -166,6 +166,40 @@ func CmdAdd(args *skel.CmdArgs) (err error) {
 	return pluginResponse(conf)
 }
 
+func pluginResponse(conf *Config) error {
+	var result *cniv1.Result
+	if conf.PrevResult == nil {
+		result = &cniv1.Result{
+			CNIVersion: cniv1.ImplementedSpecVersion,
+		}
+		return types.PrintResult(result, conf.CNIVersion)
+	}
+
+	// Pass through the result for the next plugin
+	return types.PrintResult(conf.PrevResult, conf.CNIVersion)
+}
+
+func CmdCheck(args *skel.CmdArgs) (err error) {
+	return nil
+}
+
+func CmdDelete(args *skel.CmdArgs) (err error) {
+	return nil
+}
+
+func isAmbientPod(client kubernetes.Interface, podName, podNamespace string) (bool, error) {
+	pod, err := client.CoreV1().Pods(podNamespace).Get(context.Background(), podName, metav1.GetOptions{})
+	if err != nil {
+		return false, err
+	}
+	ns, err := client.CoreV1().Namespaces().Get(context.Background(), podNamespace, metav1.GetOptions{})
+	if err != nil {
+		return false, err
+	}
+
+	return util.PodRedirectionEnabled(ns, pod), nil
+}
+
 func doAddRun(args *skel.CmdArgs, conf *Config, kClient kubernetes.Interface, rulesMgr InterceptRuleMgr) error {
 	if err := log.Configure(GetLoggingOptions(conf)); err != nil {
 		log.Error("Failed to configure istio-cni logging")
@@ -291,7 +325,7 @@ func doAddRun(args *skel.CmdArgs, conf *Config, kClient kubernetes.Interface, ru
 
 	log.Debugf("Setting up redirect")
 
-	redirect, err := NewRedirect(pi)
+	redirect, err := NewRedirect(pi) // ✅
 	if err != nil {
 		log.Errorf("redirect failed due to bad params: %v", err)
 		return err
@@ -302,38 +336,4 @@ func doAddRun(args *skel.CmdArgs, conf *Config, kClient kubernetes.Interface, ru
 	}
 
 	return nil
-}
-
-func pluginResponse(conf *Config) error {
-	var result *cniv1.Result
-	if conf.PrevResult == nil {
-		result = &cniv1.Result{
-			CNIVersion: cniv1.ImplementedSpecVersion,
-		}
-		return types.PrintResult(result, conf.CNIVersion)
-	}
-
-	// Pass through the result for the next plugin
-	return types.PrintResult(conf.PrevResult, conf.CNIVersion)
-}
-
-func CmdCheck(args *skel.CmdArgs) (err error) {
-	return nil
-}
-
-func CmdDelete(args *skel.CmdArgs) (err error) {
-	return nil
-}
-
-func isAmbientPod(client kubernetes.Interface, podName, podNamespace string) (bool, error) {
-	pod, err := client.CoreV1().Pods(podNamespace).Get(context.Background(), podName, metav1.GetOptions{})
-	if err != nil {
-		return false, err
-	}
-	ns, err := client.CoreV1().Namespaces().Get(context.Background(), podNamespace, metav1.GetOptions{})
-	if err != nil {
-		return false, err
-	}
-
-	return util.PodRedirectionEnabled(ns, pod), nil
 }

@@ -22,5 +22,5 @@ var (
 	// Analysis is a logging scope used by configuration analysis component.
 	Analysis = log.RegisterScope("analysis", "Scope for configuration analysis runtime")
 	// Processing is a logging scope used by configuration processing pipeline.
-	Processing = log.RegisterScope("processing", "Scope for configuration processing runtime")
+	_ = log.RegisterScope("processing", "Scope for configuration processing runtime")
 )

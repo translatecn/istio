@@ -18,28 +18,11 @@ import (
 	"math"
 	"math/rand"
 	"sync"
-	"time"
-
-	"istio.io/istio/pkg/test/loadbalancersim/network"
 )
 
 type LeastRequestSettings struct {
 	Connections       []*WeightedConnection
 	ActiveRequestBias float64
-}
-
-func NewLeastRequest(s LeastRequestSettings) network.Connection {
-	if len(s.Connections) == 0 {
-		panic("attempting to create load balancer with zero connections")
-	}
-
-	conn := newLBConnection("LeastRequestLB", s.Connections)
-
-	if conn.AllWeightsEqual() {
-		return newUnweightedLeastRequest(conn)
-	}
-
-	return newWeightedLeastRequest(conn, s.ActiveRequestBias)
 }
 
 type unweightedLeastRequest struct {
@@ -49,12 +32,6 @@ type unweightedLeastRequest struct {
 
 // nolint: gosec
 // Test only code
-func newUnweightedLeastRequest(conn *weightedConnections) network.Connection {
-	return &unweightedLeastRequest{
-		weightedConnections: conn,
-		r:                   rand.New(rand.NewSource(time.Now().UnixNano())),
-	}
-}
 
 func (lb *unweightedLeastRequest) pick2() (*WeightedConnection, *WeightedConnection) {
 	numConnections := len(lb.conns)
@@ -93,23 +70,9 @@ type weightedLeastRequest struct {
 	edfMutex          sync.Mutex
 }
 
-func newWeightedLeastRequest(conn *weightedConnections, activeRequestBias float64) network.Connection {
-	lb := &weightedLeastRequest{
-		weightedConnections: conn,
-		activeRequestBias:   activeRequestBias,
-		edf:                 NewEDF(),
-	}
-
-	// Add all endpoints to the EDF scheduler.
-	for _, c := range conn.conns {
-		lb.edf.Add(lb.calcEDFWeight(0, c), c)
-	}
-
-	return lb
-}
-
 func (lb *weightedLeastRequest) Request(onDone func()) {
 	// Pick the next endpoint and re-add it with the updated weight.
+
 	lb.edfMutex.Lock()
 	selected := lb.edf.PickAndAdd(lb.calcEDFWeight).(*WeightedConnection)
 	lb.edfMutex.Unlock()

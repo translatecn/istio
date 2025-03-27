@@ -21,8 +21,8 @@ import (
 
 	v1 "k8s.io/api/core/v1"
 
-	"istio.io/api/annotation"
-	"istio.io/api/label"
+	"istio.io/istio/istio.io/api/annotation"
+	"istio.io/istio/istio.io/api/label"
 	"istio.io/istio/pkg/config"
 	"istio.io/istio/pkg/config/analysis"
 	"istio.io/istio/pkg/config/analysis/analyzers/util"

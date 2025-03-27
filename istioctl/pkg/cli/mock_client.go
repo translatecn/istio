@@ -33,15 +33,13 @@ func (m MockPortForwarder) Address() string {
 	return "localhost:3456"
 }
 
-func (m MockPortForwarder) Close() {
-}
+func (m MockPortForwarder) Close() {}
 
 func (m MockPortForwarder) ErrChan() <-chan error {
 	return make(chan error)
 }
 
-func (m MockPortForwarder) WaitForStop() {
-}
+func (m MockPortForwarder) WaitForStop() {}
 
 var _ kube.PortForwarder = MockPortForwarder{}
 

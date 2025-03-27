@@ -22,8 +22,8 @@ import (
 
 	"github.com/hashicorp/go-multierror"
 
-	"istio.io/api/annotation"
-	meshconfig "istio.io/api/mesh/v1alpha1"
+	"istio.io/istio/istio.io/api/annotation"
+	meshconfig "istio.io/istio/istio.io/api/mesh/v1alpha1"
 	"istio.io/istio/pilot/pkg/model"
 	"istio.io/istio/pkg/config/mesh"
 	"istio.io/istio/pkg/config/validation/agent"
@@ -57,17 +57,6 @@ func validateProxyConfig(value string) error {
 		return fmt.Errorf("failed to convert to apply proxy config: %v", err)
 	}
 	return agent.ValidateMeshConfigProxyConfig(config)
-}
-
-func validateAnnotations(annotations map[string]string) (err error) {
-	for name, value := range annotations {
-		if v, ok := AnnotationValidation[name]; ok {
-			if e := v(value); e != nil {
-				err = multierror.Append(err, fmt.Errorf("invalid value '%s' for annotation '%s': %v", value, name, e))
-			}
-		}
-	}
-	return
 }
 
 func validatePortList(parameterName, ports string) error {
@@ -181,4 +170,15 @@ func parsePorts(portsString string) ([]int, error) {
 		}
 	}
 	return ports, nil
+}
+
+func validateAnnotations(annotations map[string]string) (err error) {
+	for name, value := range annotations {
+		if v, ok := AnnotationValidation[name]; ok {
+			if e := v(value); e != nil {
+				err = multierror.Append(err, fmt.Errorf("invalid value '%s' for annotation '%s': %v", value, name, e))
+			}
+		}
+	}
+	return
 }

@@ -20,7 +20,7 @@ import (
 	"strconv"
 	"strings"
 
-	"istio.io/api/analysis/v1alpha1"
+	"istio.io/istio/istio.io/api/analysis/v1alpha1"
 	"istio.io/istio/pkg/config/resource"
 	"istio.io/istio/pkg/url"
 )
@@ -38,16 +38,25 @@ type MessageType struct {
 }
 
 // Level returns the level of the MessageType
-func (m *MessageType) Level() Level { return m.level }
+func (m *MessageType) Level() Level {
+	// Code returns the code of the MessageType
 
-// Code returns the code of the MessageType
-func (m *MessageType) Code() string { return m.code }
+	return m.level
+}
 
-// Template returns the message template used by the MessageType
-func (m *MessageType) Template() string { return m.template }
+func (m *MessageType) Code() string {
+	// Template returns the message template used by the MessageType
 
-// Message is a specific diagnostic message
-// TODO: Implement using Analysis message API
+	return m.code
+}
+
+func (m *MessageType) Template() string {
+	// Message is a specific diagnostic message
+	// TODO: Implement using Analysis message API
+
+	return m.template
+}
+
 type Message struct {
 	Type *MessageType
 

@@ -27,7 +27,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/util/workqueue"
 
-	"istio.io/api/label"
+	"istio.io/istio/istio.io/api/label"
 	"istio.io/istio/pilot/pkg/keycertbundle"
 	kubelib "istio.io/istio/pkg/kube"
 	"istio.io/istio/pkg/kube/controllers"
@@ -57,18 +57,43 @@ type WebhookCertPatcher struct {
 	webhooks kclient.Client[*v1.MutatingWebhookConfiguration]
 }
 
+// Run runs the WebhookCertPatcher
+func (w *WebhookCertPatcher) Run(stopChan <-chan struct{}) {
+	go w.startCaBundleWatcher(stopChan)
+	w.webhooks.Start(stopChan)
+	kubelib.WaitForCacheSync("webhook patcher", stopChan, w.webhooks.HasSynced)
+	w.queue.Run(stopChan)
+}
+
+func (w *WebhookCertPatcher) HasSynced() bool {
+	return w.queue.HasSynced()
+}
+
+// startCaBundleWatcher listens for updates to the CA bundle and patches the webhooks.
+func (w *WebhookCertPatcher) startCaBundleWatcher(stop <-chan struct{}) {
+	id, watchCh := w.CABundleWatcher.AddWatcher()
+	defer w.CABundleWatcher.RemoveWatcher(id)
+	for {
+		select {
+		case <-watchCh:
+			for _, whc := range w.webhooks.List("", klabels.Everything()) {
+				log.Debugf("updating caBundle for webhook %q", whc.Name)
+				w.queue.AddObject(whc)
+			}
+		case <-stop:
+			return
+		}
+	}
+}
+
 // NewWebhookCertPatcher creates a WebhookCertPatcher
-func NewWebhookCertPatcher(
-	client kubelib.Client,
-	revision, webhookName string, caBundleWatcher *keycertbundle.Watcher,
-) (*WebhookCertPatcher, error) {
+func NewWebhookCertPatcher(client kubelib.Client, revision, webhookName string, caBundleWatcher *keycertbundle.Watcher) (*WebhookCertPatcher, error) {
 	p := &WebhookCertPatcher{
 		revision:        revision,
 		webhookName:     webhookName,
 		CABundleWatcher: caBundleWatcher,
 	}
 	p.queue = newWebhookPatcherQueue(p.webhookPatchTask)
-
 	p.webhooks = kclient.New[*v1.MutatingWebhookConfiguration](client)
 	p.webhooks.AddEventHandler(controllers.ObjectHandler(p.queue.AddObject))
 
@@ -84,18 +109,6 @@ func newWebhookPatcherQueue(reconciler controllers.ReconcilerFn) controllers.Que
 		controllers.WithRateLimiter(workqueue.NewTypedItemFastSlowRateLimiter[any](100*time.Millisecond, 1*time.Minute, 5)),
 		// Webhook patching has to be retried forever. But the retries would be rate limited.
 		controllers.WithMaxAttempts(math.MaxInt))
-}
-
-// Run runs the WebhookCertPatcher
-func (w *WebhookCertPatcher) Run(stopChan <-chan struct{}) {
-	go w.startCaBundleWatcher(stopChan)
-	w.webhooks.Start(stopChan)
-	kubelib.WaitForCacheSync("webhook patcher", stopChan, w.webhooks.HasSynced)
-	w.queue.Run(stopChan)
-}
-
-func (w *WebhookCertPatcher) HasSynced() bool {
-	return w.queue.HasSynced()
 }
 
 // webhookPatchTask takes the result of patchMutatingWebhookConfig and modifies the result for use in task queue
@@ -165,21 +178,4 @@ func (w *WebhookCertPatcher) patchMutatingWebhookConfig(webhookConfigName string
 	}
 
 	return err
-}
-
-// startCaBundleWatcher listens for updates to the CA bundle and patches the webhooks.
-func (w *WebhookCertPatcher) startCaBundleWatcher(stop <-chan struct{}) {
-	id, watchCh := w.CABundleWatcher.AddWatcher()
-	defer w.CABundleWatcher.RemoveWatcher(id)
-	for {
-		select {
-		case <-watchCh:
-			for _, whc := range w.webhooks.List("", klabels.Everything()) {
-				log.Debugf("updating caBundle for webhook %q", whc.Name)
-				w.queue.AddObject(whc)
-			}
-		case <-stop:
-			return
-		}
-	}
 }

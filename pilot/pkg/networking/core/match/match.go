@@ -34,11 +34,8 @@ var (
 		Name:        "ip",
 		TypedConfig: protoconv.MessageToAny(&network.DestinationIPInput{}),
 	}
-	SourceIP = &xds.TypedExtensionConfig{
-		Name:        "source-ip",
-		TypedConfig: protoconv.MessageToAny(&network.SourceIPInput{}),
-	}
-	SNI = &xds.TypedExtensionConfig{
+
+	_ = &xds.TypedExtensionConfig{
 		Name:        "sni",
 		TypedConfig: protoconv.MessageToAny(&network.ServerNameInput{}),
 	}
@@ -46,7 +43,7 @@ var (
 		Name:        "application-protocol",
 		TypedConfig: protoconv.MessageToAny(&network.ApplicationProtocolInput{}),
 	}
-	TransportProtocolInput = &xds.TypedExtensionConfig{
+	_ = &xds.TypedExtensionConfig{
 		Name:        "transport-protocol",
 		TypedConfig: protoconv.MessageToAny(&network.TransportProtocolInput{}),
 	}
@@ -73,14 +70,6 @@ func newMapper(input *xds.TypedExtensionConfig) Mapper {
 		OnNoMatch: nil,
 	}
 	return Mapper{Matcher: match, Map: m}
-}
-
-func NewDestinationIP() Mapper {
-	return newMapper(DestinationIP)
-}
-
-func NewSourceIP() Mapper {
-	return newMapper(SourceIP)
 }
 
 func NewDestinationPort() Mapper {

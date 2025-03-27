@@ -1,6 +1,7 @@
 apiVersion: install.istio.io/v1alpha1
 kind: IstioOperator
 spec:
+  hub: registry.cn-hangzhou.aliyuncs.com/acejilam
   components:
     cni:
       enabled: true
@@ -8,3 +9,4 @@ spec:
   values:
     global:
       platform: openshift
+

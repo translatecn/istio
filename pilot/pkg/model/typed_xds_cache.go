@@ -286,6 +286,7 @@ func (l *lruCache[K]) Get(key K) *discovery.Resource {
 func (l *lruCache[K]) get(key K, token CacheToken) *discovery.Resource {
 	// DON'T try to refactor to use RLock here.
 	// RLock will cause panic because hashicorp LRU cache does not guarantee concurrent safe.
+
 	l.mu.Lock()
 	defer l.mu.Unlock()
 	cv, ok := l.store.Get(key)
@@ -380,8 +381,7 @@ type disabledCache[K comparable] struct{}
 
 var _ typedXdsCache[uint64] = &disabledCache[uint64]{}
 
-func (d disabledCache[K]) Flush() {
-}
+func (d disabledCache[K]) Flush() {}
 
 func (d disabledCache[K]) Add(k K, entry dependents, pushReq *PushRequest, value *discovery.Resource) {
 }

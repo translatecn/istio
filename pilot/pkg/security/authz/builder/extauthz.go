@@ -30,7 +30,7 @@ import (
 	"github.com/hashicorp/go-multierror"
 	"google.golang.org/protobuf/types/known/durationpb"
 
-	meshconfig "istio.io/api/mesh/v1alpha1"
+	meshconfig "istio.io/istio/istio.io/api/mesh/v1alpha1"
 	"istio.io/istio/pilot/pkg/model"
 	authzmodel "istio.io/istio/pilot/pkg/security/authz/model"
 	"istio.io/istio/pkg/config/validation/agent"
@@ -369,8 +369,9 @@ func generateFilterMatcher(name string) *envoy_type_matcher_v3.MetadataMatcher {
 }
 
 func timeoutOrDefault(t *durationpb.Duration) *durationpb.Duration {
+	// Default timeout is 600s.
+
 	if t == nil {
-		// Default timeout is 600s.
 		return &durationpb.Duration{Seconds: 600}
 	}
 	return t

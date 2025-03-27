@@ -69,6 +69,7 @@ func NewAWS(ipv6 bool) Environment {
 
 func requestHeaders(ipv6 bool) map[string]string {
 	// try to get token first, if it fails, fallback to IMDSv1
+
 	token := getToken(ipv6)
 	if token == "" {
 		log.Debugf("token is empty, will fallback to IMDSv1")

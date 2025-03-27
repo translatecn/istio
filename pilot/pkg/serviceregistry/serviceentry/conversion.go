@@ -18,8 +18,8 @@ import (
 	"net/netip"
 	"strings"
 
-	"istio.io/api/label"
-	networking "istio.io/api/networking/v1alpha3"
+	"istio.io/istio/istio.io/api/label"
+	networking "istio.io/istio/istio.io/api/networking/v1alpha3"
 	"istio.io/istio/pilot/pkg/features"
 	"istio.io/istio/pilot/pkg/model"
 	"istio.io/istio/pilot/pkg/networking/serviceentry"
@@ -406,6 +406,7 @@ func (s *Controller) convertServiceEntryToInstances(cfg config.Config, services 
 func getTLSModeFromWorkloadEntry(wle *networking.WorkloadEntry) string {
 	// * Use security.istio.io/tlsMode if its present
 	// * If not, set TLS mode if ServiceAccount is specified
+
 	tlsMode := model.DisabledTLSModeLabel
 	if val, exists := wle.Labels[label.SecurityTlsMode.Name]; exists {
 		tlsMode = val

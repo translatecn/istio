@@ -9,7 +9,7 @@ apiVersion: networking.istio.io/v1alpha3
 kind: WorkloadEntry
 metadata:
   name: missing-address
-spec: {}
+spec: { }
 ---
 _err: UDS may not be a dir
 apiVersion: networking.istio.io/v1alpha3

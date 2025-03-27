@@ -23,10 +23,6 @@ import (
 //go:embed istio-ascii.txt
 var istioASCIIArt string
 
-func IstioArt() string {
-	return istioASCIIArt
-}
-
 func IstioColoredArt() string {
 	return color.New(color.FgHiBlue).Add(color.Bold).Sprint(istioASCIIArt)
 }

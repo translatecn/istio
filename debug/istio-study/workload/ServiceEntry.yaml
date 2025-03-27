@@ -1,0 +1,16 @@
+apiVersion: networking.istio.io/v1beta1
+kind: ServiceEntry
+metadata:
+  name: svc1
+spec:
+  hosts:
+    - whoami.internal.com
+  ports:
+    - number: 80
+      name: http
+      protocol: HTTP
+  location: MESH_INTERNAL # MESH_EXTERNAL|MESH_INTERNAL
+  resolution: STATIC # 静态解析
+  workloadSelector: # 工作负载选择器
+    labels: #  也包含 pod
+      app: foo

@@ -72,6 +72,7 @@ func (s *XdsStatusWriter) PrintAll(statuses map[string]*discovery.DiscoveryRespo
 
 func (s *XdsStatusWriter) setupStatusPrint(drs map[string]*discovery.DiscoveryResponse) (*tabwriter.Writer, []*xdsWriterStatus, error) {
 	// Gather the statuses before printing so they may be sorted
+
 	var fullStatus []*xdsWriterStatus
 	mappedResp := map[string]string{}
 	w := new(tabwriter.Writer).Init(s.Writer, 0, 8, 5, ' ', 0)
@@ -150,6 +151,7 @@ func formatStatus(s *xdsstatus.ClientConfig_GenericXdsConfig) string {
 
 func getSyncStatus(clientConfig *xdsstatus.ClientConfig) (cds, lds, eds, rds, ecds string) {
 	// If type is not found at all, it is considered ignored
+
 	lds = ignoredStatus
 	cds = ignoredStatus
 	rds = ignoredStatus

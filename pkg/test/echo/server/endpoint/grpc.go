@@ -92,6 +92,7 @@ func (s *grpcInstance) newServer(opts ...grpc.ServerOption) grpcServer {
 
 func (s *grpcInstance) Start(onReady OnReadyFunc) error {
 	// Listen on the given port and update the port if it changed from what was passed in.
+
 	listener, p, err := listenOnAddress(s.ListenerIP, s.Port.Port)
 	if err != nil {
 		return err

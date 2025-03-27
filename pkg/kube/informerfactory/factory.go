@@ -51,10 +51,11 @@ type StartableInformer struct {
 }
 
 func (s StartableInformer) Start(stopCh <-chan struct{}) {
+	// InformerFactory provides access to a shared informer factory
+
 	s.start(stopCh)
 }
 
-// InformerFactory provides access to a shared informer factory
 type InformerFactory interface {
 	// Start initializes all requested informers. They are handled in goroutines
 	// which run until the stop channel gets closed.
@@ -148,6 +149,7 @@ func allowedOverlap(resource schema.GroupVersionResource) bool {
 	// We register an optimized Pod watcher for standard flow, but for the experimental analysis feature we need the full pod,
 	// so we start another watch.
 	// We may want to reconsider this if the analysis feature becomes stable.
+
 	return features.EnableAnalysis && resource == gvr.Pod
 }
 
@@ -242,6 +244,7 @@ func (f *informerFactory) WaitForCacheSync(stopCh <-chan struct{}) bool {
 
 func (f *informerFactory) Shutdown() {
 	// Will return immediately if there is nothing to wait for.
+
 	defer f.wg.Wait()
 
 	f.lock.Lock()

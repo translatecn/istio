@@ -15,10 +15,23 @@
 package health
 
 import (
-	"istio.io/api/meta/v1alpha1"
+	"istio.io/istio/istio.io/api/meta/v1alpha1"
 	"istio.io/istio/pilot/pkg/model/status"
 	"istio.io/istio/pkg/config"
 )
+
+// HasHealthCondition returns true if a given WorkloadEntry has ConditionHealthy
+// condition.
+func HasHealthCondition(wle *config.Config) bool {
+	if wle == nil {
+		return false
+	}
+	s, ok := wle.Status.(*v1alpha1.IstioStatus)
+	if !ok {
+		return false
+	}
+	return status.GetCondition(s.Conditions, status.ConditionHealthy) != nil
+}
 
 // IsEligibleForHealthStatusUpdates returns true if a given WorkloadEntry
 // is allowed to receive health status updates sent by an Istio Proxy.
@@ -34,17 +47,4 @@ func IsEligibleForHealthStatusUpdates(wle *config.Config) bool {
 	}
 	_, annotated := wle.Annotations[status.WorkloadEntryHealthCheckAnnotation]
 	return annotated
-}
-
-// HasHealthCondition returns true if a given WorkloadEntry has ConditionHealthy
-// condition.
-func HasHealthCondition(wle *config.Config) bool {
-	if wle == nil {
-		return false
-	}
-	s, ok := wle.Status.(*v1alpha1.IstioStatus)
-	if !ok {
-		return false
-	}
-	return status.GetCondition(s.Conditions, status.ConditionHealthy) != nil
 }

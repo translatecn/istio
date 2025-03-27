@@ -16,73 +16,17 @@ package istio
 
 import (
 	"context"
-	"crypto/tls"
-	"crypto/x509"
 	"fmt"
 	"sync"
 	"time"
 
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials"
-	"google.golang.org/grpc/metadata"
 	authenticationv1 "k8s.io/api/authentication/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
-
-	pb "istio.io/api/security/v1alpha1"
-	"istio.io/istio/pkg/config/constants"
-	"istio.io/istio/pkg/test/framework"
-	pkiutil "istio.io/istio/security/pkg/pki/util"
 )
 
 type Cert struct {
 	ClientCert, Key, RootCert []byte
-}
-
-func CreateCertificate(t framework.TestContext, i Instance, serviceAccount, namespace string) (Cert, error) {
-	c := t.Clusters().Default()
-	rootCert, err := FetchRootCert(c.Kube())
-	if err != nil {
-		return Cert{}, fmt.Errorf("failed to fetch root cert: %v", err)
-	}
-
-	token, err := GetServiceAccountToken(c.Kube(), "istio-ca", namespace, serviceAccount)
-	if err != nil {
-		return Cert{}, err
-	}
-
-	san := fmt.Sprintf("spiffe://%s/ns/%s/sa/%s", "cluster.local", namespace, serviceAccount)
-	options := pkiutil.CertOptions{
-		Host:       san,
-		RSAKeySize: 2048,
-	}
-	// Generate the cert/key, send CSR to CA.
-	csrPEM, keyPEM, err := pkiutil.GenCSR(options)
-	if err != nil {
-		return Cert{}, err
-	}
-	a, err := i.InternalDiscoveryAddressFor(c)
-	if err != nil {
-		return Cert{}, err
-	}
-	client, err := newCitadelClient(a, []byte(rootCert))
-	if err != nil {
-		return Cert{}, fmt.Errorf("creating citadel client: %v", err)
-	}
-	req := &pb.IstioCertificateRequest{
-		Csr:              string(csrPEM),
-		ValidityDuration: int64((time.Hour * 24 * 7).Seconds()),
-	}
-	rctx := metadata.NewOutgoingContext(context.Background(), metadata.Pairs("Authorization", "Bearer "+token, "ClusterID", constants.DefaultClusterName))
-	resp, err := client.CreateCertificate(rctx, req)
-	if err != nil {
-		return Cert{}, fmt.Errorf("send CSR: %v", err)
-	}
-	certChain := []byte{}
-	for _, c := range resp.CertChain {
-		certChain = append(certChain, []byte(c)...)
-	}
-	return Cert{certChain, keyPEM, []byte(rootCert)}, nil
 }
 
 // 7 days
@@ -122,26 +66,6 @@ type token struct {
 }
 
 // NewCitadelClient create a CA client for Citadel.
-func newCitadelClient(endpoint string, rootCert []byte) (pb.IstioCertificateServiceClient, error) {
-	certPool := x509.NewCertPool()
-	ok := certPool.AppendCertsFromPEM(rootCert)
-	if !ok {
-		return nil, fmt.Errorf("failed to append certificates")
-	}
-	config := tls.Config{
-		RootCAs:            certPool,
-		InsecureSkipVerify: true, // nolint: gosec // test only code
-	}
-	transportCreds := credentials.NewTLS(&config)
-
-	conn, err := grpc.Dial(endpoint, grpc.WithTransportCredentials(transportCreds))
-	if err != nil {
-		return nil, fmt.Errorf("failed to connect to endpoint %s", endpoint)
-	}
-
-	client := pb.NewIstioCertificateServiceClient(conn)
-	return client, nil
-}
 
 func san(ns, sa string) string {
 	return fmt.Sprintf("spiffe://%s/ns/%s/sa/%s", "cluster.local", ns, sa)

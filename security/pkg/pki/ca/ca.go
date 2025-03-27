@@ -120,7 +120,267 @@ type IstioCAOptions struct {
 
 type RootCertUpdateFunc func() error
 
-// NewSelfSignedIstioCAOptions returns a new IstioCAOptions instance using self-signed certificate.
+// NewSelfSignedDebugIstioCAOptions returns a new IstioCAOptions instance using self-signed certificate produced by in-memory CA,
+// which runs without K8s, and no local ca key file presented.
+func NewSelfSignedDebugIstioCAOptions(rootCertFile string, caCertTTL, defaultCertTTL, maxCertTTL time.Duration,
+	org string, caRSAKeySize int,
+) (caOpts *IstioCAOptions, err error) {
+	caOpts = &IstioCAOptions{
+		CAType:         selfSignedCA,
+		DefaultCertTTL: defaultCertTTL,
+		MaxCertTTL:     maxCertTTL,
+		CARSAKeySize:   caRSAKeySize,
+	}
+
+	options := util.CertOptions{
+		TTL:          caCertTTL,
+		Org:          org,
+		IsCA:         true,
+		IsSelfSigned: true,
+		RSAKeySize:   caRSAKeySize,
+		IsDualUse:    true, // hardcoded to true for K8S as well
+	}
+	pemCert, pemKey, ckErr := util.GenCertKeyFromOptions(options)
+	if ckErr != nil {
+		return nil, fmt.Errorf("unable to generate CA cert and key for self-signed CA (%v)", ckErr)
+	}
+
+	rootCerts, err := util.AppendRootCerts(pemCert, rootCertFile)
+	if err != nil {
+		return nil, fmt.Errorf("failed to append root certificates (%v)", err)
+	}
+
+	if caOpts.KeyCertBundle, err = util.NewVerifiedKeyCertBundleFromPem(pemCert, pemKey, nil, rootCerts); err != nil {
+		return nil, fmt.Errorf("failed to create CA KeyCertBundle (%v)", err)
+	}
+
+	return caOpts, nil
+}
+
+// NewPluggedCertIstioCAOptions returns a new IstioCAOptions instance using given certificate.
+func NewPluggedCertIstioCAOptions(fileBundle SigningCAFileBundle,
+	defaultCertTTL, maxCertTTL time.Duration, caRSAKeySize int,
+) (caOpts *IstioCAOptions, err error) {
+	caOpts = &IstioCAOptions{
+		CAType:         pluggedCertCA,
+		DefaultCertTTL: defaultCertTTL,
+		MaxCertTTL:     maxCertTTL,
+		CARSAKeySize:   caRSAKeySize,
+	}
+
+	if caOpts.KeyCertBundle, err = util.NewVerifiedKeyCertBundleFromFile(
+		fileBundle.SigningCertFile, fileBundle.SigningKeyFile, fileBundle.CertChainFiles, fileBundle.RootCertFile); err != nil {
+		return nil, fmt.Errorf("failed to create CA KeyCertBundle (%v)", err)
+	}
+
+	// Validate that the passed in signing cert can be used as CA.
+	// The check can't be done inside `KeyCertBundle`, since bundle could also be used to
+	// validate workload certificates (i.e., where the leaf certificate is not a CA).
+	b, err := os.ReadFile(fileBundle.SigningCertFile)
+	if err != nil {
+		return nil, err
+	}
+	block, _ := pem.Decode(b)
+	if block == nil {
+		return nil, fmt.Errorf("invalid PEM encoded certificate")
+	}
+	cert, err := x509.ParseCertificate(block.Bytes)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse X.509 certificate")
+	}
+	if !cert.IsCA {
+		return nil, fmt.Errorf("certificate is not authorized to sign other certificates")
+	}
+
+	return caOpts, nil
+}
+
+// IstioCA generates keys and certificates for Istio identities.
+type IstioCA struct {
+	defaultCertTTL time.Duration
+	maxCertTTL     time.Duration
+	caRSAKeySize   int
+
+	keyCertBundle *util.KeyCertBundle
+
+	// rootCertRotator periodically rotates self-signed root cert for CA. It is nil
+	// if CA is not self-signed CA.
+	rootCertRotator *SelfSignedCARootCertRotator
+}
+
+func (ca *IstioCA) Run(stopChan chan struct{}) {
+	if ca.rootCertRotator != nil {
+		// Start root cert rotator in a separate goroutine.
+		go ca.rootCertRotator.Run(stopChan)
+	}
+}
+
+// Sign takes a PEM-encoded CSR and cert opts, and returns a signed certificate.
+func (ca *IstioCA) Sign(csrPEM []byte, certOpts CertOpts) (
+	[]byte, error,
+) {
+	return ca.sign(csrPEM, certOpts.SubjectIDs, certOpts.TTL, true, certOpts.ForCA)
+}
+
+// SignWithCertChain is similar to Sign but returns the leaf cert and the entire cert chain.
+func (ca *IstioCA) SignWithCertChain(csrPEM []byte, certOpts CertOpts) (
+	[]string, error,
+) {
+	cert, err := ca.signWithCertChain(csrPEM, certOpts.SubjectIDs, certOpts.TTL, true, certOpts.ForCA)
+	if err != nil {
+		return nil, err
+	}
+	return []string{string(cert)}, nil
+}
+
+// GetCAKeyCertBundle returns the KeyCertBundle for the CA.
+func (ca *IstioCA) GetCAKeyCertBundle() *util.KeyCertBundle {
+	return ca.keyCertBundle
+}
+
+func (ca *IstioCA) sign(csrPEM []byte, subjectIDs []string, requestedLifetime time.Duration, checkLifetime, forCA bool) ([]byte, error) {
+	signingCert, signingKey, _, _ := ca.keyCertBundle.GetAll()
+	if signingCert == nil {
+		return nil, caerror.NewError(caerror.CANotReady, fmt.Errorf("Istio CA is not ready")) // nolint
+	}
+
+	csr, err := util.ParsePemEncodedCSR(csrPEM)
+	if err != nil {
+		return nil, caerror.NewError(caerror.CSRError, err)
+	}
+
+	if err := csr.CheckSignature(); err != nil {
+		return nil, caerror.NewError(caerror.CSRError, err)
+	}
+
+	lifetime := requestedLifetime
+	// If the requested requestedLifetime is non-positive, apply the default TTL.
+	if requestedLifetime.Seconds() <= 0 {
+		lifetime = ca.defaultCertTTL
+	}
+	// If checkLifetime is set and the requested TTL is greater than maxCertTTL, return an error
+	if checkLifetime && requestedLifetime.Seconds() > ca.maxCertTTL.Seconds() {
+		return nil, caerror.NewError(caerror.TTLError, fmt.Errorf(
+			"requested TTL %s is greater than the max allowed TTL %s", requestedLifetime, ca.maxCertTTL))
+	}
+
+	certBytes, err := util.GenCertFromCSR(csr, signingCert, csr.PublicKey, *signingKey, subjectIDs, lifetime, forCA)
+	if err != nil {
+		return nil, caerror.NewError(caerror.CertGenError, err)
+	}
+
+	block := &pem.Block{
+		Type:  "CERTIFICATE",
+		Bytes: certBytes,
+	}
+	cert := pem.EncodeToMemory(block)
+
+	return cert, nil
+}
+
+func (ca *IstioCA) signWithCertChain(csrPEM []byte, subjectIDs []string, requestedLifetime time.Duration, lifetimeCheck,
+	forCA bool,
+) ([]byte, error) {
+	cert, err := ca.sign(csrPEM, subjectIDs, requestedLifetime, lifetimeCheck, forCA)
+	if err != nil {
+		return nil, err
+	}
+
+	chainPem := ca.GetCAKeyCertBundle().GetCertChainPem()
+	if len(chainPem) > 0 {
+		cert = append(cert, chainPem...)
+	}
+	return cert, nil
+}
+
+func loadSelfSignedCaSecret(client corev1.CoreV1Interface, namespace string, caCertName string, rootCertFile string, caOpts *IstioCAOptions) error {
+	caSecret, err := client.Secrets(namespace).Get(context.TODO(), caCertName, metav1.GetOptions{})
+	if err == nil {
+		pkiCaLog.Infof("Load signing key and cert from existing secret %s/%s", caSecret.Namespace, caSecret.Name)
+		rootCerts, err := util.AppendRootCerts(caSecret.Data[CACertFile], rootCertFile)
+		if err != nil {
+			return fmt.Errorf("failed to append root certificates (%v)", err)
+		}
+		if caOpts.KeyCertBundle, err = util.NewVerifiedKeyCertBundleFromPem(caSecret.Data[CACertFile],
+			caSecret.Data[CAPrivateKeyFile], nil, rootCerts); err != nil {
+			return fmt.Errorf("failed to create CA KeyCertBundle (%v)", err)
+		}
+		// pkiCaLog.Infof("Using existing public key: %v", string(rootCerts))
+	}
+	return err
+}
+
+// NewIstioCA returns a new IstioCA instance.
+func NewIstioCA(opts *IstioCAOptions) (*IstioCA, error) {
+	ca := &IstioCA{
+		maxCertTTL:    opts.MaxCertTTL,
+		keyCertBundle: opts.KeyCertBundle,
+		caRSAKeySize:  opts.CARSAKeySize,
+	}
+
+	if opts.CAType == selfSignedCA && opts.RotatorConfig != nil && opts.RotatorConfig.CheckInterval > time.Duration(0) {
+		ca.rootCertRotator = NewSelfSignedCARootCertRotator(opts.RotatorConfig, ca, opts.OnRootCertUpdate)
+	}
+
+	// if CA cert becomes invalid before workload cert it's going to cause workload cert to be invalid too,
+	// however citatel won't rotate if that happens, this function will prevent that using cert chain TTL as
+	// the workload TTL
+	defaultCertTTL, err := ca.minTTL(opts.DefaultCertTTL)
+	if err != nil {
+		return ca, fmt.Errorf("failed to get default cert TTL %s", err.Error())
+	}
+	ca.defaultCertTTL = defaultCertTTL
+
+	return ca, nil
+}
+
+func (ca *IstioCA) minTTL(defaultCertTTL time.Duration) (time.Duration, error) {
+	certChainPem := ca.keyCertBundle.GetCertChainPem()
+	if len(certChainPem) == 0 {
+		return defaultCertTTL, nil
+	}
+
+	certChainExpiration, err := util.TimeBeforeCertExpires(certChainPem, time.Now())
+	if err != nil {
+		return 0, fmt.Errorf("failed to get cert chain TTL %s", err.Error())
+	}
+
+	if certChainExpiration <= 0 {
+		return 0, fmt.Errorf("cert chain has expired")
+	}
+
+	if defaultCertTTL > certChainExpiration {
+		return certChainExpiration, nil
+	}
+
+	return defaultCertTTL, nil
+}
+
+// BuildSecret returns a secret struct, contents of which are filled with parameters passed in.
+// Adds the "istio-generated" key if the secret name is `cacerts`.
+func BuildSecret(scrtName, namespace string, certChain, privateKey, rootCert, caCert, caPrivateKey []byte, secretType v1.SecretType) *v1.Secret {
+	secret := &v1.Secret{
+		Data: map[string][]byte{
+			CertChainFile:    certChain,
+			PrivateKeyFile:   privateKey,
+			RootCertFile:     rootCert,
+			CACertFile:       caCert,
+			CAPrivateKeyFile: caPrivateKey,
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      scrtName,
+			Namespace: namespace,
+		},
+		Type: secretType,
+	}
+
+	if scrtName == CACertsSecret {
+		secret.Data[IstioGenerated] = []byte("")
+	}
+
+	return secret
+}
+
 func NewSelfSignedIstioCAOptions(ctx context.Context,
 	rootCertGracePeriodPercentile int, caCertTTL, rootCertCheckInverval, defaultCertTTL,
 	maxCertTTL time.Duration, org string, useCacertsSecretName, dualUse bool, namespace string, client corev1.CoreV1Interface,
@@ -210,192 +470,6 @@ func NewSelfSignedIstioCAOptions(ctx context.Context,
 	return caOpts, err
 }
 
-func loadSelfSignedCaSecret(client corev1.CoreV1Interface, namespace string, caCertName string, rootCertFile string, caOpts *IstioCAOptions) error {
-	caSecret, err := client.Secrets(namespace).Get(context.TODO(), caCertName, metav1.GetOptions{})
-	if err == nil {
-		pkiCaLog.Infof("Load signing key and cert from existing secret %s/%s", caSecret.Namespace, caSecret.Name)
-		rootCerts, err := util.AppendRootCerts(caSecret.Data[CACertFile], rootCertFile)
-		if err != nil {
-			return fmt.Errorf("failed to append root certificates (%v)", err)
-		}
-		if caOpts.KeyCertBundle, err = util.NewVerifiedKeyCertBundleFromPem(caSecret.Data[CACertFile],
-			caSecret.Data[CAPrivateKeyFile], nil, rootCerts); err != nil {
-			return fmt.Errorf("failed to create CA KeyCertBundle (%v)", err)
-		}
-		pkiCaLog.Infof("Using existing public key: %v", string(rootCerts))
-	}
-	return err
-}
-
-// NewSelfSignedDebugIstioCAOptions returns a new IstioCAOptions instance using self-signed certificate produced by in-memory CA,
-// which runs without K8s, and no local ca key file presented.
-func NewSelfSignedDebugIstioCAOptions(rootCertFile string, caCertTTL, defaultCertTTL, maxCertTTL time.Duration,
-	org string, caRSAKeySize int,
-) (caOpts *IstioCAOptions, err error) {
-	caOpts = &IstioCAOptions{
-		CAType:         selfSignedCA,
-		DefaultCertTTL: defaultCertTTL,
-		MaxCertTTL:     maxCertTTL,
-		CARSAKeySize:   caRSAKeySize,
-	}
-
-	options := util.CertOptions{
-		TTL:          caCertTTL,
-		Org:          org,
-		IsCA:         true,
-		IsSelfSigned: true,
-		RSAKeySize:   caRSAKeySize,
-		IsDualUse:    true, // hardcoded to true for K8S as well
-	}
-	pemCert, pemKey, ckErr := util.GenCertKeyFromOptions(options)
-	if ckErr != nil {
-		return nil, fmt.Errorf("unable to generate CA cert and key for self-signed CA (%v)", ckErr)
-	}
-
-	rootCerts, err := util.AppendRootCerts(pemCert, rootCertFile)
-	if err != nil {
-		return nil, fmt.Errorf("failed to append root certificates (%v)", err)
-	}
-
-	if caOpts.KeyCertBundle, err = util.NewVerifiedKeyCertBundleFromPem(pemCert, pemKey, nil, rootCerts); err != nil {
-		return nil, fmt.Errorf("failed to create CA KeyCertBundle (%v)", err)
-	}
-
-	return caOpts, nil
-}
-
-// NewPluggedCertIstioCAOptions returns a new IstioCAOptions instance using given certificate.
-func NewPluggedCertIstioCAOptions(fileBundle SigningCAFileBundle,
-	defaultCertTTL, maxCertTTL time.Duration, caRSAKeySize int,
-) (caOpts *IstioCAOptions, err error) {
-	caOpts = &IstioCAOptions{
-		CAType:         pluggedCertCA,
-		DefaultCertTTL: defaultCertTTL,
-		MaxCertTTL:     maxCertTTL,
-		CARSAKeySize:   caRSAKeySize,
-	}
-
-	if caOpts.KeyCertBundle, err = util.NewVerifiedKeyCertBundleFromFile(
-		fileBundle.SigningCertFile, fileBundle.SigningKeyFile, fileBundle.CertChainFiles, fileBundle.RootCertFile); err != nil {
-		return nil, fmt.Errorf("failed to create CA KeyCertBundle (%v)", err)
-	}
-
-	// Validate that the passed in signing cert can be used as CA.
-	// The check can't be done inside `KeyCertBundle`, since bundle could also be used to
-	// validate workload certificates (i.e., where the leaf certificate is not a CA).
-	b, err := os.ReadFile(fileBundle.SigningCertFile)
-	if err != nil {
-		return nil, err
-	}
-	block, _ := pem.Decode(b)
-	if block == nil {
-		return nil, fmt.Errorf("invalid PEM encoded certificate")
-	}
-	cert, err := x509.ParseCertificate(block.Bytes)
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse X.509 certificate")
-	}
-	if !cert.IsCA {
-		return nil, fmt.Errorf("certificate is not authorized to sign other certificates")
-	}
-
-	return caOpts, nil
-}
-
-// BuildSecret returns a secret struct, contents of which are filled with parameters passed in.
-// Adds the "istio-generated" key if the secret name is `cacerts`.
-func BuildSecret(scrtName, namespace string, certChain, privateKey, rootCert, caCert, caPrivateKey []byte, secretType v1.SecretType) *v1.Secret {
-	secret := &v1.Secret{
-		Data: map[string][]byte{
-			CertChainFile:    certChain,
-			PrivateKeyFile:   privateKey,
-			RootCertFile:     rootCert,
-			CACertFile:       caCert,
-			CAPrivateKeyFile: caPrivateKey,
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      scrtName,
-			Namespace: namespace,
-		},
-		Type: secretType,
-	}
-
-	if scrtName == CACertsSecret {
-		secret.Data[IstioGenerated] = []byte("")
-	}
-
-	return secret
-}
-
-// IstioCA generates keys and certificates for Istio identities.
-type IstioCA struct {
-	defaultCertTTL time.Duration
-	maxCertTTL     time.Duration
-	caRSAKeySize   int
-
-	keyCertBundle *util.KeyCertBundle
-
-	// rootCertRotator periodically rotates self-signed root cert for CA. It is nil
-	// if CA is not self-signed CA.
-	rootCertRotator *SelfSignedCARootCertRotator
-}
-
-// NewIstioCA returns a new IstioCA instance.
-func NewIstioCA(opts *IstioCAOptions) (*IstioCA, error) {
-	ca := &IstioCA{
-		maxCertTTL:    opts.MaxCertTTL,
-		keyCertBundle: opts.KeyCertBundle,
-		caRSAKeySize:  opts.CARSAKeySize,
-	}
-
-	if opts.CAType == selfSignedCA && opts.RotatorConfig != nil && opts.RotatorConfig.CheckInterval > time.Duration(0) {
-		ca.rootCertRotator = NewSelfSignedCARootCertRotator(opts.RotatorConfig, ca, opts.OnRootCertUpdate)
-	}
-
-	// if CA cert becomes invalid before workload cert it's going to cause workload cert to be invalid too,
-	// however citatel won't rotate if that happens, this function will prevent that using cert chain TTL as
-	// the workload TTL
-	defaultCertTTL, err := ca.minTTL(opts.DefaultCertTTL)
-	if err != nil {
-		return ca, fmt.Errorf("failed to get default cert TTL %s", err.Error())
-	}
-	ca.defaultCertTTL = defaultCertTTL
-
-	return ca, nil
-}
-
-func (ca *IstioCA) Run(stopChan chan struct{}) {
-	if ca.rootCertRotator != nil {
-		// Start root cert rotator in a separate goroutine.
-		go ca.rootCertRotator.Run(stopChan)
-	}
-}
-
-// Sign takes a PEM-encoded CSR and cert opts, and returns a signed certificate.
-func (ca *IstioCA) Sign(csrPEM []byte, certOpts CertOpts) (
-	[]byte, error,
-) {
-	return ca.sign(csrPEM, certOpts.SubjectIDs, certOpts.TTL, true, certOpts.ForCA)
-}
-
-// SignWithCertChain is similar to Sign but returns the leaf cert and the entire cert chain.
-func (ca *IstioCA) SignWithCertChain(csrPEM []byte, certOpts CertOpts) (
-	[]string, error,
-) {
-	cert, err := ca.signWithCertChain(csrPEM, certOpts.SubjectIDs, certOpts.TTL, true, certOpts.ForCA)
-	if err != nil {
-		return nil, err
-	}
-	return []string{string(cert)}, nil
-}
-
-// GetCAKeyCertBundle returns the KeyCertBundle for the CA.
-func (ca *IstioCA) GetCAKeyCertBundle() *util.KeyCertBundle {
-	return ca.keyCertBundle
-}
-
-// GenKeyCert generates a certificate signed by the CA,
-// returns the certificate chain and the private key.
 func (ca *IstioCA) GenKeyCert(hostnames []string, certTTL time.Duration, checkLifetime bool) ([]byte, []byte, error) {
 	opts := util.CertOptions{
 		RSAKeySize: rsaKeySize,
@@ -426,81 +500,4 @@ func (ca *IstioCA) GenKeyCert(hostnames []string, certTTL time.Duration, checkLi
 	}
 
 	return certPEM, privPEM, nil
-}
-
-func (ca *IstioCA) minTTL(defaultCertTTL time.Duration) (time.Duration, error) {
-	certChainPem := ca.keyCertBundle.GetCertChainPem()
-	if len(certChainPem) == 0 {
-		return defaultCertTTL, nil
-	}
-
-	certChainExpiration, err := util.TimeBeforeCertExpires(certChainPem, time.Now())
-	if err != nil {
-		return 0, fmt.Errorf("failed to get cert chain TTL %s", err.Error())
-	}
-
-	if certChainExpiration <= 0 {
-		return 0, fmt.Errorf("cert chain has expired")
-	}
-
-	if defaultCertTTL > certChainExpiration {
-		return certChainExpiration, nil
-	}
-
-	return defaultCertTTL, nil
-}
-
-func (ca *IstioCA) sign(csrPEM []byte, subjectIDs []string, requestedLifetime time.Duration, checkLifetime, forCA bool) ([]byte, error) {
-	signingCert, signingKey, _, _ := ca.keyCertBundle.GetAll()
-	if signingCert == nil {
-		return nil, caerror.NewError(caerror.CANotReady, fmt.Errorf("Istio CA is not ready")) // nolint
-	}
-
-	csr, err := util.ParsePemEncodedCSR(csrPEM)
-	if err != nil {
-		return nil, caerror.NewError(caerror.CSRError, err)
-	}
-
-	if err := csr.CheckSignature(); err != nil {
-		return nil, caerror.NewError(caerror.CSRError, err)
-	}
-
-	lifetime := requestedLifetime
-	// If the requested requestedLifetime is non-positive, apply the default TTL.
-	if requestedLifetime.Seconds() <= 0 {
-		lifetime = ca.defaultCertTTL
-	}
-	// If checkLifetime is set and the requested TTL is greater than maxCertTTL, return an error
-	if checkLifetime && requestedLifetime.Seconds() > ca.maxCertTTL.Seconds() {
-		return nil, caerror.NewError(caerror.TTLError, fmt.Errorf(
-			"requested TTL %s is greater than the max allowed TTL %s", requestedLifetime, ca.maxCertTTL))
-	}
-
-	certBytes, err := util.GenCertFromCSR(csr, signingCert, csr.PublicKey, *signingKey, subjectIDs, lifetime, forCA)
-	if err != nil {
-		return nil, caerror.NewError(caerror.CertGenError, err)
-	}
-
-	block := &pem.Block{
-		Type:  "CERTIFICATE",
-		Bytes: certBytes,
-	}
-	cert := pem.EncodeToMemory(block)
-
-	return cert, nil
-}
-
-func (ca *IstioCA) signWithCertChain(csrPEM []byte, subjectIDs []string, requestedLifetime time.Duration, lifetimeCheck,
-	forCA bool,
-) ([]byte, error) {
-	cert, err := ca.sign(csrPEM, subjectIDs, requestedLifetime, lifetimeCheck, forCA)
-	if err != nil {
-		return nil, err
-	}
-
-	chainPem := ca.GetCAKeyCertBundle().GetCertChainPem()
-	if len(chainPem) > 0 {
-		cert = append(cert, chainPem...)
-	}
-	return cert, nil
 }

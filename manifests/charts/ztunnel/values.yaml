@@ -2,7 +2,7 @@
 # For instance, instead of `--set _internal_defaults_do_not_set.foo=bar``, just set `--set foo=bar`.
 _internal_defaults_do_not_set:
   # Hub to pull from. Image will be `Hub/Image:Tag-Variant`
-  hub: gcr.io/istio-testing
+  hub: registry.cn-hangzhou.aliyuncs.com/acejilam
   # Tag to pull from. Image will be `Hub/Image:Tag-Variant`
   tag: latest
   # Variant to pull. Options are "debug" or "distroless". Unset will use the default for the given version.
@@ -13,15 +13,15 @@ _internal_defaults_do_not_set:
   image: ztunnel
 
   # Labels to apply to all top level resources
-  labels: {}
+  labels: { }
   # Annotations to apply to all top level resources
-  annotations: {}
+  annotations: { }
 
   # Additional volumeMounts to the ztunnel container
-  volumeMounts: []
+  volumeMounts: [ ]
 
   # Additional volumes to the ztunnel pod
-  volumes: []
+  volumes: [ ]
 
   # Annotations added to each pod. The default annotations are required for scraping prometheus (in most environments).
   podAnnotations:
@@ -29,7 +29,7 @@ _internal_defaults_do_not_set:
     prometheus.io/scrape: "true"
 
   # Additional labels to apply on the pod level
-  podLabels: {}
+  podLabels: { }
 
   # Pod resource configuration
   resources:
@@ -40,10 +40,10 @@ _internal_defaults_do_not_set:
       memory: 512Mi
 
   # List of secret names to add to the service account as image pull secrets
-  imagePullSecrets: []
+  imagePullSecrets: [ ]
 
   # A `key: value` mapping of environment variables to add to the pod
-  env: {}
+  env: { }
 
   # Override for the pod imagePullPolicy
   imagePullPolicy: ""
@@ -60,7 +60,7 @@ _internal_defaults_do_not_set:
   # TODO: https://github.com/istio/istio/issues/43248
   meshConfig:
     defaultConfig:
-      proxyMetadata: {}
+      proxyMetadata: { }
 
   # This value defines:
   # 1. how many seconds kube waits for ztunnel pod to gracefully exit before forcibly terminating it (this value)
@@ -92,7 +92,7 @@ _internal_defaults_do_not_set:
   logAsJson: false
 
   # Set to `type: RuntimeDefault` to use the default profile if available.
-  seLinuxOptions: {}
+  seLinuxOptions: { }
   # TODO Ambient inpod - for OpenShift, set to the following to get writable sockets in hostmounts to work, eventually consider CSI driver instead
   #seLinuxOptions:
   #  type: spc_t

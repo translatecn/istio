@@ -29,10 +29,6 @@ func MatchRegion(l Instance) Match {
 	}
 }
 
-func MatchOtherZoneInSameRegion(l Instance) Match {
-	return And(MatchRegion(l), Not(MatchZone(l)))
-}
-
 func And(m1 Match, m2 Match) Match {
 	return func(o Instance) bool {
 		return m1(o) && m2(o)

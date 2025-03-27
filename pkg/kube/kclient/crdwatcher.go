@@ -44,23 +44,8 @@ type crdWatcher struct {
 
 func init() {
 	// Unfortunate hack needed to avoid circular imports
+
 	kube.NewCrdWatcher = newCrdWatcher
-}
-
-// newCrdWatcher returns a new CRD watcher controller.
-func newCrdWatcher(client kube.Client) kubetypes.CrdWatcher {
-	c := &crdWatcher{
-		running:   make(chan struct{}),
-		callbacks: map[string][]func(){},
-	}
-
-	c.queue = controllers.NewQueue("crd watcher",
-		controllers.WithReconciler(c.Reconcile))
-	c.crds = NewMetadata(client, gvr.CustomResourceDefinition, Filter{
-		ObjectFilter: kubetypes.NewStaticObjectFilter(minimumVersionFilter),
-	})
-	c.crds.AddEventHandler(controllers.ObjectHandler(c.queue.AddObject))
-	return c
 }
 
 var minimumCRDVersions = map[string]*semver.Version{
@@ -76,6 +61,7 @@ var minimumCRDVersions = map[string]*semver.Version{
 // The user may have opted into using an experimental CRD, but not to experimental usage *in Istio* so this isn't acceptable.
 func minimumVersionFilter(t any) bool {
 	// Setup a filter
+
 	crd := t.(*metav1.PartialObjectMetadata)
 	mv, f := minimumCRDVersions[crd.Name]
 	if !f {
@@ -167,6 +153,7 @@ func (c *crdWatcher) KnownOrCallback(s schema.GroupVersionResource, f func(stop 
 
 func (c *crdWatcher) known(s schema.GroupVersionResource) bool {
 	// From the spec: "Its name MUST be in the format <.spec.name>.<.spec.group>."
+
 	name := fmt.Sprintf("%s.%s", s.Resource, s.Group)
 	return c.crds.Get(name, "") != nil
 }
@@ -185,4 +172,17 @@ func (c *crdWatcher) Reconcile(key types.NamespacedName) error {
 		cb()
 	}
 	return nil
+}
+
+// newCrdWatcher returns a new CRD watcher controller.
+func newCrdWatcher(client kube.Client) kubetypes.CrdWatcher {
+	c := &crdWatcher{
+		running:   make(chan struct{}),
+		callbacks: map[string][]func(){},
+	}
+
+	c.queue = controllers.NewQueue("crd watcher", controllers.WithReconciler(c.Reconcile))
+	c.crds = NewMetadata(client, gvr.CustomResourceDefinition, Filter{ObjectFilter: kubetypes.NewStaticObjectFilter(minimumVersionFilter)})
+	c.crds.AddEventHandler(controllers.ObjectHandler(c.queue.AddObject))
+	return c
 }

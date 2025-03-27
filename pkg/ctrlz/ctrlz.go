@@ -117,6 +117,35 @@ func normalize(input string) string {
 	return strings.Replace(input, "/", "-", -1)
 }
 
+func (s *Server) listen() {
+	log.Infof("ControlZ available at %s", s.httpServer.Addr)
+	if listeningTestProbe != nil {
+		go listeningTestProbe()
+	}
+	err := s.httpServer.Serve(s.listener)
+	log.Infof("ControlZ terminated: %v", err)
+	s.shutdown.Done()
+}
+
+// Close terminates ControlZ.
+//
+// Close is not normally used by programs that expose ControlZ, it is primarily intended to be
+// used by tests.
+func (s *Server) Close() {
+	log.Info("Closing ControlZ")
+
+	if s.listener != nil {
+		if err := s.listener.Close(); err != nil {
+			log.Warnf("Error closing ControlZ: %v", err)
+		}
+		s.shutdown.Wait()
+	}
+}
+
+func (s *Server) Address() string {
+	return s.httpServer.Addr
+}
+
 // Run starts up the ControlZ listeners.
 //
 // ControlZ uses the set of standard core topics.
@@ -183,33 +212,4 @@ func Run(o *Options, customTopics []fw.Topic) (*Server, error) {
 	go s.listen()
 
 	return s, nil
-}
-
-func (s *Server) listen() {
-	log.Infof("ControlZ available at %s", s.httpServer.Addr)
-	if listeningTestProbe != nil {
-		go listeningTestProbe()
-	}
-	err := s.httpServer.Serve(s.listener)
-	log.Infof("ControlZ terminated: %v", err)
-	s.shutdown.Done()
-}
-
-// Close terminates ControlZ.
-//
-// Close is not normally used by programs that expose ControlZ, it is primarily intended to be
-// used by tests.
-func (s *Server) Close() {
-	log.Info("Closing ControlZ")
-
-	if s.listener != nil {
-		if err := s.listener.Close(); err != nil {
-			log.Warnf("Error closing ControlZ: %v", err)
-		}
-		s.shutdown.Wait()
-	}
-}
-
-func (s *Server) Address() string {
-	return s.httpServer.Addr
 }

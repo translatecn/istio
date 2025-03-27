@@ -42,12 +42,11 @@ import (
 	anypb "google.golang.org/protobuf/types/known/anypb"
 	pstruct "google.golang.org/protobuf/types/known/structpb"
 
-	mcp "istio.io/api/mcp/v1alpha1"
-	"istio.io/api/mesh/v1alpha1"
+	mcp "istio.io/istio/istio.io/api/mcp/v1alpha1"
+	"istio.io/istio/istio.io/api/mesh/v1alpha1"
 	mem "istio.io/istio/pilot/pkg/config/memory"
 	"istio.io/istio/pilot/pkg/model"
 	"istio.io/istio/pilot/pkg/networking/util"
-	"istio.io/istio/pilot/pkg/serviceregistry/memory"
 	"istio.io/istio/pilot/pkg/util/network"
 	v3 "istio.io/istio/pilot/pkg/xds/v3"
 	"istio.io/istio/pkg/backoff"
@@ -196,9 +195,6 @@ type ADSC struct {
 
 	// Retrieved configurations can be stored using the common istio model interface.
 	Store model.ConfigStore
-
-	// Retrieved endpoints can be stored in the memory registry. This is used for CDS and EDS responses.
-	Registry *memory.ServiceDiscovery
 
 	cfg *ADSConfig
 
@@ -452,6 +448,7 @@ func (a *ADSC) reconnect() {
 
 func (a *ADSC) handleRecv() {
 	// We connected, so reset the backoff
+
 	if a.cfg.BackoffPolicy != nil {
 		a.cfg.BackoffPolicy.Reset()
 	}
@@ -1168,6 +1165,7 @@ func (a *ADSC) GetEndpoints() map[string]*endpoint.ClusterLoadAssignment {
 
 func (a *ADSC) handleMCP(groupVersionKind config.GroupVersionKind, resources []*anypb.Any) {
 	// Generic - fill up the store
+
 	if a.Store == nil {
 		return
 	}

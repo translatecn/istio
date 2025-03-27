@@ -34,10 +34,11 @@ func (m *MessageThreshold) String() string {
 
 // Type is a function declared in the pflag.Value interface
 func (m *MessageThreshold) Type() string {
+	// Set is a function declared in the pflag.Value interface
+
 	return "Level"
 }
 
-// Set is a function declared in the pflag.Value interface
 func (m *MessageThreshold) Set(s string) error {
 	levelMap := diag.GetUppercaseStringToLevelMap()
 	level, ok := levelMap[strings.ToUpper(s)]

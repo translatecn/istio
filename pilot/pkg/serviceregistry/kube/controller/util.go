@@ -27,7 +27,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 
-	"istio.io/api/annotation"
+	"istio.io/istio/istio.io/api/annotation"
 	"istio.io/istio/pilot/pkg/model"
 	"istio.io/istio/pkg/config"
 	"istio.io/istio/pkg/config/constants"
@@ -98,32 +98,6 @@ type serviceTargetPort struct {
 	explicitName bool
 }
 
-func findServiceTargetPort(servicePort *model.Port, k8sService *v1.Service) serviceTargetPort {
-	for _, p := range k8sService.Spec.Ports {
-		// TODO(@hzxuzhonghu): check protocol as well as port
-		if p.Name == servicePort.Name || p.Port == int32(servicePort.Port) {
-			if p.TargetPort.Type == intstr.Int && p.TargetPort.IntVal > 0 {
-				return serviceTargetPort{num: int(p.TargetPort.IntVal), name: p.Name, explicitName: false}
-			}
-			return serviceTargetPort{num: 0, name: p.TargetPort.StrVal, explicitName: true}
-		}
-	}
-	// should never happen
-	log.Debugf("did not find matching target port for %v on service %s", servicePort, k8sService.Name)
-	return serviceTargetPort{num: 0, name: "", explicitName: false}
-}
-
-func getPodServices(allServices []*v1.Service, pod *v1.Pod) []*v1.Service {
-	var services []*v1.Service
-	for _, service := range allServices {
-		if labels.Instance(service.Spec.Selector).Match(pod.Labels) {
-			services = append(services, service)
-		}
-	}
-
-	return services
-}
-
 func getNodeSelectorsForService(svc *v1.Service) labels.Instance {
 	if nodeSelector := svc.Annotations[annotation.TrafficNodeSelector.Name]; nodeSelector != "" {
 		var nodeSelectorKV map[string]string
@@ -165,11 +139,6 @@ func namespacedNameForService(svc *model.Service) types.NamespacedName {
 	}
 }
 
-// serviceClusterSetLocalHostname produces Kubernetes Multi-Cluster Services (MCS) ClusterSet FQDN for a k8s service
-func serviceClusterSetLocalHostname(nn types.NamespacedName) host.Name {
-	return host.Name(nn.Name + "." + nn.Namespace + "." + "svc" + "." + constants.DefaultClusterSetLocalDomain)
-}
-
 // serviceClusterSetLocalHostnameForKR calls serviceClusterSetLocalHostname with the name and namespace of the given kubernetes resource.
 func serviceClusterSetLocalHostnameForKR(obj metav1.Object) host.Name {
 	return serviceClusterSetLocalHostname(config.NamespacedName(obj))
@@ -181,4 +150,35 @@ func labelRequirement(key string, op selection.Operator, vals []string, opts ...
 		panic(fmt.Sprintf("failed creating requirements for Service: %v", err))
 	}
 	return out
+}
+
+// serviceClusterSetLocalHostname produces Kubernetes Multi-Cluster Services (MCS) ClusterSet FQDN for a k8s service
+func serviceClusterSetLocalHostname(nn types.NamespacedName) host.Name {
+	return host.Name(nn.Name + "." + nn.Namespace + "." + "svc" + "." + constants.DefaultClusterSetLocalDomain)
+}
+
+func getPodServices(allServices []*v1.Service, pod *v1.Pod) []*v1.Service {
+	var services []*v1.Service
+	for _, service := range allServices {
+		if labels.Instance(service.Spec.Selector).Match(pod.Labels) {
+			services = append(services, service)
+		}
+	}
+
+	return services
+}
+
+func findServiceTargetPort(servicePort *model.Port, k8sService *v1.Service) serviceTargetPort {
+	for _, p := range k8sService.Spec.Ports {
+		// TODO(@hzxuzhonghu): check protocol as well as port
+		if p.Name == servicePort.Name || p.Port == int32(servicePort.Port) {
+			if p.TargetPort.Type == intstr.Int && p.TargetPort.IntVal > 0 {
+				return serviceTargetPort{num: int(p.TargetPort.IntVal), name: p.Name, explicitName: false}
+			}
+			return serviceTargetPort{num: 0, name: p.TargetPort.StrVal, explicitName: true}
+		}
+	}
+	// should never happen
+	log.Debugf("did not find matching target port for %v on service %s", servicePort, k8sService.Name)
+	return serviceTargetPort{num: 0, name: "", explicitName: false}
 }

@@ -29,8 +29,8 @@ import (
 	"google.golang.org/protobuf/types/known/anypb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
 
-	meshconfig "istio.io/api/mesh/v1alpha1"
-	telemetrypb "istio.io/api/telemetry/v1alpha1"
+	meshconfig "istio.io/istio/istio.io/api/mesh/v1alpha1"
+	telemetrypb "istio.io/istio/istio.io/api/telemetry/v1alpha1"
 	"istio.io/istio/pilot/pkg/features"
 	"istio.io/istio/pilot/pkg/model"
 	"istio.io/istio/pilot/pkg/networking"
@@ -141,11 +141,6 @@ func configureTracingFromTelemetry(
 	reqIDExtension.UseRequestIDForTraceSampling = spec.UseRequestIDForTraceSampling
 	return reqIDExtension
 }
-
-// configureFromProviderConfigHandled contains the number of providers we handle below.
-// This is to ensure this stays in sync as new handlers are added
-// STOP. DO NOT UPDATE THIS WITHOUT UPDATING configureFromProviderConfig.
-const configureFromProviderConfigHandled = 14
 
 func configureFromProviderConfig(pushCtx *model.PushContext, proxy *model.Proxy,
 	providerCfg *meshconfig.MeshConfig_ExtensionProvider,
@@ -470,6 +465,7 @@ func buildHCMTracing(provider string, startChildSpan bool, maxTagLen uint32, any
 func dryRunPolicyTraceTag(name, key string) *tracing.CustomTag {
 	// The tag will not be populated when not used as there is no default value set for the tag.
 	// See https://www.envoyproxy.io/docs/envoy/v1.17.1/configuration/http/http_filters/rbac_filter#dynamic-metadata.
+
 	return &tracing.CustomTag{
 		Tag: name,
 		Type: &tracing.CustomTag_Metadata_{
@@ -584,6 +580,7 @@ func configureSampling(hcmTracing *hcm.HttpConnectionManager_Tracing, providerPe
 
 func proxyConfigSamplingValue(config *meshconfig.ProxyConfig) float64 {
 	// PILOT_TRACE_SAMPLING
+
 	sampling := features.TraceSampling
 
 	// Tracing from default_config

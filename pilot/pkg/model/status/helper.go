@@ -15,7 +15,7 @@
 package status
 
 import (
-	"istio.io/api/meta/v1alpha1"
+	"istio.io/istio/istio.io/api/meta/v1alpha1"
 	"istio.io/istio/pkg/config"
 	"istio.io/istio/pkg/slices"
 )
@@ -24,14 +24,6 @@ const (
 	StatusTrue  = "True"
 	StatusFalse = "False"
 )
-
-func GetConditionFromSpec(cfg config.Config, condition string) *v1alpha1.IstioCondition {
-	c, ok := cfg.Status.(*v1alpha1.IstioStatus)
-	if !ok {
-		return nil
-	}
-	return GetCondition(c.Conditions, condition)
-}
 
 func GetBoolConditionFromSpec(cfg config.Config, condition string, defaultValue bool) bool {
 	c, ok := cfg.Status.(*v1alpha1.IstioStatus)

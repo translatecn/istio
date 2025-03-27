@@ -86,6 +86,7 @@ func unmarshalListOrMap[T any](input json.RawMessage, i *[]T) error {
 // PrintBootstrapDump prints just the bootstrap config dump to the ConfigWriter stdout
 func (c *ConfigWriter) PrintBootstrapDump(outputFormat string) error {
 	// TODO
+
 	return nil
 }
 
@@ -125,12 +126,14 @@ func (c *ConfigWriter) PrintFullDump(outputFormat string) error {
 // PrintVersionSummary prints version information for Istio and Ztunnel from the config dump
 func (c *ConfigWriter) PrintVersionSummary() error {
 	// TODO
+
 	return nil
 }
 
 // PrintPodRootCAFromDynamicSecretDump prints just pod's root ca from dynamic secret config dump to the ConfigWriter stdout
 func (c *ConfigWriter) PrintPodRootCAFromDynamicSecretDump() (string, error) {
 	// TODO
+
 	return "", nil
 }
 

@@ -33,12 +33,12 @@ import (
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"istio.io/api/label"
+	"istio.io/istio/istio.io/api/label"
 	"istio.io/istio/istioctl/pkg/clioptions"
 	"istio.io/istio/istioctl/pkg/xds"
 	pilotxds "istio.io/istio/pilot/pkg/xds"
 	"istio.io/istio/pkg/kube"
-	istioversion "istio.io/istio/pkg/version"
+	istioversion "istio.io/istio/pkg/version_over"
 )
 
 const (
@@ -330,6 +330,7 @@ func MultiRequestAndProcessXds(all bool, dr *discovery.DiscoveryRequest, central
 	ns string, serviceAccount string, kubeClient kube.CLIClient, options Options,
 ) (map[string]*discovery.DiscoveryResponse, error) {
 	// If Central Istiod case, just call it
+
 	if ns == "" {
 		ns = istioNamespace
 	}

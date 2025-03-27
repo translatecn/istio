@@ -20,15 +20,6 @@ import (
 )
 
 var (
-	EnableAmbient = env.Register(
-		"PILOT_ENABLE_AMBIENT",
-		false,
-		"If enabled, ambient mode can be used. Individual flags configure fine grained enablement; this must be enabled for any ambient functionality.").Get()
-
-	EnableAmbientWaypoints = registerAmbient("PILOT_ENABLE_AMBIENT_WAYPOINTS",
-		true, false,
-		"If enabled, controllers required for ambient will run. This is required to run ambient mesh.")
-
 	EnableHBONESend = registerAmbient(
 		"PILOT_ENABLE_SENDING_HBONE",
 		true, false,
@@ -38,12 +29,6 @@ var (
 		"PILOT_ENABLE_SIDECAR_LISTENING_HBONE",
 		true, false,
 		"If enabled, HBONE support can be configured for proxies.")
-
-	EnableAmbientStatus = registerAmbient(
-		"AMBIENT_ENABLE_STATUS",
-		true, false,
-		"If enabled, status messages for ambient mode will be written to resources. "+
-			"Currently, this does not do leader election, so may be unsafe to enable with multiple replicas.")
 
 	// Not required for ambient, so disabled by default
 	PreferHBONESend = registerAmbient(
@@ -59,6 +44,9 @@ var (
 
 	EnableIngressWaypointRouting = registerAmbient("ENABLE_INGRESS_WAYPOINT_ROUTING", true, false,
 		"If true, Gateways will call service waypoints if the 'istio.io/ingress-use-waypoint' label set on the Service.")
+	EnableAmbientStatus    = registerAmbient("AMBIENT_ENABLE_STATUS", true, false, "如果启用，Ambient模式的状态消息将写入资源。目前，它不进行leader选举，因此使用多个副本启用可能不安全。")
+	EnableAmbient          = env.Register("PILOT_ENABLE_AMBIENT", false, "If enabled, ambient mode can be used. Individual flags configure fine grained enablement; this must be enabled for any ambient functionality.").Get()
+	EnableAmbientWaypoints = registerAmbient("PILOT_ENABLE_AMBIENT_WAYPOINTS", true, false, "If enabled, controllers required for ambient will run. This is required to run ambient mesh.")
 )
 
 // registerAmbient registers a variable that is allowed only if EnableAmbient is set

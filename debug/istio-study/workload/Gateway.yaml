@@ -1,0 +1,14 @@
+apiVersion: networking.istio.io/v1
+kind: Gateway
+metadata:
+  name: whoami-gw
+spec:
+  selector:
+    istio: ingressgateway
+  servers:
+    - port:
+        number: 801 # 共用端口，通过域名区分
+        name: http
+        protocol: HTTP
+      hosts:
+        - whoami.com

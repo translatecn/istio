@@ -32,9 +32,9 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/util/workqueue"
 
-	"istio.io/api/label"
-	networking "istio.io/api/networking/v1alpha3"
-	clientnetworking "istio.io/client-go/pkg/apis/networking/v1"
+	"istio.io/istio/istio.io/api/label"
+	networking "istio.io/istio/istio.io/api/networking/v1alpha3"
+	clientnetworking "istio.io/istio/istio.io/client-go/pkg/apis/networking/v1"
 	"istio.io/istio/pilot/pkg/keycertbundle"
 	"istio.io/istio/pkg/config/constants"
 	"istio.io/istio/pkg/config/labels"

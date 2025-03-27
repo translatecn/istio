@@ -92,7 +92,7 @@ spec:
             allowPrivilegeEscalation: false
             capabilities:
               drop:
-              - ALL
+                - ALL
             privileged: false
             readOnlyRootFilesystem: true
         {{- end }}
@@ -104,24 +104,24 @@ spec:
 {{- end }}
           env:
           {{- if not $gateway.runAsRoot }}
-          - name: ISTIO_META_UNPRIVILEGED_POD
-            value: "true"
+            - name: ISTIO_META_UNPRIVILEGED_POD
+              value: "true"
           {{- end }}
           {{- range $key, $val := $gateway.env }}
-          - name: {{ $key }}
-            value: {{ $val | quote }}
+            - name: {{ $key }}
+              value: {{ $val | quote }}
           {{- end }}
           volumeMounts:
           {{- range $gateway.secretVolumes }}
-          - name: {{ .name }}
-            mountPath: {{ .mountPath | quote }}
-            readOnly: true
+            - name: {{ .name }}
+              mountPath: {{ .mountPath | quote }}
+              readOnly: true
           {{- end }}
           {{- range $gateway.configVolumes }}
           {{- if .mountPath }}
-          - name: {{ .name }}
-            mountPath: {{ .mountPath | quote }}
-            readOnly: true
+            - name: {{ .name }}
+              mountPath: {{ .mountPath | quote }}
+              readOnly: true
           {{- end }}
           {{- end }}
 {{- if $gateway.additionalContainers }}
@@ -129,16 +129,16 @@ spec:
 {{- end }}
       volumes:
       {{- range $gateway.secretVolumes }}
-      - name: {{ .name }}
-        secret:
-          secretName: {{ .secretName | quote }}
-          optional: true
+        - name: {{ .name }}
+          secret:
+            secretName: {{ .secretName | quote }}
+            optional: true
       {{- end }}
       {{- range $gateway.configVolumes }}
-      - name: {{ .name }}
-        configMap:
-          name: {{ .configMapName | quote }}
-          optional: true
+        - name: {{ .name }}
+          configMap:
+            name: {{ .configMapName | quote }}
+            optional: true
       {{- end }}
       affinity:
 {{ include "nodeaffinity" (dict "global" .Values.global "nodeSelector" $gateway.nodeSelector) | trim | indent 8 }}

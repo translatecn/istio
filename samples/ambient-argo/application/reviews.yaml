@@ -10,8 +10,8 @@ metadata:
     service: reviews
 spec:
   ports:
-  - port: 9080
-    name: http
+    - port: 9080
+      name: http
   selector:
     app: reviews
 ---
@@ -43,24 +43,24 @@ spec:
     spec:
       serviceAccountName: bookinfo-reviews
       containers:
-      - name: reviews
-        image: docker.io/istio/examples-bookinfo-reviews-v1:1.18.0
-        imagePullPolicy: IfNotPresent
-        env:
-        - name: LOG_DIR
-          value: "/tmp/logs"
-        ports:
-        - containerPort: 9080
-        volumeMounts:
-        - name: tmp
-          mountPath: /tmp
-        - name: wlp-output
-          mountPath: /opt/ibm/wlp/output
+        - name: reviews
+          image: registry.cn-hangzhou.aliyuncs.com/acejilam/examples-bookinfo-reviews-v1:1.18.0
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: LOG_DIR
+              value: "/tmp/logs"
+          ports:
+            - containerPort: 9080
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+            - name: wlp-output
+              mountPath: /opt/ibm/wlp/output
       volumes:
-      - name: wlp-output
-        emptyDir: {}
-      - name: tmp
-        emptyDir: {}
+        - name: wlp-output
+          emptyDir: { }
+        - name: tmp
+          emptyDir: { }
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -83,24 +83,24 @@ spec:
     spec:
       serviceAccountName: bookinfo-reviews
       containers:
-      - name: reviews
-        image: docker.io/istio/examples-bookinfo-reviews-v2:1.18.0
-        imagePullPolicy: IfNotPresent
-        env:
-        - name: LOG_DIR
-          value: "/tmp/logs"
-        ports:
-        - containerPort: 9080
-        volumeMounts:
-        - name: tmp
-          mountPath: /tmp
-        - name: wlp-output
-          mountPath: /opt/ibm/wlp/output
+        - name: reviews
+          image: registry.cn-hangzhou.aliyuncs.com/acejilam/examples-bookinfo-reviews-v2:1.18.0
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: LOG_DIR
+              value: "/tmp/logs"
+          ports:
+            - containerPort: 9080
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+            - name: wlp-output
+              mountPath: /opt/ibm/wlp/output
       volumes:
-      - name: wlp-output
-        emptyDir: {}
-      - name: tmp
-        emptyDir: {}
+        - name: wlp-output
+          emptyDir: { }
+        - name: tmp
+          emptyDir: { }
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -123,21 +123,21 @@ spec:
     spec:
       serviceAccountName: bookinfo-reviews
       containers:
-      - name: reviews
-        image: docker.io/istio/examples-bookinfo-reviews-v3:1.18.0
-        imagePullPolicy: IfNotPresent
-        env:
-        - name: LOG_DIR
-          value: "/tmp/logs"
-        ports:
-        - containerPort: 9080
-        volumeMounts:
-        - name: tmp
-          mountPath: /tmp
-        - name: wlp-output
-          mountPath: /opt/ibm/wlp/output
+        - name: reviews
+          image: registry.cn-hangzhou.aliyuncs.com/acejilam/examples-bookinfo-reviews-v3:1.18.0
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: LOG_DIR
+              value: "/tmp/logs"
+          ports:
+            - containerPort: 9080
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+            - name: wlp-output
+              mountPath: /opt/ibm/wlp/output
       volumes:
-      - name: wlp-output
-        emptyDir: {}
-      - name: tmp
-        emptyDir: {}
+        - name: wlp-output
+          emptyDir: { }
+        - name: tmp
+          emptyDir: { }

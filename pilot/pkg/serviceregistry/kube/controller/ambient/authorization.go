@@ -20,8 +20,8 @@ import (
 	"strconv"
 	"strings"
 
-	"istio.io/api/security/v1beta1"
-	securityclient "istio.io/client-go/pkg/apis/security/v1"
+	"istio.io/istio/istio.io/api/security/v1beta1"
+	securityclient "istio.io/istio/istio.io/client-go/pkg/apis/security/v1"
 	"istio.io/istio/pilot/pkg/model"
 	"istio.io/istio/pkg/config/schema/kind"
 	"istio.io/istio/pkg/log"
@@ -37,6 +37,7 @@ const (
 
 func (a *index) Policies(requested sets.Set[model.ConfigKey]) []model.WorkloadAuthorization {
 	// TODO: use many Gets instead of List?
+
 	cfgs := a.authorizationPolicies.List()
 	l := len(cfgs)
 	if len(requested) > 0 {

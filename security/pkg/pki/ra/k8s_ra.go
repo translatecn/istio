@@ -24,7 +24,7 @@ import (
 	cert "k8s.io/api/certificates/v1"
 	clientset "k8s.io/client-go/kubernetes"
 
-	meshconfig "istio.io/api/mesh/v1alpha1"
+	meshconfig "istio.io/istio/istio.io/api/mesh/v1alpha1"
 	"istio.io/istio/pkg/log"
 	"istio.io/istio/security/pkg/k8s/chiron"
 	"istio.io/istio/security/pkg/pki/ca"
@@ -44,22 +44,6 @@ type KubernetesRA struct {
 }
 
 var pkiRaLog = log.RegisterScope("pkira", "Istiod RA log")
-
-// NewKubernetesRA : Create a RA that interfaces with K8S CSR CA
-func NewKubernetesRA(raOpts *IstioRAOptions) (*KubernetesRA, error) {
-	keyCertBundle, err := util.NewKeyCertBundleWithRootCertFromFile(raOpts.CaCertFile)
-	if err != nil {
-		return nil, raerror.NewError(raerror.CAInitFail, fmt.Errorf("error processing Certificate Bundle for Kubernetes RA"))
-	}
-	istioRA := &KubernetesRA{
-		csrInterface:                 raOpts.K8sClient,
-		raOpts:                       raOpts,
-		keyCertBundle:                keyCertBundle,
-		certSignerDomain:             raOpts.CertSignerDomain,
-		caCertificatesFromMeshConfig: make(map[string]string),
-	}
-	return istioRA, nil
-}
 
 func (r *KubernetesRA) kubernetesSign(csrPEM []byte, caCertFile string, certSigner string,
 	requestedLifetime time.Duration,
@@ -191,4 +175,20 @@ func (r *KubernetesRA) GetRootCertFromMeshConfig(signerName string) ([]byte, err
 		}
 	}
 	return nil, fmt.Errorf("failed to find root cert for signer: %v in mesh config", signerName)
+}
+
+// NewKubernetesRA : Create a RA that interfaces with K8S CSR CA
+func NewKubernetesRA(raOpts *IstioRAOptions) (*KubernetesRA, error) {
+	keyCertBundle, err := util.NewKeyCertBundleWithRootCertFromFile(raOpts.CaCertFile)
+	if err != nil {
+		return nil, raerror.NewError(raerror.CAInitFail, fmt.Errorf("error processing Certificate Bundle for Kubernetes RA"))
+	}
+	istioRA := &KubernetesRA{
+		csrInterface:                 raOpts.K8sClient,
+		raOpts:                       raOpts,
+		keyCertBundle:                keyCertBundle,
+		certSignerDomain:             raOpts.CertSignerDomain,
+		caCertificatesFromMeshConfig: make(map[string]string),
+	}
+	return istioRA, nil
 }

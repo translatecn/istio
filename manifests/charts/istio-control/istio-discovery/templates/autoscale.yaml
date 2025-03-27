@@ -22,19 +22,19 @@ spec:
     kind: Deployment
     name: istiod{{- if not (eq .Values.revision "") }}-{{ .Values.revision }}{{- end }}
   metrics:
-  - type: Resource
-    resource:
-      name: cpu
-      target:
-        type: Utilization
-        averageUtilization: {{ .Values.cpu.targetAverageUtilization }}
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.cpu.targetAverageUtilization }}
   {{- if .Values.memory.targetAverageUtilization }}
-  - type: Resource
-    resource:
-      name: memory
-      target:
-        type: Utilization
-        averageUtilization: {{ .Values.memory.targetAverageUtilization }}
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.memory.targetAverageUtilization }}
   {{- end }}
   {{- if .Values.autoscaleBehavior }}
   behavior: {{ toYaml .Values.autoscaleBehavior | nindent 4 }}

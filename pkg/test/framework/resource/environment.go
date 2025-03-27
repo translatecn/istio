@@ -14,7 +14,9 @@
 
 package resource
 
-import "istio.io/istio/pkg/test/framework/components/cluster"
+import (
+	"istio.io/istio/pkg/test/framework/components/cluster"
+)
 
 // EnvironmentFactory creates an Environment.
 type EnvironmentFactory func(ctx Context) (Environment, error)
@@ -23,10 +25,11 @@ var _ EnvironmentFactory = NilEnvironmentFactory
 
 // NilEnvironmentFactory is an EnvironmentFactory that returns nil.
 func NilEnvironmentFactory(Context) (Environment, error) {
+	// Environment is the ambient environment that the test runs in.
+
 	return nil, nil
 }
 
-// Environment is the ambient environment that the test runs in.
 type Environment interface {
 	Resource
 

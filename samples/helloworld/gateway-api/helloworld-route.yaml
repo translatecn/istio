@@ -4,16 +4,16 @@ metadata:
   name: helloworld
 spec:
   parentRefs:
-  - name: helloworld-gateway
+    - name: helloworld-gateway
   rules:
-  - matches:
-    - path:
-        type: Exact
-        value: /hello
-    backendRefs:
-    - name: helloworld-v1
-      port: 5000
-      weight: 90
-    - name: helloworld-v2
-      port: 5000
-      weight: 10
+    - matches:
+        - path:
+            type: Exact
+            value: /hello
+      backendRefs:
+        - name: helloworld-v1
+          port: 5000
+          weight: 90
+        - name: helloworld-v2
+          port: 5000
+          weight: 10

@@ -44,9 +44,6 @@ var rotateToken = true
 
 // SetTokenRotation enable/disable periodic token rotation job.
 // This is only for testing purpose, not thread safe.
-func SetTokenRotation(enable bool) {
-	rotateToken = enable
-}
 
 // GCEPlugin is the plugin object.
 type GCEPlugin struct {
@@ -88,6 +85,7 @@ func (p *GCEPlugin) Stop() {
 
 func (p *GCEPlugin) startTokenRotationJob() {
 	// Wake up once in a while and refresh GCE VM credential.
+
 	p.rotationTicker = time.NewTicker(rotationInterval)
 	for {
 		select {

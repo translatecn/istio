@@ -18,7 +18,6 @@ import (
 	"istio.io/istio/pkg/test"
 	"istio.io/istio/pkg/test/framework/components/echo/config/param"
 	"istio.io/istio/pkg/test/framework/components/namespace"
-	"istio.io/istio/pkg/test/util/file"
 	"istio.io/istio/pkg/test/util/tmpl"
 	"istio.io/istio/pkg/test/util/yml"
 )
@@ -77,13 +76,6 @@ func YAML(text string) Source {
 }
 
 // File returns a Source of YAML text stored in files.
-func File(filePath string) Source {
-	return sourceImpl{
-		read: func() (string, error) {
-			return file.AsString(filePath)
-		},
-	}
-}
 
 type sourceImpl struct {
 	read   func() (string, error)
@@ -122,6 +114,7 @@ func (s sourceImpl) MustTemplate() *param.Template {
 
 func (s sourceImpl) YAML() (string, error) {
 	// If params were specified, process the yaml as a template.
+
 	if s.params != nil {
 		t, err := s.Template()
 		if err != nil {

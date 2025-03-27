@@ -17,7 +17,7 @@ package model
 import (
 	"k8s.io/apimachinery/pkg/types"
 
-	authpb "istio.io/api/security/v1beta1"
+	authpb "istio.io/istio/istio.io/api/security/v1beta1"
 	"istio.io/istio/pkg/config/schema/gvk"
 )
 
@@ -48,7 +48,7 @@ func GetAuthorizationPolicies(env *Environment) *AuthorizationPolicies {
 		RootNamespace:       env.Mesh().GetRootNamespace(),
 	}
 
-	policies := env.List(gvk.AuthorizationPolicy, NamespaceAll)
+	policies := env.ConfigStore.List(gvk.AuthorizationPolicy, NamespaceAll)
 	sortConfigByCreationTime(policies)
 
 	policyCount := make(map[string]int)

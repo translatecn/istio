@@ -16,7 +16,6 @@ package log
 
 import (
 	goflag "flag"
-	"fmt"
 	"sync"
 
 	"github.com/spf13/pflag"
@@ -71,6 +70,3 @@ func klogVerboseFlag() *goflag.Flag {
 
 // EnableKlogWithVerbosity sets the klog verbosity directly.
 // When using in an application, EnableKlogWithCobra is preferred to expose a --vklog flag.
-func EnableKlogWithVerbosity(v int) {
-	_ = klogFlagSet.Set("v", fmt.Sprint(v))
-}

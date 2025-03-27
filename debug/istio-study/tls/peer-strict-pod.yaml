@@ -1,0 +1,12 @@
+#peer-strict-pod.yaml
+apiVersion: security.istio.io/v1beta1
+kind: PeerAuthentication
+metadata:
+  name: "httpbin"
+  namespace: "bar"
+spec:
+  selector:
+    matchLabels:
+      app: httpbin # 匹配 httpbin 应用的标签
+  mtls:
+    mode: STRICT

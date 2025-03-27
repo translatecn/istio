@@ -25,8 +25,8 @@ import (
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
 
-	meshconfig "istio.io/api/mesh/v1alpha1"
-	networking "istio.io/api/networking/v1alpha3"
+	meshconfig "istio.io/istio/istio.io/api/mesh/v1alpha1"
+	networking "istio.io/istio/istio.io/api/networking/v1alpha3"
 	"istio.io/istio/pilot/pkg/features"
 	"istio.io/istio/pilot/pkg/model"
 	"istio.io/istio/pilot/pkg/networking/core/loadbalancer"
@@ -195,6 +195,7 @@ func shouldH2Upgrade(clusterName string, port *model.Port, mesh *meshconfig.Mesh
 ) bool {
 	// TODO (mjog)
 	// Upgrade if tls.GetMode() == networking.TLSSettings_ISTIO_MUTUAL
+
 	if connectionPool != nil && connectionPool.Http != nil {
 		override := connectionPool.Http.H2UpgradePolicy
 		// If useClientProtocol is set, do not upgrade
@@ -237,6 +238,7 @@ func applyLoadBalancer(c *cluster.Cluster, lb *networking.LoadBalancerSettings, 
 ) {
 	// Disable panic threshold when SendUnhealthyEndpoints is enabled as enabling it "may" send traffic to unready
 	// end points when load balancer is in panic mode.
+
 	if features.SendUnhealthyEndpoints.Load() {
 		c.CommonLbConfig.HealthyPanicThreshold = &xdstype.Percent{Value: 0}
 	}
@@ -280,6 +282,7 @@ func applyLocalityLoadBalancer(locality *core.Locality, proxyLabels map[string]s
 	localityLB *networking.LocalityLoadBalancerSetting,
 ) {
 	// Failover should only be applied with outlier detection, or traffic will never failover.
+
 	enableFailover := c.OutlierDetection != nil
 	// set locality weighted lb config when locality lb is enabled, otherwise it will influence the result of LBPolicy like `least request`
 	if features.EnableLocalityWeightedLbConfig ||

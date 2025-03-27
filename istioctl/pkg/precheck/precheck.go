@@ -29,8 +29,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/yaml"
 
-	"istio.io/api/label"
-	networking "istio.io/api/networking/v1alpha3"
+	"istio.io/istio/istio.io/api/label"
+	networking "istio.io/istio/istio.io/api/networking/v1alpha3"
 	"istio.io/istio/istioctl/pkg/cli"
 	"istio.io/istio/istioctl/pkg/clioptions"
 	"istio.io/istio/istioctl/pkg/install/k8sversion"
@@ -168,6 +168,7 @@ func checkFromVersion(ctx cli.Context, revision, version string) (diag.Messages,
 func checkTracing(cli kube.CLIClient, messages *diag.Messages) error {
 	// In 1.22, we remove the default tracing config which points to zipkin.istio-system
 	// This has no effect for users, unless they have this service.
+
 	svc, err := cli.Kube().CoreV1().Services("istio-system").Get(context.Background(), "zipkin", metav1.GetOptions{})
 	if err != nil && !kerrors.IsNotFound(err) {
 		return err

@@ -25,8 +25,8 @@ metadata:
 spec:
   type: NodePort
   ports:
-  - port: 9080
-    name: http
+    - port: 9080
+      name: http
   selector:
     app: productpage
 ---

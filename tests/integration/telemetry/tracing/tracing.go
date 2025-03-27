@@ -47,10 +47,9 @@ const (
 )
 
 func GetIstioInstance() *istio.Instance {
-	return &ist
+	// GetAppNamespace gets echo app namespace instance.	return &ist
 }
 
-// GetAppNamespace gets echo app namespace instance.
 func GetAppNamespace() namespace.Instance {
 	return appNsInst
 }

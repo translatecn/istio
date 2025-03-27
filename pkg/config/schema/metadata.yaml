@@ -176,39 +176,39 @@ resources:
     proto: "k8s.io.api.coordination.v1.LeaseSpec"
     protoPackage: "k8s.io/api/coordination/v1"
 
-#  - kind: "HorizontalPodAutoscaler"
-#    plural: "horizontalpodautoscalers"
-#    group: "autoscaling"
-#    version: "v2"
-#    builtin: true
-#    proto: "k8s.io.api.autoscaling.v2.HorizontalPodAutoscalerSpec"
-#    protoPackage: "k8s.io/api/autoscaling/v2"
-#    statusProto: "k8s.io.api.autoscaling.v2.HorizontalPodAutoscalerStatus"
-#    statusProtoPackage: "k8s.io/api/autoscaling/v2"
-#
-#  - kind: "PodDisruptionBudget"
-#    plural: "poddisruptionbudgets"
-#    group: "policy"
-#    version: "v1"
-#    builtin: true
-#    proto: "k8s.io.api.policy.v1.PodDisruptionBudgetSpec"
-#    protoPackage: "k8s.io/api/policy/v1"
-#    statusProto: "k8s.io.api.policy.v1.PodDisruptionBudgetStatus"
-#    statusProtoPackage: "k8s.io/api/policy/v1"
-#
-#  - kind: "ClusterRole"
-#    plural: "clusterroles"
-#    group: "rbac.authorization.k8s.io"
-#    version: "v1"
-#    builtin: true
+  #  - kind: "HorizontalPodAutoscaler"
+  #    plural: "horizontalpodautoscalers"
+  #    group: "autoscaling"
+  #    version: "v2"
+  #    builtin: true
+  #    proto: "k8s.io.api.autoscaling.v2.HorizontalPodAutoscalerSpec"
+  #    protoPackage: "k8s.io/api/autoscaling/v2"
+  #    statusProto: "k8s.io.api.autoscaling.v2.HorizontalPodAutoscalerStatus"
+  #    statusProtoPackage: "k8s.io/api/autoscaling/v2"
+  #
+  #  - kind: "PodDisruptionBudget"
+  #    plural: "poddisruptionbudgets"
+  #    group: "policy"
+  #    version: "v1"
+  #    builtin: true
+  #    proto: "k8s.io.api.policy.v1.PodDisruptionBudgetSpec"
+  #    protoPackage: "k8s.io/api/policy/v1"
+  #    statusProto: "k8s.io.api.policy.v1.PodDisruptionBudgetStatus"
+  #    statusProtoPackage: "k8s.io/api/policy/v1"
+  #
+  #  - kind: "ClusterRole"
+  #    plural: "clusterroles"
+  #    group: "rbac.authorization.k8s.io"
+  #    version: "v1"
+  #    builtin: true
 
   - kind: "GatewayClass"
     plural: "gatewayclasses"
     group: "gateway.networking.k8s.io"
     version: "v1beta1"
     versionAliases:
-    - "v1alpha2"
-    - "v1"
+      - "v1alpha2"
+      - "v1"
     clusterScoped: true
     protoPackage: "sigs.k8s.io/gateway-api/apis/v1beta1"
     proto: "k8s.io.gateway_api.api.v1alpha1.GatewayClassSpec"
@@ -221,8 +221,8 @@ resources:
     group: "gateway.networking.k8s.io"
     version: "v1beta1"
     versionAliases:
-    - "v1alpha2"
-    - "v1"
+      - "v1alpha2"
+      - "v1"
     protoPackage: "sigs.k8s.io/gateway-api/apis/v1beta1"
     proto: "k8s.io.gateway_api.api.v1alpha1.GatewaySpec"
     validate: "validation.EmptyValidate"
@@ -234,8 +234,8 @@ resources:
     group: "gateway.networking.k8s.io"
     version: "v1beta1"
     versionAliases:
-    - "v1alpha2"
-    - "v1"
+      - "v1alpha2"
+      - "v1"
     protoPackage: "sigs.k8s.io/gateway-api/apis/v1beta1"
     proto: "k8s.io.gateway_api.api.v1alpha1.HTTPRouteSpec"
     statusProto: "k8s.io.gateway_api.api.v1alpha1.HTTPRouteStatus"
@@ -246,7 +246,7 @@ resources:
     group: "gateway.networking.k8s.io"
     version: "v1"
     versionAliases:
-    - "v1alpha2"
+      - "v1alpha2"
     protoPackage: "sigs.k8s.io/gateway-api/apis/v1"
     proto: "k8s.io.gateway_api.api.v1alpha1.GRPCRouteSpec"
     statusProto: "k8s.io.gateway_api.api.v1alpha1.GRPCRouteStatus"
@@ -284,7 +284,7 @@ resources:
     group: "gateway.networking.k8s.io"
     version: "v1beta1"
     versionAliases:
-    - "v1alpha2"
+      - "v1alpha2"
     protoPackage: "sigs.k8s.io/gateway-api/apis/v1beta1"
     proto: "k8s.io.gateway_api.api.v1alpha1.ReferenceGrantSpec"
 
@@ -434,7 +434,7 @@ resources:
     group: "security.istio.io"
     version: "v1"
     versionAliases:
-    - "v1beta1"
+      - "v1beta1"
     proto: "istio.security.v1beta1.PeerAuthentication"
     protoPackage: "istio.io/api/security/v1beta1"
     statusProto: "istio.meta.v1alpha1.IstioStatus"
@@ -444,8 +444,8 @@ resources:
     plural: "telemetries"
     group: "telemetry.istio.io"
     version: "v1"
-    versionAliases: 
-    - "v1alpha1"
+    versionAliases:
+      - "v1alpha1"
     proto: "istio.telemetry.v1alpha1.Telemetry"
     protoPackage: "istio.io/api/telemetry/v1alpha1"
     statusProto: "istio.meta.v1alpha1.IstioStatus"

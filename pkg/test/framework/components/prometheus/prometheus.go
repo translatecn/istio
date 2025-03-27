@@ -18,7 +18,6 @@ import (
 	v1 "github.com/prometheus/client_golang/api/prometheus/v1"
 	prom "github.com/prometheus/common/model"
 
-	"istio.io/istio/pkg/test"
 	"istio.io/istio/pkg/test/framework/components/cluster"
 	"istio.io/istio/pkg/test/framework/resource"
 )
@@ -51,12 +50,3 @@ func New(ctx resource.Context, c Config) (i Instance, err error) {
 }
 
 // NewOrFail returns a new Prometheus instance or fails test.
-func NewOrFail(t test.Failer, ctx resource.Context, c Config) Instance {
-	t.Helper()
-	i, err := New(ctx, c)
-	if err != nil {
-		t.Fatalf("prometheus.NewOrFail: %v", err)
-	}
-
-	return i
-}

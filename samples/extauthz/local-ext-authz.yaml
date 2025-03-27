@@ -21,13 +21,13 @@ metadata:
   name: httpbin-ext-authz-http
 spec:
   hosts:
-  - "ext-authz-http.local"
+    - "ext-authz-http.local"
   endpoints:
-  - address: "127.0.0.1"
+    - address: "127.0.0.1"
   ports:
-  - name: http
-    number: 8000
-    protocol: HTTP
+    - name: http
+      number: 8000
+      protocol: HTTP
   resolution: STATIC
 ---
 # Define the service entry for the local ext-authz service on port 9000.
@@ -37,13 +37,13 @@ metadata:
   name: httpbin-ext-authz-grpc
 spec:
   hosts:
-  - "ext-authz-grpc.local"
+    - "ext-authz-grpc.local"
   endpoints:
-  - address: "127.0.0.1"
+    - address: "127.0.0.1"
   ports:
-  - name: grpc
-    number: 9000
-    protocol: GRPC
+    - name: grpc
+      number: 9000
+      protocol: GRPC
   resolution: STATIC
 ---
 # Deploy the ext-authz server locally with the application container in the same pod.
@@ -65,29 +65,29 @@ spec:
     spec:
       serviceAccountName: httpbin
       containers:
-      - image: docker.io/mccutchen/go-httpbin:v2.15.0
-        imagePullPolicy: IfNotPresent
-        name: httpbin
-        # Same as found in Dockerfile's CMD but using an unprivileged port
-        command:
-        - gunicorn
-        - -b
-        - 0.0.0.0:8080
-        - httpbin:app
-        - -k
-        - gevent
-        env:
-        # Tells pipenv to use a writable directory instead of $HOME
-        - name: WORKON_HOME
-          value: /tmp
-        ports:
-        - containerPort: 8080
-      - image: gcr.io/istio-testing/ext-authz:latest
-        imagePullPolicy: IfNotPresent
-        name: ext-authz
-        ports:
-        - containerPort: 8000
-        - containerPort: 9000
+        - image: registry.cn-hangzhou.aliyuncs.com/acejilam/go-httpbin:v2.15.0
+          imagePullPolicy: IfNotPresent
+          name: httpbin
+          # Same as found in Dockerfile's CMD but using an unprivileged port
+          command:
+            - gunicorn
+            - -b
+            - 0.0.0.0:8080
+            - httpbin:app
+            - -k
+            - gevent
+          env:
+            # Tells pipenv to use a writable directory instead of $HOME
+            - name: WORKON_HOME
+              value: /tmp
+          ports:
+            - containerPort: 8080
+        - image: gcr.io/istio-testing/ext-authz:latest
+          imagePullPolicy: IfNotPresent
+          name: ext-authz
+          ports:
+            - containerPort: 8000
+            - containerPort: 9000
 ---
 apiVersion: v1
 kind: Service
@@ -98,9 +98,9 @@ metadata:
     service: httpbin
 spec:
   ports:
-  - name: http
-    port: 8000
-    targetPort: 8080
+    - name: http
+      port: 8000
+      targetPort: 8080
   selector:
     app: httpbin
 ---

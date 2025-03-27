@@ -17,7 +17,6 @@ package structpath
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"reflect"
 	"regexp"
@@ -50,23 +49,6 @@ type constraint func() error
 // converts proto.Any and proto.Struct to the serialized JSON forms which can then be evaluated
 // over. The downside is the loss of type fidelity for numeric types as JSON can only represent
 // floats.
-func ForProto(proto proto.Message) *Instance {
-	if proto == nil {
-		return newErrorInstance(errors.New("expected non-nil proto"))
-	}
-
-	parsed, err := protoToParsedJSON(proto)
-	if err != nil {
-		return newErrorInstance(err)
-	}
-
-	i := &Instance{
-		isJSON:    true,
-		structure: parsed,
-	}
-	i.structure = parsed
-	return i
-}
 
 func newErrorInstance(err error) *Instance {
 	return &Instance{
@@ -77,6 +59,7 @@ func newErrorInstance(err error) *Instance {
 
 func protoToParsedJSON(message proto.Message) (any, error) {
 	// Convert proto to json and then parse into struct
+
 	jsonText, err := protomarshal.MarshalIndent(message, "  ")
 	if err != nil {
 		return nil, fmt.Errorf("failed to convert proto to JSON: %v", err)
@@ -249,6 +232,7 @@ func (i *Instance) NotExists(path string, args ...any) *Instance {
 // check is performed.
 func (i *Instance) Check() error {
 	// After the check completes, clear out the constraints.
+
 	defer func() {
 		i.constraints = i.constraints[:0]
 	}()
@@ -312,6 +296,7 @@ func (i *Instance) fixPath(path string) string {
 	// jsonpath doesn't handle numeric comparisons in a tolerant way. All json numbers are floats
 	// and filter expressions on the form {.x[?(@.some.value==123]} won't work but
 	// {.x[?(@.some.value==123.0]} will.
+
 	result := path
 	if i.isJSON {
 		template := "$1$2.0)"

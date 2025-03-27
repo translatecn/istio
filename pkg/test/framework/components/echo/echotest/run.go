@@ -20,7 +20,7 @@ import (
 
 	"k8s.io/apimachinery/pkg/types"
 
-	"istio.io/api/label"
+	"istio.io/istio/istio.io/api/label"
 	"istio.io/istio/pkg/slices"
 	"istio.io/istio/pkg/test/framework"
 	"istio.io/istio/pkg/test/framework/components/cluster"
@@ -166,6 +166,7 @@ func (gi gatewayInstance) ServiceName() types.NamespacedName {
 
 func (t *T) RunViaGatewayIngress(gatewayClass string, testFn ingressTest) {
 	// Build and apply any completed configuration that does not require to/from params.
+
 	t.cfg.BuildCompleteSources().Apply()
 	istioInstance := istio.GetOrFail(t.rootCtx)
 	t.toEachDeployment(t.rootCtx, func(ctx framework.TestContext, dstInstances echo.Instances) {
@@ -201,6 +202,7 @@ func (t *T) RunViaGatewayIngress(gatewayClass string, testFn ingressTest) {
 
 func (t *T) RunViaIngress(testFn ingressTest) {
 	// Build and apply any completed configuration that does not require to/from params.
+
 	t.cfg.BuildCompleteSources().Apply()
 
 	istioInstance := istio.GetOrFail(t.rootCtx)

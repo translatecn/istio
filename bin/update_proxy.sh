@@ -22,7 +22,7 @@ set -u
 # Print commands
 set -x
 
-SCRIPTPATH="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+SCRIPTPATH="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOTDIR=$(dirname "${SCRIPTPATH}")
 cd "${ROOTDIR}"
 
@@ -36,15 +36,15 @@ SLEEP_TIME=60
 
 printf "Verifying %s is available\n" "$ISTIO_ENVOY_RELEASE_URL"
 until curl --output /dev/null --silent --head --fail "$ISTIO_ENVOY_RELEASE_URL"; do
-    printf '.'
-    sleep $SLEEP_TIME
+	printf '.'
+	sleep $SLEEP_TIME
 done
 printf '\n'
 
 printf "Verifying %s is available\n" "$ISTIO_ENVOY_ARM_RELEASE_URL"
 until curl --output /dev/null --silent --head --fail "$ISTIO_ENVOY_ARM_RELEASE_URL"; do
-    printf '.'
-    sleep $SLEEP_TIME
+	printf '.'
+	sleep $SLEEP_TIME
 done
 printf '\n'
 

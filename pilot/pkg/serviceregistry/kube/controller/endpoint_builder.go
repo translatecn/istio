@@ -17,7 +17,7 @@ package controller
 import (
 	v1 "k8s.io/api/core/v1"
 
-	"istio.io/api/label"
+	"istio.io/istio/istio.io/api/label"
 	"istio.io/istio/pilot/pkg/model"
 	"istio.io/istio/pilot/pkg/networking/util"
 	"istio.io/istio/pilot/pkg/serviceregistry/kube"
@@ -148,6 +148,7 @@ func (b *EndpointBuilder) buildIstioEndpoint(
 // return the mesh network for the endpoint IP. Empty string if not found.
 func (b *EndpointBuilder) endpointNetwork(endpointIP string) network.ID {
 	// If we're building the endpoint based on proxy meta, prefer the injected ISTIO_META_NETWORK value.
+
 	if b.metaNetwork != "" {
 		return b.metaNetwork
 	}

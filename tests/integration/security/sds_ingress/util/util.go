@@ -30,6 +30,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/yaml"
 
+	"istio.io/istio/debug/functrace"
 	"istio.io/istio/pkg/config/protocol"
 	"istio.io/istio/pkg/http/headers"
 	"istio.io/istio/pkg/test/framework"
@@ -111,6 +112,7 @@ var (
 // IngressKubeSecretYAML will generate a credential for a gateway
 func IngressKubeSecretYAML(name, namespace string, ingressType CallType, ingressCred IngressCredential) string {
 	// Create Kubernetes secret for ingress gateway
+
 	secret := createSecret(ingressType, name, namespace, ingressCred, true)
 	by, err := yaml.Marshal(secret)
 	if err != nil {
@@ -125,9 +127,11 @@ func IngressKubeSecretYAML(name, namespace string, ingressType CallType, ingress
 func CreateIngressKubeSecret(t framework.TestContext, credName string,
 	ingressType CallType, ingressCred IngressCredential, isCompoundAndNotGeneric bool, clusters ...cluster.Cluster,
 ) {
-	t.Helper()
+	defer functrace.
 
-	// Get namespace for ingress gateway pod.
+		// Get namespace for ingress gateway pod.	t.Helper()
+		Trace()()
+
 	istioCfg := istio.DefaultConfigOrFail(t, t)
 	systemNS := namespace.ClaimOrFail(t, istioCfg.SystemNamespace)
 	CreateIngressKubeSecretInNamespace(t, credName, ingressType, ingressCred, isCompoundAndNotGeneric, systemNS.Name(), clusters...)
@@ -182,6 +186,7 @@ func CreateIngressKubeSecretInNamespace(t framework.TestContext, credName string
 // nolint: interfacer
 func deleteKubeSecret(t framework.TestContext, credName string) {
 	// Get namespace for ingress gateway pod.
+
 	istioCfg := istio.DefaultConfigOrFail(t, t)
 	systemNS := namespace.ClaimOrFail(t, istioCfg.SystemNamespace)
 
@@ -484,7 +489,9 @@ func SetupConfig(ctx framework.TestContext, ns namespace.Instance, config ...Tes
 // RunTestMultiMtlsGateways deploys multiple mTLS gateways with SDS enabled, and creates kubernetes secret that stores
 // private key, server certificate and CA certificate for each mTLS gateway. Verifies that all gateways are able to terminate
 // mTLS connections successfully.
-func RunTestMultiMtlsGateways(ctx framework.TestContext, inst istio.Instance, ns namespace.Getter) { // nolint:interfacer
+func RunTestMultiMtlsGateways(ctx framework.TestContext, inst istio.Instance, ns namespace.Getter) {
+	// nolint:interfacer
+
 	var credNames []string
 	var tests []TestConfig
 	echotest.New(ctx, A).
@@ -532,7 +539,9 @@ func RunTestMultiMtlsGateways(ctx framework.TestContext, inst istio.Instance, ns
 // RunTestMultiTLSGateways deploys multiple TLS gateways with SDS enabled, and creates kubernetes secret that stores
 // private key and server certificate for each TLS gateway. Verifies that all gateways are able to terminate
 // SSL connections successfully.
-func RunTestMultiTLSGateways(t framework.TestContext, inst istio.Instance, ns namespace.Getter) { // nolint:interfacer
+func RunTestMultiTLSGateways(t framework.TestContext, inst istio.Instance, ns namespace.Getter) {
+	// nolint:interfacer
+
 	var credNames []string
 	var tests []TestConfig
 	echotest.New(t, A).

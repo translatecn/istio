@@ -1,6 +1,7 @@
 apiVersion: install.istio.io/v1alpha1
 kind: IstioOperator
 spec:
+  hub: registry.cn-hangzhou.aliyuncs.com/acejilam
   components:
     cni:
       enabled: true
@@ -9,10 +10,11 @@ spec:
       enabled: true
       namespace: kube-system
     ingressGateways:
-    - name: istio-ingressgateway
-      enabled: false
+      - name: istio-ingressgateway
+        enabled: false
   values:
     profile: ambient
     global:
       platform: openshift
+
 

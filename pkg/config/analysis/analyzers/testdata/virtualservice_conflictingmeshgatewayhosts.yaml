@@ -5,11 +5,11 @@ metadata:
   namespace: foo
 spec:
   hosts:
-  - productpage # should generate an error as this conflicts with VirtualService foo/bogus
+    - productpage # should generate an error as this conflicts with VirtualService foo/bogus
   http:
-  - route:
-    - destination:
-        host: productpage
+    - route:
+        - destination:
+            host: productpage
 ---
 apiVersion: networking.istio.io/v1
 kind: VirtualService
@@ -18,11 +18,11 @@ metadata:
   namespace: foo
 spec:
   hosts:
-  - productpage # should generate an error as this conflicts with VirtualService foo/productpage
+    - productpage # should generate an error as this conflicts with VirtualService foo/productpage
   http:
-  - route:
-    - destination:
-        host: reviews
+    - route:
+        - destination:
+            host: reviews
 ---
 apiVersion: networking.istio.io/v1
 kind: VirtualService
@@ -31,11 +31,11 @@ metadata:
   namespace: foo
 spec:
   hosts:
-  - reviews # shouldn't generate an error as there's no conflicting VirtualService
+    - reviews # shouldn't generate an error as there's no conflicting VirtualService
   http:
-  - route:
-    - destination:
-        host: reviews
+    - route:
+        - destination:
+            host: reviews
 ---
 apiVersion: networking.istio.io/v1
 kind: VirtualService
@@ -44,13 +44,13 @@ metadata:
   namespace: bar
 spec:
   hosts:
-  - reviews.foo.svc.cluster.local # shouldn't generate an error as the gateway is different even though host is the same
+    - reviews.foo.svc.cluster.local # shouldn't generate an error as the gateway is different even though host is the same
   gateways:
-  - istio-ingressgateway
+    - istio-ingressgateway
   http:
-  - route:
-    - destination:
-        host: reviews
+    - route:
+        - destination:
+            host: reviews
 ---
 apiVersion: networking.istio.io/v1
 kind: VirtualService
@@ -59,13 +59,13 @@ metadata:
   namespace: foo
 spec:
   hosts:
-  - ratings # should generate an error as this conflicts with VirtualService bar/ratings
+    - ratings # should generate an error as this conflicts with VirtualService bar/ratings
   gateways:
-  - mesh
+    - mesh
   http:
-  - route:
-    - destination:
-        host: ratings
+    - route:
+        - destination:
+            host: ratings
 ---
 apiVersion: networking.istio.io/v1
 kind: VirtualService
@@ -74,15 +74,15 @@ metadata:
   namespace: bar
 spec:
   hosts:
-  - ratings.foo.svc.cluster.local # should generate an error as mesh gateway is specified and hosts conflict with VirtualService foo/ratings
-  - google.com
+    - ratings.foo.svc.cluster.local # should generate an error as mesh gateway is specified and hosts conflict with VirtualService foo/ratings
+    - google.com
   gateways:
-  - istio-ingressgateway
-  - mesh
+    - istio-ingressgateway
+    - mesh
   http:
-  - route:
-    - destination:
-        host: ratings
+    - route:
+        - destination:
+            host: ratings
 ---
 apiVersion: networking.istio.io/v1
 kind: VirtualService
@@ -91,15 +91,15 @@ metadata:
   namespace: team1
 spec:
   hosts:
-  - ratings # shouldn't generate an error as this doesn't conflict with VirtualService ratings.team2 due to exportTo setting
+    - ratings # shouldn't generate an error as this doesn't conflict with VirtualService ratings.team2 due to exportTo setting
   gateways:
-  - mesh
+    - mesh
   exportTo:
-  - "."
+    - "."
   http:
-  - route:
-    - destination:
-        host: ratings
+    - route:
+        - destination:
+            host: ratings
 ---
 apiVersion: networking.istio.io/v1
 kind: VirtualService
@@ -108,17 +108,17 @@ metadata:
   namespace: team2
 spec:
   hosts:
-  - ratings.team1.svc.cluster.local # shouldn't generate an error as this VirtualService doesn't conflict with VirtualService ratings.team1 due to exportTo setting
-  - google.com # conflict with bar/ratings host `google.com` which export to all namespaces
+    - ratings.team1.svc.cluster.local # shouldn't generate an error as this VirtualService doesn't conflict with VirtualService ratings.team1 due to exportTo setting
+    - google.com # conflict with bar/ratings host `google.com` which export to all namespaces
   exportTo:
-  - "."
+    - "."
   gateways:
-  - istio-ingressgateway
-  - mesh
+    - istio-ingressgateway
+    - mesh
   http:
-  - route:
-    - destination:
-        host: ratings
+    - route:
+        - destination:
+            host: ratings
 ---
 apiVersion: networking.istio.io/v1
 kind: VirtualService
@@ -127,15 +127,15 @@ metadata:
   namespace: team3
 spec:
   hosts:
-  - ratings # should generate an error as this conflicts with VirtualService ratings.team4
+    - ratings # should generate an error as this conflicts with VirtualService ratings.team4
   gateways:
-  - mesh
+    - mesh
   exportTo:
-  - "*"
+    - "*"
   http:
-  - route:
-    - destination:
-        host: ratings
+    - route:
+        - destination:
+            host: ratings
 ---
 apiVersion: networking.istio.io/v1
 kind: VirtualService
@@ -144,11 +144,11 @@ metadata:
   namespace: team4
 spec:
   hosts:
-  - ratings.team3.svc.cluster.local # should generate an error as this conflicts with VirtualService ratings.team3
+    - ratings.team3.svc.cluster.local # should generate an error as this conflicts with VirtualService ratings.team3
   gateways:
-  - istio-ingressgateway
-  - mesh
+    - istio-ingressgateway
+    - mesh
   http:
-  - route:
-    - destination:
-        host: ratings
+    - route:
+        - destination:
+            host: ratings

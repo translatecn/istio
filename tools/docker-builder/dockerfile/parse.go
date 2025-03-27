@@ -54,12 +54,6 @@ func IgnoreRuns() Option {
 }
 
 // BaseDir is the directory that files are copied relative to. If not set, the base directory of the Dockerfile is used.
-func BaseDir(dir string) Option {
-	return func(o *options) error {
-		o.baseDir = dir
-		return nil
-	}
-}
 
 var log = istiolog.RegisterScope("dockerfile", "")
 

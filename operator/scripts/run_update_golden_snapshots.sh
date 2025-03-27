@@ -22,7 +22,7 @@ set -u
 set -x
 set -e
 
-SCRIPTPATH="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+SCRIPTPATH="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOTDIR="${SCRIPTPATH}/../.."
 
 MANIFESTS_DIR="${ROOTDIR}/manifests"

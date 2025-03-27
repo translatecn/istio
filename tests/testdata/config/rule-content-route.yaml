@@ -10,18 +10,18 @@ spec:
     - headers.test.istio.io
   http:
     - match:
-      - headers:
-          version:
-            exact: v2
-        sourceLabels:
-          version: v1
+        - headers:
+            version:
+              exact: v2
+          sourceLabels:
+            version: v1
       route:
-      - destination:
-          host: c-weighted.extsvc.com
-          subset: v2
-        weight: 100
+        - destination:
+            host: c-weighted.extsvc.com
+            subset: v2
+          weight: 100
     - route:
-      - destination:
-          host: c-weighted.extsvc.com
-          subset: v1
-        weight: 100
+        - destination:
+            host: c-weighted.extsvc.com
+            subset: v1
+          weight: 100

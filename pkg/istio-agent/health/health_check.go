@@ -19,7 +19,7 @@ import (
 	"strings"
 	"time"
 
-	"istio.io/api/networking/v1alpha3"
+	"istio.io/istio/istio.io/api/networking/v1alpha3"
 	"istio.io/istio/pilot/cmd/pilot-agent/status"
 	"istio.io/istio/pilot/cmd/pilot-agent/status/ready"
 	"istio.io/istio/pkg/kube/apimirror"
@@ -83,6 +83,7 @@ func fillInDefaults(cfg *v1alpha3.ReadinessProbe, ipAddresses []string) *v1alpha
 
 func NewWorkloadHealthChecker(cfg *v1alpha3.ReadinessProbe, envoyProbe ready.Prober, proxyAddrs []string, ipv6 bool) *WorkloadHealthChecker {
 	// if a config does not exist return a no-op prober
+
 	if cfg == nil {
 		return nil
 	}

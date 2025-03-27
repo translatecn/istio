@@ -43,36 +43,6 @@ func init() {
 	otel.SetLogger(log.NewLogrAdapter(monitoringLogger))
 }
 
-// RegisterPrometheusExporter sets the global metrics handler to the provided Prometheus registerer and gatherer.
-// Returned is an HTTP handler that can be used to read metrics from.
-func RegisterPrometheusExporter(reg prometheus.Registerer, gatherer prometheus.Gatherer) (http.Handler, error) {
-	if reg == nil {
-		reg = prometheus.DefaultRegisterer
-	}
-	if gatherer == nil {
-		gatherer = prometheus.DefaultGatherer
-	}
-	promOpts := []otelprom.Option{
-		otelprom.WithoutScopeInfo(),
-		otelprom.WithoutTargetInfo(),
-		otelprom.WithoutUnits(),
-		otelprom.WithRegisterer(reg),
-		otelprom.WithoutCounterSuffixes(),
-	}
-
-	prom, err := otelprom.New(promOpts...)
-	if err != nil {
-		return nil, err
-	}
-
-	opts := []metric.Option{metric.WithReader(prom)}
-	opts = append(opts, knownMetrics.toHistogramViews()...)
-	mp := metric.NewMeterProvider(opts...)
-	otel.SetMeterProvider(mp)
-	handler := promhttp.HandlerFor(gatherer, promhttp.HandlerOpts{})
-	return handler, nil
-}
-
 // A Metric collects numerical observations.
 type Metric interface {
 	// Increment records a value of 1 for the current measure. For Sums,
@@ -167,11 +137,6 @@ var (
 )
 
 // RegisterRecordHook adds a RecordHook for a given measure.
-func RegisterRecordHook(name string, h RecordHook) {
-	recordHookMutex.Lock()
-	defer recordHookMutex.Unlock()
-	recordHooks[name] = h
-}
 
 // NewSum creates a new Sum Metric (the values will be cumulative).
 // That means that data collected by the new Metric will be summed before export.
@@ -186,21 +151,6 @@ func NewSum(name, description string, opts ...Options) Metric {
 		return dm
 	}
 	return newCounter(o)
-}
-
-// NewGauge creates a new Gauge Metric. That means that data collected by the new
-// Metric will export only the last recorded value.
-func NewGauge(name, description string, opts ...Options) Metric {
-	knownMetrics.register(MetricDefinition{
-		Name:        name,
-		Type:        "LastValue",
-		Description: description,
-	})
-	o, dm := createOptions(name, description, opts...)
-	if dm != nil {
-		return dm
-	}
-	return newGauge(o)
 }
 
 // NewDerivedGauge creates a new Gauge Metric. That means that data collected by the new
@@ -274,13 +224,30 @@ func (d *metrics) register(def MetricDefinition) {
 	d.known[def.Name] = def
 }
 
+// NewGauge creates a new Gauge Metric. That means that data collected by the new
+// Metric will export only the last recorded value.
+func NewGauge(name, description string, opts ...Options) Metric {
+	knownMetrics.register(MetricDefinition{
+		Name:        name,
+		Type:        "LastValue",
+		Description: description,
+	})
+	o, dm := createOptions(name, description, opts...)
+	if dm != nil {
+		return dm
+	}
+	return newGauge(o)
+}
+
 // toHistogramViews works around https://github.com/open-telemetry/opentelemetry-go/issues/4003; in the future we can define
 // this when we create the histogram.
 func (d *metrics) toHistogramViews() []metric.Option {
+	// 柱状图
+
 	d.mu.Lock()
 	defer d.mu.Unlock()
 	d.started = true
-	opts := []metric.Option{}
+	var opts []metric.Option
 	for name, def := range d.known {
 		if def.Bounds == nil {
 			continue
@@ -288,11 +255,43 @@ func (d *metrics) toHistogramViews() []metric.Option {
 		// for each histogram metric (i.e. those with bounds), set up a view explicitly defining those buckets.
 		v := metric.WithView(metric.NewView(
 			metric.Instrument{Name: name},
-			metric.Stream{Aggregation: metric.AggregationExplicitBucketHistogram{
-				Boundaries: def.Bounds,
-			}},
+			metric.Stream{
+				Aggregation: metric.AggregationExplicitBucketHistogram{
+					Boundaries: def.Bounds,
+				},
+			},
 		))
 		opts = append(opts, v)
 	}
 	return opts
+}
+
+// RegisterPrometheusExporter sets the global metrics handler to the provided Prometheus registerer and gatherer.
+// Returned is an HTTP handler that can be used to read metrics from.
+func RegisterPrometheusExporter(reg prometheus.Registerer, gatherer prometheus.Gatherer) (http.Handler, error) {
+	if reg == nil {
+		reg = prometheus.DefaultRegisterer
+	}
+	if gatherer == nil {
+		gatherer = prometheus.DefaultGatherer
+	}
+	promOpts := []otelprom.Option{
+		otelprom.WithoutScopeInfo(),
+		otelprom.WithoutTargetInfo(),
+		otelprom.WithoutUnits(),
+		otelprom.WithRegisterer(reg),
+		otelprom.WithoutCounterSuffixes(),
+	}
+
+	prom, err := otelprom.New(promOpts...)
+	if err != nil {
+		return nil, err
+	}
+
+	opts := []metric.Option{metric.WithReader(prom)}
+	opts = append(opts, knownMetrics.toHistogramViews()...)
+	mp := metric.NewMeterProvider(opts...)
+	otel.SetMeterProvider(mp)
+	handler := promhttp.HandlerFor(gatherer, promhttp.HandlerOpts{})
+	return handler, nil
 }

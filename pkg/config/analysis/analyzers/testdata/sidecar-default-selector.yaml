@@ -5,8 +5,8 @@ metadata:
   namespace: ns1
 spec:
   egress:
-  - hosts:
-    - "./*"
+    - hosts:
+        - "./*"
 ---
 apiVersion: networking.istio.io/v1
 kind: Sidecar
@@ -18,8 +18,8 @@ spec:
     labels:
       app: foo
   egress:
-  - hosts:
-    - "./*"
+    - hosts:
+        - "./*"
 ---
 apiVersion: networking.istio.io/v1
 kind: Sidecar
@@ -28,8 +28,8 @@ metadata:
   namespace: ns2
 spec:
   egress:
-  - hosts:
-    - "./*"
+    - hosts:
+        - "./*"
 ---
 apiVersion: networking.istio.io/v1
 kind: Sidecar
@@ -38,8 +38,8 @@ metadata:
   namespace: ns2
 spec:
   egress:
-  - hosts:
-    - "./*"
+    - hosts:
+        - "./*"
 ---
 apiVersion: v1
 kind: Namespace
@@ -60,7 +60,7 @@ metadata:
     app: foo
 spec:
   containers:
-  - image: proxyv2
+    - image: proxyv2
 ---
 # some tests for ambient
 # pod in ambient mode should throw error for sidecar resource

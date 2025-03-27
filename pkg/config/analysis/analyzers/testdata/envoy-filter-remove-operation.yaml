@@ -9,16 +9,16 @@ spec:
     labels:
       app: mysvc1
   configPatches:
-  - applyTo: NETWORK_FILTER # http connection manager is a filter in Envoy
-    match:
-      context: GATEWAY
-      listener:
-        filterChain:
-          sni: app.example.com
-          filter:
-            name: "envoy.filters.network.http_connection_manager.InternalAddressConfig"
-    patch:
-      operation: REMOVE
+    - applyTo: NETWORK_FILTER # http connection manager is a filter in Envoy
+      match:
+        context: GATEWAY
+        listener:
+          filterChain:
+            sni: app.example.com
+            filter:
+              name: "envoy.filters.network.http_connection_manager.InternalAddressConfig"
+      patch:
+        operation: REMOVE
 
 ---
 apiVersion: networking.istio.io/v1alpha3
@@ -31,16 +31,16 @@ spec:
     labels:
       app: mysvc2
   configPatches:
-  - applyTo: ROUTE_CONFIGURATION
-    match:
-      context: GATEWAY
-      listener:
-        filterChain:
-          sni: app.example.com
-          filter:
-            name: "envoy.filters.network.http_connection_manager.InternalAddressConfig"
-    patch:
-      operation: REMOVE
+    - applyTo: ROUTE_CONFIGURATION
+      match:
+        context: GATEWAY
+        listener:
+          filterChain:
+            sni: app.example.com
+            filter:
+              name: "envoy.filters.network.http_connection_manager.InternalAddressConfig"
+      patch:
+        operation: REMOVE
 
 ---
 apiVersion: networking.istio.io/v1alpha3
@@ -53,16 +53,16 @@ spec:
     labels:
       app: mysvc3
   configPatches:
-  - applyTo: HTTP_ROUTE
-    match:
-      context: GATEWAY
-      listener:
-        filterChain:
-          sni: app.example.com
-          filter:
-            name: "envoy.filters.network.http_connection_manager.InternalAddressConfig"
-    patch:
-      operation: REMOVE
+    - applyTo: HTTP_ROUTE
+      match:
+        context: GATEWAY
+        listener:
+          filterChain:
+            sni: app.example.com
+            filter:
+              name: "envoy.filters.network.http_connection_manager.InternalAddressConfig"
+      patch:
+        operation: REMOVE
 
 ---
 apiVersion: networking.istio.io/v1alpha3
@@ -75,9 +75,9 @@ spec:
     labels:
       app: mysvc1
   configPatches:
-  - applyTo: NETWORK_FILTER # http connection manager is a filter in Envoy
-    match:
-    patch:
+    - applyTo: NETWORK_FILTER # http connection manager is a filter in Envoy
+      match:
+      patch:
 
 ---
 apiVersion: networking.istio.io/v1alpha3
@@ -90,7 +90,7 @@ spec:
     labels:
       app: mysvc1
   configPatches:
-  - applyTo: NETWORK_FILTER # http connection manager is a filter in Envoy
-    match:
-    patch:
-      operation: REMOVE
+    - applyTo: NETWORK_FILTER # http connection manager is a filter in Envoy
+      match:
+      patch:
+        operation: REMOVE

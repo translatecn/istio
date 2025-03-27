@@ -24,10 +24,10 @@ metadata:
     service: details
 spec:
   ipFamilyPolicy: RequireDualStack
-  ipFamilies: [IPv6, IPv4]
+  ipFamilies: [ IPv6, IPv4 ]
   ports:
-  - port: 9080
-    name: http
+    - port: 9080
+      name: http
   selector:
     app: details
 ---
@@ -51,9 +51,9 @@ spec:
         version: v1
     spec:
       containers:
-      - name: details
-        image: docker.io/istio/examples-bookinfo-details-v1:1.20.2
-        imagePullPolicy: IfNotPresent
-        ports:
-        - containerPort: 9080
+        - name: details
+          image: registry.cn-hangzhou.aliyuncs.com/acejilam/examples-bookinfo-details-v1:1.20.2
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 9080
 ---

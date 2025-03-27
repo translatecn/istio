@@ -43,8 +43,8 @@ import (
 	"k8s.io/kubectl/pkg/util/podutils"
 	"sigs.k8s.io/yaml"
 
-	"istio.io/api/label"
-	meshconfig "istio.io/api/mesh/v1alpha1"
+	"istio.io/istio/istio.io/api/label"
+	meshconfig "istio.io/istio/istio.io/api/mesh/v1alpha1"
 	"istio.io/istio/istioctl/pkg/cli"
 	"istio.io/istio/istioctl/pkg/clioptions"
 	"istio.io/istio/istioctl/pkg/util"
@@ -53,7 +53,7 @@ import (
 	"istio.io/istio/pkg/kube"
 	"istio.io/istio/pkg/kube/inject"
 	"istio.io/istio/pkg/log"
-	"istio.io/istio/pkg/version"
+	"istio.io/istio/pkg/version_over"
 )
 
 const (
@@ -255,7 +255,7 @@ func getMeshConfigFromConfigMap(ctx cli.Context, command, revision string) (*mes
 	cfg, err := mesh.ApplyMeshConfigDefaults(configYaml)
 	if err != nil {
 		err = multierror.Append(err, fmt.Errorf("istioctl version %s cannot parse mesh config.  Install istioctl from the latest Istio release",
-			version.Info.Version))
+			version_over.Info.Version))
 	}
 	return cfg, err
 }
@@ -372,8 +372,8 @@ func validateFlags() error {
 func setupKubeInjectParameters(cliContext cli.Context, sidecarTemplate *inject.RawTemplates, valuesConfig *string,
 	revision, injectorAddress string,
 ) (*ExternalInjector, *meshconfig.MeshConfig, error) {
-	var err error
-	// Get configs from IOP files firstly, and if not exists, get configs from files and configmaps.
+	// Get configs from IOP files firstly, and if not exists, get configs from files and configmaps.	var err error
+
 	values, meshConfig, err := getIOPConfigs()
 	if err != nil {
 		return nil, nil, err

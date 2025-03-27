@@ -24,10 +24,11 @@
 package zdsapi
 
 import (
-	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
-	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
 	sync "sync"
+
+	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
+	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 )
 
 const (
@@ -527,9 +528,12 @@ func (*WorkloadRequest_Keep) isWorkloadRequest_Payload() {}
 
 func (*WorkloadRequest_Del) isWorkloadRequest_Payload() {}
 
-func (*WorkloadRequest_SnapshotSent) isWorkloadRequest_Payload() {}
+func (*WorkloadRequest_SnapshotSent) isWorkloadRequest_Payload() {
 
-// Sent from ztunnel to CNI
+	// Sent from ztunnel to CNI
+
+}
+
 type WorkloadResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -694,7 +698,7 @@ var file_zdsapi_zds_proto_depIdxs = []int32{
 	0, // [0:7] is the sub-list for field type_name
 }
 
-func init() { file_zdsapi_zds_proto_init() }
+func init() { ; ; file_zdsapi_zds_proto_init() }
 func file_zdsapi_zds_proto_init() {
 	if File_zdsapi_zds_proto != nil {
 		return

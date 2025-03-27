@@ -53,18 +53,6 @@ func NewKeyCertBundleFromPem(certBytes, privKeyBytes, certChainBytes, rootCertBy
 	return bundle
 }
 
-// NewVerifiedKeyCertBundleFromPem returns a new KeyCertBundle, or error if the provided certs failed the
-// verification.
-func NewVerifiedKeyCertBundleFromPem(certBytes, privKeyBytes, certChainBytes, rootCertBytes []byte) (
-	*KeyCertBundle, error,
-) {
-	bundle := &KeyCertBundle{}
-	if err := bundle.VerifyAndSetAll(certBytes, privKeyBytes, certChainBytes, rootCertBytes); err != nil {
-		return nil, err
-	}
-	return bundle, nil
-}
-
 // NewVerifiedKeyCertBundleFromFile returns a new KeyCertBundle, or error if the provided certs failed the
 // verification.
 func NewVerifiedKeyCertBundleFromFile(certFile string, privKeyFile string, certChainFiles []string, rootCertFile string) (
@@ -95,28 +83,6 @@ func NewVerifiedKeyCertBundleFromFile(certFile string, privKeyFile string, certC
 		return nil, err
 	}
 	return NewVerifiedKeyCertBundleFromPem(certBytes, privKeyBytes, certChainBytes, rootCertBytes)
-}
-
-// NewKeyCertBundleWithRootCertFromFile returns a new KeyCertBundle with the root cert without verification.
-func NewKeyCertBundleWithRootCertFromFile(rootCertFile string) (*KeyCertBundle, error) {
-	var rootCertBytes []byte
-	var err error
-	if rootCertFile == "" {
-		rootCertBytes = []byte{}
-	} else {
-		rootCertBytes, err = os.ReadFile(rootCertFile)
-		if err != nil {
-			return nil, err
-		}
-	}
-	return &KeyCertBundle{
-		certBytes:      []byte{},
-		cert:           nil,
-		privKeyBytes:   []byte{},
-		privKey:        nil,
-		certChainBytes: []byte{},
-		rootCertBytes:  rootCertBytes,
-	}, nil
 }
 
 // GetAllPem returns all key/cert PEMs in KeyCertBundle together. Getting all values together avoids inconsistency.
@@ -156,31 +122,6 @@ func (b *KeyCertBundle) GetRootCertPem() []byte {
 	b.mutex.RLock()
 	defer b.mutex.RUnlock()
 	return copyBytes(b.rootCertBytes)
-}
-
-// VerifyAndSetAll verifies the key/certs, and sets all key/certs in KeyCertBundle together.
-// Setting all values together avoids inconsistency.
-func (b *KeyCertBundle) VerifyAndSetAll(certBytes, privKeyBytes, certChainBytes, rootCertBytes []byte) error {
-	if err := Verify(certBytes, privKeyBytes, certChainBytes, rootCertBytes); err != nil {
-		return err
-	}
-	b.setAllFromPem(certBytes, privKeyBytes, certChainBytes, rootCertBytes)
-	return nil
-}
-
-// Setting all values together avoids inconsistency.
-func (b *KeyCertBundle) setAllFromPem(certBytes, privKeyBytes, certChainBytes, rootCertBytes []byte) {
-	b.mutex.Lock()
-	b.certBytes = copyBytes(certBytes)
-	b.privKeyBytes = copyBytes(privKeyBytes)
-	b.certChainBytes = copyBytes(certChainBytes)
-	b.rootCertBytes = copyBytes(rootCertBytes)
-	// cert and privKey are always reset to point to new addresses. This avoids modifying the pointed structs that
-	// could be still used outside of the class.
-	b.cert, _ = ParsePemEncodedCertificate(certBytes)
-	privKey, _ := ParsePemEncodedKey(privKeyBytes)
-	b.privKey = &privKey
-	b.mutex.Unlock()
 }
 
 // CertOptions returns the certificate config based on currently stored cert.
@@ -280,9 +221,68 @@ func TimeBeforeCertExpires(certBytes []byte, now time.Time) (time.Duration, erro
 	return certExpiry, nil
 }
 
+func extractCertExpiryTimestamp(certType string, certPem []byte) (time.Time, error) {
+	cert, err := ParsePemEncodedCertificate(certPem)
+	if err != nil {
+		return time.Unix(0, 0), fmt.Errorf("failed to parse the %s: %v", certType, err)
+	}
+	return cert.NotAfter, nil
+}
+
+func copyBytes(src []byte) []byte {
+	bs := make([]byte, len(src))
+	copy(bs, src)
+	return bs
+}
+
+// NewKeyCertBundleWithRootCertFromFile returns a new KeyCertBundle with the root cert without verification.
+func NewKeyCertBundleWithRootCertFromFile(rootCertFile string) (*KeyCertBundle, error) {
+	var rootCertBytes []byte
+	var err error
+	if rootCertFile == "" {
+		rootCertBytes = []byte{}
+	} else {
+		rootCertBytes, err = os.ReadFile(rootCertFile)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return &KeyCertBundle{
+		certBytes:      []byte{},
+		cert:           nil,
+		privKeyBytes:   []byte{},
+		privKey:        nil,
+		certChainBytes: []byte{},
+		rootCertBytes:  rootCertBytes,
+	}, nil
+}
+
+// NewVerifiedKeyCertBundleFromPem returns a new KeyCertBundle, or error if the provided certs failed the
+// verification.
+func NewVerifiedKeyCertBundleFromPem(certBytes, privKeyBytes, certChainBytes, rootCertBytes []byte) (
+	*KeyCertBundle, error,
+) {
+	bundle := &KeyCertBundle{}
+	if err := bundle.VerifyAndSetAll(certBytes, privKeyBytes, certChainBytes, rootCertBytes); err != nil {
+		return nil, err
+	}
+	return bundle, nil
+}
+
+// VerifyAndSetAll verifies the key/certs, and sets all key/certs in KeyCertBundle together.
+// Setting all values together avoids inconsistency.
+func (b *KeyCertBundle) VerifyAndSetAll(certBytes, privKeyBytes, certChainBytes, rootCertBytes []byte) error {
+	if err := Verify(certBytes, privKeyBytes, certChainBytes, rootCertBytes); err != nil {
+		return err
+	}
+	b.setAllFromPem(certBytes, privKeyBytes, certChainBytes, rootCertBytes)
+	return nil
+}
+
 // Verify that the cert chain, root cert and key/cert match.
 func Verify(certBytes, privKeyBytes, certChainBytes, rootCertBytes []byte) error {
 	// Verify the cert can be verified from the root cert through the cert chain.
+
 	rcp := x509.NewCertPool()
 	rcp.AppendCertsFromPEM(rootCertBytes)
 
@@ -301,8 +301,7 @@ func Verify(certBytes, privKeyBytes, certChainBytes, rootCertBytes []byte) error
 
 	if len(chains) == 0 || err != nil {
 		return fmt.Errorf(
-			"cannot verify the cert with the provided root chain and cert "+
-				"pool with error: %v", err)
+			"cannot verify the cert with the provided root chain and cert pool with error: %v", err)
 	}
 
 	// Verify that the key can be correctly parsed.
@@ -318,16 +317,17 @@ func Verify(certBytes, privKeyBytes, certChainBytes, rootCertBytes []byte) error
 	return nil
 }
 
-func extractCertExpiryTimestamp(certType string, certPem []byte) (time.Time, error) {
-	cert, err := ParsePemEncodedCertificate(certPem)
-	if err != nil {
-		return time.Unix(0, 0), fmt.Errorf("failed to parse the %s: %v", certType, err)
-	}
-	return cert.NotAfter, nil
-}
-
-func copyBytes(src []byte) []byte {
-	bs := make([]byte, len(src))
-	copy(bs, src)
-	return bs
+// Setting all values together avoids inconsistency.
+func (b *KeyCertBundle) setAllFromPem(certBytes, privKeyBytes, certChainBytes, rootCertBytes []byte) {
+	b.mutex.Lock()
+	b.certBytes = copyBytes(certBytes)
+	b.privKeyBytes = copyBytes(privKeyBytes)
+	b.certChainBytes = copyBytes(certChainBytes)
+	b.rootCertBytes = copyBytes(rootCertBytes)
+	// cert and privKey are always reset to point to new addresses. This avoids modifying the pointed structs that
+	// could be still used outside of the class.
+	b.cert, _ = ParsePemEncodedCertificate(certBytes)
+	privKey, _ := ParsePemEncodedKey(privKeyBytes)
+	b.privKey = &privKey
+	b.mutex.Unlock()
 }

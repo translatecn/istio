@@ -36,8 +36,6 @@ const (
 	CertChainFilename = "cert-chain.pem"
 	// KeyFilename is mTLS private key
 	KeyFilename = "key.pem"
-	// RootCertFilename is mTLS root cert
-	RootCertFilename = "root-cert.pem"
 
 	// ConfigPathDir config directory for storing envoy json config files.
 	ConfigPathDir = "./etc/istio/proxy"
@@ -75,10 +73,6 @@ const (
 
 	// IstioSystemNamespace is the namespace where Istio's components are deployed
 	IstioSystemNamespace = "istio-system"
-
-	// DefaultAuthenticationPolicyName is the name of the cluster-scoped authentication policy. Only
-	// policy with this name in the cluster-scoped will be considered.
-	DefaultAuthenticationPolicyName = "default"
 
 	// IstioMeshGateway is the built in gateway for all sidecars
 	IstioMeshGateway = "mesh"

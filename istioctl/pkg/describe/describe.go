@@ -38,13 +38,13 @@ import (
 	klabels "k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/kubernetes"
 
-	apiannotation "istio.io/api/annotation"
-	"istio.io/api/label"
-	meshconfig "istio.io/api/mesh/v1alpha1"
-	"istio.io/api/networking/v1alpha3"
-	typev1beta1 "istio.io/api/type/v1beta1"
-	clientnetworking "istio.io/client-go/pkg/apis/networking/v1"
-	istioclient "istio.io/client-go/pkg/clientset/versioned"
+	apiannotation "istio.io/istio/istio.io/api/annotation"
+	"istio.io/istio/istio.io/api/label"
+	meshconfig "istio.io/istio/istio.io/api/mesh/v1alpha1"
+	"istio.io/istio/istio.io/api/networking/v1alpha3"
+	typev1beta1 "istio.io/istio/istio.io/api/type/v1beta1"
+	clientnetworking "istio.io/istio/istio.io/client-go/pkg/apis/networking/v1"
+	istioclient "istio.io/istio/istio.io/client-go/pkg/clientset/versioned"
 	"istio.io/istio/istioctl/pkg/cli"
 	"istio.io/istio/istioctl/pkg/clioptions"
 	"istio.io/istio/istioctl/pkg/completion"
@@ -338,7 +338,9 @@ func recordShortPolicies(lb *v1alpha3.LoadBalancerSettings,
 }
 
 // httpRouteMatchSvc returns true if it matches and a slice of facts about the match
-func httpRouteMatchSvc(vs *clientnetworking.VirtualService, route *v1alpha3.HTTPRoute, svc corev1.Service, matchingSubsets []string, nonmatchingSubsets []string, dr *clientnetworking.DestinationRule) (bool, []string) { // nolint: lll
+func httpRouteMatchSvc(vs *clientnetworking.VirtualService, route *v1alpha3.HTTPRoute, svc corev1.Service, matchingSubsets []string, nonmatchingSubsets []string, dr *clientnetworking.DestinationRule) (bool, []string) {
+	// nolint: lll
+
 	svcHost := extendFQDN(fmt.Sprintf("%s.%s", svc.ObjectMeta.Name, svc.ObjectMeta.Namespace))
 	facts := []string{}
 	mismatchNotes := []string{}
@@ -859,7 +861,9 @@ func getIstioDestinationRulePathForSvc(cd *configdump.Wrapper, svc corev1.Servic
 // and showing the non-matching Destinations.  (The current code is ad-hoc, and usually shows most of that information.)
 func printVirtualService(writer io.Writer, initPrintNum int,
 	vs *clientnetworking.VirtualService, svc corev1.Service, matchingSubsets []string, nonmatchingSubsets []string, dr *clientnetworking.DestinationRule,
-) { // nolint: lll
+) {
+	// nolint: lll
+
 	fmt.Fprintf(writer, "%sVirtualService: %s\n", printSpaces(initPrintNum+printLevel0), kname(vs.ObjectMeta))
 
 	// There is no point in checking that 'port' uses HTTP (for HTTP route matches)
@@ -1308,7 +1312,9 @@ the configuration objects that affect that service.`,
 	return cmd
 }
 
-func describePodServices(writer io.Writer, kubeClient kube.CLIClient, configClient istioclient.Interface, pod *corev1.Pod, matchingServices []corev1.Service, podsLabels []klabels.Set) error { // nolint: lll
+func describePodServices(writer io.Writer, kubeClient kube.CLIClient, configClient istioclient.Interface, pod *corev1.Pod, matchingServices []corev1.Service, podsLabels []klabels.Set) error {
+	// nolint: lll
+
 	byConfigDump, err := kubeClient.EnvoyDo(context.TODO(), pod.ObjectMeta.Name, pod.ObjectMeta.Namespace, "GET", "config_dump")
 	if err != nil {
 		if ignoreUnmeshed {

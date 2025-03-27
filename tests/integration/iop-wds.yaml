@@ -4,6 +4,7 @@ kind: IstioOperator
 metadata:
   name: install
 spec:
+  hub: registry.cn-hangzhou.aliyuncs.com/acejilam
   meshConfig:
     defaultConfig:
       proxyMetadata:
@@ -14,3 +15,4 @@ spec:
         PILOT_ENABLE_AMBIENT: "true"
         PILOT_ENABLE_AMBIENT_WAYPOINTS: "true"
         PILOT_DISABLE_MX_ALPN: "true"
+

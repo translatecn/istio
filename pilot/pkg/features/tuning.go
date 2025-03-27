@@ -55,25 +55,6 @@ var (
 		return min(15+5*procs, 100)
 	}()
 
-	RequestLimit = func() float64 {
-		v := env.Register(
-			"PILOT_MAX_REQUESTS_PER_SECOND",
-			0.0,
-			"Limits the number of incoming XDS requests per second. On larger machines this can be increased to handle more proxies concurrently. "+
-				"If set to 0 or unset, the max will be automatically determined based on the machine size",
-		).Get()
-		if v > 0 {
-			return v
-		}
-		procs := runtime.GOMAXPROCS(0)
-		// Heuristic to scale with cores. We end up with...
-		// 1: 20
-		// 2: 25
-		// 4: 35
-		// 32: 100
-		return min(float64(15+5*procs), 100.0)
-	}()
-
 	DebounceAfter = env.Register(
 		"PILOT_DEBOUNCE_AFTER",
 		100*time.Millisecond,
@@ -104,25 +85,20 @@ var (
 			"accelerate configuration push, but it also means that istiod will consume more CPU resources.",
 	).Get()
 
-	MutexProfileFraction = env.Register("MUTEX_PROFILE_FRACTION", 1000,
-		"If set to a non-zero value, enables mutex profiling a rate of 1/MUTEX_PROFILE_FRACTION events."+
-			" For example, '1000' will record 0.1% of events. "+
-			"Set to 0 to disable entirely.").Get()
-
-	StatusUpdateInterval = env.Register(
+	_ = env.Register(
 		"PILOT_STATUS_UPDATE_INTERVAL",
 		500*time.Millisecond,
 		"Interval to update the XDS distribution status.",
 	).Get()
 
-	StatusQPS = env.Register(
+	_ = env.Register(
 		"PILOT_STATUS_QPS",
 		100,
 		"If status is enabled, controls the QPS with which status will be updated.  "+
 			"See https://godoc.org/k8s.io/client-go/rest#Config QPS",
 	).Get()
 
-	StatusBurst = env.Register(
+	_ = env.Register(
 		"PILOT_STATUS_BURST",
 		500,
 		"If status is enabled, controls the Burst rate with which status will be updated.  "+
@@ -138,4 +114,22 @@ var (
 
 	XDSCacheIndexClearInterval = env.Register("PILOT_XDS_CACHE_INDEX_CLEAR_INTERVAL", 5*time.Second,
 		"The interval for xds cache index clearing.").Get()
+	MutexProfileFraction = env.Register("MUTEX_PROFILE_FRACTION", 1000,
+		"If set to a non-zero value, enables mutex profiling a rate of 1/MUTEX_PROFILE_FRACTION events."+
+			" For example, '1000' will record 0.1% of events. "+
+			"Set to 0 to disable entirely.").Get()
+
+	RequestLimit = func() float64 {
+		v := env.Register("PILOT_MAX_REQUESTS_PER_SECOND", 0.0, "限制每秒传入的XDS请求的数量。在较大的机器上，可以增加这个值以并发处理更多代理。如果设置为0或不设置，则根据机器大小自动确定最大值").Get()
+		if v > 0 {
+			return v
+		}
+		procs := runtime.GOMAXPROCS(0)
+		// Heuristic to scale with cores. We end up with...
+		// 1: 20
+		// 2: 25
+		// 4: 35
+		// 32: 100
+		return min(float64(15+5*procs), 100.0)
+	}()
 )

@@ -4,6 +4,6 @@ metadata:
   name: otel-demo
 spec:
   tracing:
-  - providers:
-    - name: otel-tracing
-    randomSamplingPercentage: 0
+    - providers:
+        - name: otel-tracing
+      randomSamplingPercentage: 0

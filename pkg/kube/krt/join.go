@@ -69,6 +69,7 @@ func (j *join[T]) RegisterBatch(f func(o []Event[T], initialSync bool), runExist
 // nolint: unused // (not true, its to implement an interface)
 func (j *join[T]) augment(a any) any {
 	// not supported in this collection type
+
 	return a
 }
 
@@ -76,9 +77,12 @@ func (j *join[T]) augment(a any) any {
 func (j *join[T]) name() string { return j.collectionName }
 
 // nolint: unused // (not true, its to implement an interface)
-func (j *join[T]) uid() collectionUID { return j.id }
+func (j *join[T]) uid() collectionUID {
+	// nolint: unused // (not true, its to implement an interface)
 
-// nolint: unused // (not true, its to implement an interface)
+	return j.id
+}
+
 func (j *join[I]) dump() {
 	log.Errorf("> BEGIN DUMP (join %v)", j.collectionName)
 	for _, c := range j.collections {

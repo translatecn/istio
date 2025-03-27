@@ -1,23 +1,24 @@
 apiVersion: install.istio.io/v1alpha1
 kind: IstioOperator
 spec:
+  hub: registry.cn-hangzhou.aliyuncs.com/acejilam
   components:
     ingressGateways:
-    - enabled: true
-      name: istio-ingressgateway
-      k8s:
-        hpaSpec:
-          metrics:
-          - resource:
-              name: cpu
-              target:
-                type: Utilization
-                averageUtilization: 80
-          - resource:
-              name: memory
-              target:
-                type: Utilization
-                averageUtilization: 80
+      - enabled: true
+        name: istio-ingressgateway
+        k8s:
+          hpaSpec:
+            metrics:
+              - resource:
+                  name: cpu
+                  target:
+                    type: Utilization
+                    averageUtilization: 80
+              - resource:
+                  name: memory
+                  target:
+                    type: Utilization
+                    averageUtilization: 80
   values:
     pilot:
       cpu:

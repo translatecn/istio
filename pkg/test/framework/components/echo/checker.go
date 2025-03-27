@@ -14,10 +14,6 @@
 
 package echo
 
-var noChecker Checker = func(_ CallResult, err error) error {
-	return err
-}
-
 // Checker inspects echo call results for errors.
 type Checker func(CallResult, error) error
 
@@ -26,6 +22,3 @@ func (c Checker) Check(result CallResult, err error) error {
 }
 
 // NoChecker provides a Checker that returns the original raw call error, unaltered.
-func NoChecker() Checker {
-	return noChecker
-}

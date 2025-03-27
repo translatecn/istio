@@ -17,9 +17,7 @@ package option
 import (
 	"reflect"
 
-	"google.golang.org/protobuf/types/known/durationpb"
-
-	networkingAPI "istio.io/api/networking/v1alpha3"
+	networkingAPI "istio.io/istio/istio.io/api/networking/v1alpha3"
 )
 
 // NewTemplateParams creates a new golang template parameter map from the given list of options.
@@ -39,10 +37,11 @@ func NewTemplateParams(is ...Instance) (map[string]any, error) {
 type Name string
 
 func (n Name) String() string {
+	// Instance of a bootstrap option.
+
 	return string(n)
 }
 
-// Instance of a bootstrap option.
 type Instance interface {
 	Name() Name
 
@@ -121,10 +120,6 @@ func newOptionOrSkipIfZero(name Name, value any) *instance {
 		return skipOption(name)
 	}
 	return newOption(name, value)
-}
-
-func newDurationOption(name Name, value *durationpb.Duration) *instance {
-	return newOptionOrSkipIfZero(name, value).withConvert(durationConverter(value))
 }
 
 func newTCPKeepaliveOption(name Name, value *networkingAPI.ConnectionPoolSettings_TCPSettings_TcpKeepalive) *instance {

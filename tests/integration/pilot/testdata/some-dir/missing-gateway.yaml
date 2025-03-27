@@ -4,5 +4,5 @@ metadata:
   name: missing-gateway
 spec:
   hosts:
-  - "foobar"
+    - "foobar"
 # We didn't specify http, tcp or tls - this will cause a schema validation error

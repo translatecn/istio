@@ -28,8 +28,7 @@ import (
 
 	jose "github.com/go-jose/go-jose/v3"
 
-	meshconfig "istio.io/api/mesh/v1alpha1"
-	"istio.io/istio/pkg/config/constants"
+	meshconfig "istio.io/istio/istio.io/api/mesh/v1alpha1"
 	"istio.io/istio/pkg/log"
 	"istio.io/istio/pkg/util/sets"
 )
@@ -39,9 +38,6 @@ const (
 
 	URIPrefix    = Scheme + "://"
 	URIPrefixLen = len(URIPrefix)
-
-	// The default SPIFFE URL value for trust domain
-	defaultTrustDomain = constants.DefaultClusterLocalDomain
 
 	ServiceAccountSegment = "sa"
 	NamespaceSegment      = "ns"
@@ -87,37 +83,7 @@ type bundleDoc struct {
 	RefreshHint int    `json:"spiffe_refresh_hint,omitempty"`
 }
 
-func sanitizeTrustDomain(td string) string {
-	return strings.Replace(td, "@", ".", -1)
-}
-
-// GenSpiffeURI returns the formatted uri(SPIFFE format for now) for the certificate.
-func genSpiffeURI(td string, ns, serviceAccount string) (string, error) {
-	var err error
-	if ns == "" || serviceAccount == "" {
-		err = fmt.Errorf(
-			"namespace or service account empty for SPIFFE uri ns=%v serviceAccount=%v", ns, serviceAccount)
-	}
-	return URIPrefix + sanitizeTrustDomain(td) + "/ns/" + ns + "/sa/" + serviceAccount, err
-}
-
-// MustGenSpiffeURI returns the formatted uri(SPIFFE format for now) for the certificate and logs if there was an error.
-func MustGenSpiffeURI(meshCfg *meshconfig.MeshConfig, ns, serviceAccount string) string {
-	uri, err := genSpiffeURI(meshCfg.GetTrustDomain(), ns, serviceAccount)
-	if err != nil {
-		spiffeLog.Debug(err.Error())
-	}
-	return uri
-}
-
 // MustGenSpiffeURIForTrustDomain returns the formatted uri(SPIFFE format for now) for the certificate and logs if there was an error.
-func MustGenSpiffeURIForTrustDomain(td, ns, serviceAccount string) string {
-	uri, err := genSpiffeURI(td, ns, serviceAccount)
-	if err != nil {
-		spiffeLog.Debug(err.Error())
-	}
-	return uri
-}
 
 // ExpandWithTrustDomains expands a given spiffe identities, plus a list of trust domain aliases.
 // We ensure the returned list does not contain duplicates; the original input is always retained.
@@ -351,4 +317,27 @@ func (v *PeerCertVerifier) VerifyPeerCert(rawCerts [][]byte, _ [][]*x509.Certifi
 		Intermediates: intCertPool,
 	})
 	return err
+}
+
+func sanitizeTrustDomain(td string) string {
+	return strings.Replace(td, "@", ".", -1)
+}
+
+// GenSpiffeURI returns the formatted uri(SPIFFE format for now) for the certificate.
+func genSpiffeURI(td string, ns, serviceAccount string) (string, error) {
+	var err error
+	if ns == "" || serviceAccount == "" {
+		err = fmt.Errorf(
+			"namespace or service account empty for SPIFFE uri ns=%v serviceAccount=%v", ns, serviceAccount)
+	}
+	return URIPrefix + sanitizeTrustDomain(td) + "/ns/" + ns + "/sa/" + serviceAccount, err
+}
+
+// MustGenSpiffeURI returns the formatted uri(SPIFFE format for now) for the certificate and logs if there was an error.
+func MustGenSpiffeURI(meshCfg *meshconfig.MeshConfig, ns, serviceAccount string) string {
+	uri, err := genSpiffeURI(meshCfg.GetTrustDomain(), ns, serviceAccount)
+	if err != nil {
+		spiffeLog.Debug(err.Error())
+	}
+	return uri
 }

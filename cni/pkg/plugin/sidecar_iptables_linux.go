@@ -24,7 +24,6 @@ import (
 	"istio.io/istio/pkg/log"
 	"istio.io/istio/tools/istio-iptables/pkg/cmd"
 	"istio.io/istio/tools/istio-iptables/pkg/config"
-	"istio.io/istio/tools/istio-iptables/pkg/dependencies"
 )
 
 // getNs is a unit test override variable for interface create.
@@ -48,7 +47,7 @@ func (ipt *iptables) Program(podName, netns string, rdrct *Redirect) error {
 	cfg.OutboundPortsInclude = rdrct.includeOutboundPorts
 	cfg.OutboundIPRangesExclude = rdrct.excludeIPCidrs
 	cfg.KubeVirtInterfaces = rdrct.kubevirtInterfaces
-	cfg.DryRun = dependencies.DryRunFilePath.Get() != ""
+	cfg.DryRun = false
 	cfg.RedirectDNS = rdrct.dnsRedirect
 	cfg.CaptureAllDNS = rdrct.dnsRedirect
 	cfg.DropInvalid = rdrct.invalidDrop

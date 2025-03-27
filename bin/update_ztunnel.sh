@@ -18,21 +18,21 @@ set -e
 
 UPDATE_BRANCH=${UPDATE_BRANCH:-"release-1.24"}
 
-SCRIPTPATH="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+SCRIPTPATH="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOTDIR=$(dirname "${SCRIPTPATH}")
 cd "${ROOTDIR}"
 
 # Get the sha of top commit
 # $1 = repo
 function getSha() {
-  local dir result
-  dir=$(mktemp -d)
-  git clone --depth=1 "https://github.com/istio/${1}.git" -b "${UPDATE_BRANCH}" "${dir}"
+	local dir result
+	dir=$(mktemp -d)
+	git clone --depth=1 "https://github.com/istio/${1}.git" -b "${UPDATE_BRANCH}" "${dir}"
 
-  result="$(cd "${dir}" && git rev-parse HEAD)"
-  rm -rf "${dir}"
+	result="$(cd "${dir}" && git rev-parse HEAD)"
+	rm -rf "${dir}"
 
-  echo "${result}"
+	echo "${result}"
 }
 
 sed -i '/ZTUNNEL_REPO_SHA/,/lastStableSHA/ { s/"lastStableSHA":.*/"lastStableSHA": "'"$(getSha ztunnel)"'"/  }' istio.deps

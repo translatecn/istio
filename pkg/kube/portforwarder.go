@@ -123,9 +123,8 @@ func (f *forwarder) Address() string {
 }
 
 func (f *forwarder) Close() {
-	close(f.stopCh)
 	// Closing the stop channel should close anything
-	// opened by f.forwarder.ForwardPorts()
+	// opened by f.forwarder.ForwardPorts()	close(f.stopCh)
 }
 
 func (f *forwarder) ErrChan() <-chan error {

@@ -21,7 +21,6 @@ import (
 	"net"
 	"net/http"
 	"strconv"
-	"sync"
 	"sync/atomic"
 	"time"
 
@@ -30,10 +29,7 @@ import (
 	"istio.io/istio/pkg/log"
 )
 
-var (
-	cfgContent  = "{\"jwks_uri\": \"%s\"}"
-	serverMutex = &sync.Mutex{}
-)
+var cfgContent = "{\"jwks_uri\": \"%s\"}"
 
 const (
 	// JwtPubKey1 is the response to 1st call for JWT public key returned by mock server.
@@ -47,21 +43,6 @@ const (
 	// JwtPubKey2 is the response to later calls for JWT public key returned by mock server.
 	JwtPubKey2 = `{ "keys": [ { "kid": "fakeKey2_1", "alg": "RS256", "kty": "RSA", "n": "ghi", "e": "lmn" },
 			{ "kid": "fakeKey2_2", "alg": "RS256", "kty": "RSA", "n": "789", "e": "1234" } ] }`
-
-	JwtPubKeyNoKid = `{ "keys": [ { "alg": "RS256", "kty": "RSA", "n": "abc", "e": "def" },
-			{ "alg": "RS256", "kty": "RSA", "n": "123", "e": "456" } ] }`
-
-	JwtPubKeyNoKid2 = `{ "keys": [ { "alg": "RS256", "kty": "RSA", "n": "ghi", "e": "lmn" },
-			{ "alg": "RS256", "kty": "RSA", "n": "789", "e": "123" } ] }`
-
-	JwtPubKeyNoKeys = `{ "pub": [ { "kid": "fakeKey1_1", "alg": "RS256", "kty": "RSA", "n": "abc", "e": "def" },
-			{ "kid": "fakeKey1_2", "alg": "RS256", "kty": "RSA", "n": "123", "e": "456" } ] }`
-
-	JwtPubKeyNoKeys2 = `{ "pub": [ { "kid": "fakeKey1_3", "alg": "RS256", "kty": "RSA", "n": "abc", "e": "def" },
-			{ "kid": "fakeKey1_4", "alg": "RS256", "kty": "RSA", "n": "123", "e": "456" } ] }`
-
-	JwtPubKeyExtraElements = `{ "keys": [ { "kid": "fakeKey1_1", "alg": "RS256", "kty": "RSA", "n": "abc", "e": "def", "bla": "blah" },
-			{ "kid": "fakeKey1_2", "alg": "RS256", "kty": "RSA", "n": "123", "e": "456", "bla": "blah" } ] }`
 )
 
 // Wrap the original handler with a delay
@@ -111,50 +92,10 @@ type MockOpenIDDiscoveryServer struct {
 }
 
 // StartNewServer creates a mock openID discovery server and starts it
-func StartNewServer() (*MockOpenIDDiscoveryServer, error) {
-	serverMutex.Lock()
-	defer serverMutex.Unlock()
-
-	server := &MockOpenIDDiscoveryServer{
-		// 0 means the mock server always return the success result.
-		ReturnErrorForFirstNumHits:   0,
-		ReturnErrorAfterFirstNumHits: 0,
-	}
-
-	return server, server.Start()
-}
 
 // StartNewServer creates a mock openID discovery server with an artificious timeout on handling requests and starts it
-func StartNewServerWithHandlerDelay(timeout time.Duration) (*MockOpenIDDiscoveryServer, error) {
-	serverMutex.Lock()
-	defer serverMutex.Unlock()
-
-	server := &MockOpenIDDiscoveryServer{
-		// 0 means the mock server always return the success result.
-		ReturnErrorForFirstNumHits:   0,
-		ReturnErrorAfterFirstNumHits: 0,
-		timeout:                      timeout,
-	}
-
-	return server, server.Start()
-}
 
 // StartNewTLSServer creates a mock openID discovery server that serves HTTPS and starts it
-func StartNewTLSServer(tlsCert, tlsKey string) (*MockOpenIDDiscoveryServer, error) {
-	serverMutex.Lock()
-	defer serverMutex.Unlock()
-
-	server := &MockOpenIDDiscoveryServer{
-		// 0 means the mock server always return the success result.
-		ReturnErrorForFirstNumHits:   0,
-		ReturnErrorAfterFirstNumHits: 0,
-
-		TLSCertFile: tlsCert,
-		TLSKeyFile:  tlsKey,
-	}
-
-	return server, server.Start()
-}
 
 // Start starts the mock server.
 func (ms *MockOpenIDDiscoveryServer) Start() error {

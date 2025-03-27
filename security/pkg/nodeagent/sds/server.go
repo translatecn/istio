@@ -21,7 +21,7 @@ import (
 	"go.uber.org/atomic"
 	"google.golang.org/grpc"
 
-	mesh "istio.io/api/mesh/v1alpha1"
+	mesh "istio.io/istio/istio.io/api/mesh/v1alpha1"
 	"istio.io/istio/pkg/security"
 	"istio.io/istio/pkg/uds"
 )

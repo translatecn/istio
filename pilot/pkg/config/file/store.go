@@ -113,8 +113,7 @@ func (s *KubeSource) RegisterEventHandler(kind config.GroupVersionKind, handler 
 	panic("implement me")
 }
 
-func (s *KubeSource) Run(stop <-chan struct{}) {
-}
+func (s *KubeSource) Run(stop <-chan struct{}) {}
 
 func (s *KubeSource) HasSynced() bool {
 	return true
@@ -148,8 +147,7 @@ type kubeResourceKey struct {
 
 var _ model.ConfigStore = &KubeSource{}
 
-// NewKubeSource returns a new in-memory Source that works with Kubernetes resources.
-func NewKubeSource(schemas collection.Schemas) *KubeSource {
+func NewKubeSourceInMemory(schemas collection.Schemas) *KubeSource {
 	name := fmt.Sprintf("kube-inmemory-%d", inMemoryKubeNameDiscriminator)
 	inMemoryKubeNameDiscriminator++
 
@@ -418,9 +416,7 @@ func (s *KubeSource) parseChunk(r *collection.Schemas, name string, lineNum int,
 	// yamlv3.Node contains information like line number of the node, which will be used with its name to construct the field map
 	yamlChunkNode := yamlv3.Node{}
 	err = yamlv3.Unmarshal(yamlChunk, &yamlChunkNode)
-	if err == nil && len(yamlChunkNode.Content) == 1 {
-
-		// Get the Node that contains all the YAML chunk information
+	if err == nil && len(yamlChunkNode.Content) == 1 { // Get the Node that contains all the YAML chunk information
 		yamlNode := yamlChunkNode.Content[0]
 
 		BuildFieldPathMap(yamlNode, lineNum, "", fieldMap)
@@ -552,6 +548,7 @@ func TranslateObject(obj *unstructured.Unstructured, domainSuffix string, schema
 // BuildFieldPathMap builds the flat map for each field of the YAML resource
 func BuildFieldPathMap(yamlNode *yamlv3.Node, startLineNum int, curPath string, fieldPathMap map[string]int) {
 	// If no content in the node, terminate the DFS search
+
 	if len(yamlNode.Content) == 0 {
 		return
 	}

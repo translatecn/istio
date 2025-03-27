@@ -56,78 +56,6 @@ type SelfSignedCARootCertRotator struct {
 	onRootCertUpdate   func() error
 }
 
-// NewSelfSignedCARootCertRotator returns a new root cert rotator instance that
-// rotates self-signed root cert periodically.
-// nolint: gosec
-// Not security sensitive code
-func NewSelfSignedCARootCertRotator(config *SelfSignedCARootCertRotatorConfig,
-	ca *IstioCA,
-	onRootCertUpdate func() error,
-) *SelfSignedCARootCertRotator {
-	rotator := &SelfSignedCARootCertRotator{
-		caSecretController: controller.NewCaSecretController(config.client),
-		config:             config,
-		ca:                 ca,
-		onRootCertUpdate:   onRootCertUpdate,
-	}
-	if config.enableJitter {
-		// Select a back off time in seconds, which is in the range of [0, rotator.config.CheckInterval).
-		randSource := rand.NewSource(time.Now().UnixNano())
-		randBackOff := rand.New(randSource)
-		backOffSeconds := int(time.Duration(randBackOff.Int63n(int64(rotator.config.CheckInterval))).Seconds())
-		rotator.backOffTime = time.Duration(backOffSeconds) * time.Second
-		rootCertRotatorLog.Infof("Set up back off time %s to start rotator.", rotator.backOffTime.String())
-	} else {
-		rotator.backOffTime = time.Duration(0)
-	}
-	return rotator
-}
-
-// Run refreshes root certs and updates config map accordingly.
-func (rotator *SelfSignedCARootCertRotator) Run(stopCh chan struct{}) {
-	if rotator.config.enableJitter {
-		rootCertRotatorLog.Infof("Jitter is enabled, wait %s before "+
-			"starting root cert rotator.", rotator.backOffTime.String())
-		select {
-		case <-time.After(rotator.backOffTime):
-			rootCertRotatorLog.Infof("Jitter complete, start rotator.")
-		case <-stopCh:
-			rootCertRotatorLog.Info("Received stop signal, so stop the root cert rotator.")
-			return
-		}
-	}
-	ticker := time.NewTicker(rotator.config.CheckInterval)
-	for {
-		select {
-		case <-ticker.C:
-			rootCertRotatorLog.Info("Check and rotate root cert.")
-			rotator.checkAndRotateRootCert()
-		case _, ok := <-stopCh:
-			if !ok {
-				rootCertRotatorLog.Info("Received stop signal, so stop the root cert rotator.")
-				if ticker != nil {
-					ticker.Stop()
-				}
-				return
-			}
-		}
-	}
-}
-
-// checkAndRotateRootCert decides whether root cert should be refreshed, and rotates
-// root cert for self-signed Citadel.
-func (rotator *SelfSignedCARootCertRotator) checkAndRotateRootCert() {
-	caSecret, scrtErr := rotator.caSecretController.LoadCASecretWithRetry(rotator.config.secretName,
-		rotator.config.caStorageNamespace, rotator.config.retryInterval, rotator.config.retryMax)
-
-	if scrtErr != nil {
-		rootCertRotatorLog.Errorf("Fail to load CA secret %s:%s (error: %s), skip cert rotation job",
-			rotator.config.caStorageNamespace, rotator.config.secretName, scrtErr.Error())
-	} else {
-		rotator.checkAndRotateRootCertForSigningCertCitadel(caSecret)
-	}
-}
-
 // checkAndRotateRootCertForSigningCertCitadel checks root cert secret and rotates
 // root cert if the current one is about to expire. The rotation uses existing
 // root private key to generate a new root cert, and updates root cert secret.
@@ -135,8 +63,7 @@ func (rotator *SelfSignedCARootCertRotator) checkAndRotateRootCertForSigningCert
 	caSecret *v1.Secret,
 ) {
 	if caSecret == nil {
-		rootCertRotatorLog.Errorf("root cert secret %s is nil, skip cert rotation job",
-			rotator.config.secretName)
+		rootCertRotatorLog.Errorf("root cert secret %s is nil, skip cert rotation job", rotator.config.secretName)
 		return
 	}
 	// Check root certificate expiration time in CA secret
@@ -253,4 +180,72 @@ func (rotator *SelfSignedCARootCertRotator) updateRootCertificate(caSecret *v1.S
 		_ = rotator.onRootCertUpdate()
 	}
 	return false, nil
+}
+
+// NewSelfSignedCARootCertRotator returns a new root cert rotator instance that
+// rotates self-signed root cert periodically.
+// nolint: gosec
+// Not security sensitive code
+func NewSelfSignedCARootCertRotator(config *SelfSignedCARootCertRotatorConfig,
+	ca *IstioCA,
+	onRootCertUpdate func() error,
+) *SelfSignedCARootCertRotator {
+	rotator := &SelfSignedCARootCertRotator{
+		caSecretController: controller.NewCaSecretController(config.client),
+		config:             config,
+		ca:                 ca,
+		onRootCertUpdate:   onRootCertUpdate,
+	}
+	if config.enableJitter {
+		// Select a back off time in seconds, which is in the range of [0, rotator.config.CheckInterval).
+		randSource := rand.NewSource(time.Now().UnixNano())
+		randBackOff := rand.New(randSource)
+		backOffSeconds := int(time.Duration(randBackOff.Int63n(int64(rotator.config.CheckInterval))).Seconds())
+		rotator.backOffTime = time.Duration(backOffSeconds) * time.Second
+		rootCertRotatorLog.Infof("Set up back off time %s to start rotator.", rotator.backOffTime.String())
+	} else {
+		rotator.backOffTime = time.Duration(0)
+	}
+	return rotator
+}
+
+// Run refreshes root certs and updates config map accordingly.
+func (rotator *SelfSignedCARootCertRotator) Run(stopCh chan struct{}) {
+	if rotator.config.enableJitter {
+		rootCertRotatorLog.Infof("Jitter is enabled, wait %s before starting root cert rotator.", rotator.backOffTime.String())
+		select {
+		case <-time.After(rotator.backOffTime):
+			rootCertRotatorLog.Infof("Jitter complete, start rotator.")
+		case <-stopCh:
+			rootCertRotatorLog.Info("Received stop signal, so stop the root cert rotator.")
+			return
+		}
+	}
+	ticker := time.NewTicker(rotator.config.CheckInterval)
+	for {
+		select {
+		case <-ticker.C:
+			rootCertRotatorLog.Info("Check and rotate root cert.")
+			rotator.checkAndRotateRootCert()
+		case _, ok := <-stopCh:
+			if !ok {
+				rootCertRotatorLog.Info("Received stop signal, so stop the root cert rotator.")
+				if ticker != nil {
+					ticker.Stop()
+				}
+				return
+			}
+		}
+	}
+}
+
+// checkAndRotateRootCert decides whether root cert should be refreshed, and rotates
+// root cert for self-signed Citadel.
+func (rotator *SelfSignedCARootCertRotator) checkAndRotateRootCert() {
+	caSecret, scrtErr := rotator.caSecretController.LoadCASecretWithRetry(rotator.config.secretName, rotator.config.caStorageNamespace, rotator.config.retryInterval, rotator.config.retryMax)
+	if scrtErr != nil {
+		rootCertRotatorLog.Errorf("Fail to load CA secret %s:%s (error: %s), skip cert rotation job", rotator.config.caStorageNamespace, rotator.config.secretName, scrtErr.Error())
+	} else {
+		rotator.checkAndRotateRootCertForSigningCertCitadel(caSecret)
+	}
 }

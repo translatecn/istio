@@ -12,20 +12,20 @@ spec:
       labels:
         app: external-forward-proxy
     spec:
-      {{ if not .OpenShift }}
+      { { if not .OpenShift } }
       securityContext:
         runAsUser: 65534
         runAsGroup: 65534
         fsGroup: 65534
-      {{ end }}
+      { { end } }
       containers:
-      - name: external-forward-proxy
-        image: envoyproxy/envoy:v1.21.0
-        imagePullPolicy: IfNotPresent
-        volumeMounts:
-        - name: external-forward-proxy-config
-          mountPath: /etc/envoy
+        - name: external-forward-proxy
+          image: envoyproxy/envoy:v1.21.0
+          imagePullPolicy: IfNotPresent
+          volumeMounts:
+            - name: external-forward-proxy-config
+              mountPath: /etc/envoy
       volumes:
-      - name: external-forward-proxy-config
-        configMap:
-          name: external-forward-proxy-config
+        - name: external-forward-proxy-config
+          configMap:
+            name: external-forward-proxy-config

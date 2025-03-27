@@ -20,11 +20,7 @@ import "istio.io/istio/pkg/monitoring"
 var RequestType = monitoring.CreateLabel("request_type")
 
 const (
-	TokenExchange = "token_exchange"
-	CSR           = "csr"
+	CSR = "csr"
 )
 
-var NumOutgoingRetries = monitoring.NewSum(
-	"num_outgoing_retries",
-	"Number of outgoing retry requests (e.g. to a token exchange server, CA, etc.)",
-)
+var NumOutgoingRetries = monitoring.NewSum("num_outgoing_retries", "Number of outgoing retry requests (e.g. to a token exchange server, CA, etc.)")

@@ -23,17 +23,19 @@ import (
 type Namespace string
 
 func (n Namespace) String() string {
+	// LocalName that uniquely identifies the resource within the Namespace.
+
 	return string(n)
 }
 
-// LocalName that uniquely identifies the resource within the Namespace.
 type LocalName string
 
 func (n LocalName) String() string {
+	// FullName is a name that uniquely identifies a resource within the mesh.
+
 	return string(n)
 }
 
-// FullName is a name that uniquely identifies a resource within the mesh.
 type FullName struct {
 	Namespace Namespace
 	Name      LocalName

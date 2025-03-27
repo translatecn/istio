@@ -6,15 +6,15 @@ typedConfig:
     policies:
       ns[foo]-policy[httpbin-2]-rule[0]:
         permissions:
-        - andRules:
-            rules:
-            - orRules:
-                rules:
-                - urlPath:
-                    path:
-                      exact: /deny
+          - andRules:
+              rules:
+                - orRules:
+                    rules:
+                      - urlPath:
+                          path:
+                            exact: /deny
         principals:
-        - andIds:
-            ids:
-            - any: true
+          - andIds:
+              ids:
+                - any: true
   shadowRulesStatPrefix: istio_dry_run_deny_

@@ -46,16 +46,6 @@ func NewController(cs model.ConfigStore) *Controller {
 	return out
 }
 
-// NewSyncController return an implementation of model.ConfigStoreController which processes events synchronously
-func NewSyncController(cs model.ConfigStore) *Controller {
-	out := &Controller{
-		configStore: cs,
-		monitor:     NewSyncMonitor(cs),
-	}
-
-	return out
-}
-
 func (c *Controller) RegisterHasSyncedHandler(cb func() bool) {
 	c.hasSynced = cb
 }

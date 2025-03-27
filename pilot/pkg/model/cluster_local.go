@@ -51,20 +51,6 @@ type ClusterLocalProvider interface {
 	GetClusterLocalHosts() ClusterLocalHosts
 }
 
-// NewClusterLocalProvider returns a new ClusterLocalProvider for the Environment.
-func NewClusterLocalProvider(e *Environment) ClusterLocalProvider {
-	c := &clusterLocalProvider{}
-
-	// Register a handler to update the environment when the mesh config is updated.
-	e.AddMeshHandler(func() {
-		c.onMeshUpdated(e)
-	})
-
-	// Update the cluster-local hosts now.
-	c.onMeshUpdated(e)
-	return c
-}
-
 var _ ClusterLocalProvider = &clusterLocalProvider{}
 
 type clusterLocalProvider struct {
@@ -81,6 +67,7 @@ func (c *clusterLocalProvider) GetClusterLocalHosts() ClusterLocalHosts {
 
 func (c *clusterLocalProvider) onMeshUpdated(e *Environment) {
 	// Create the default list of cluster-local hosts.
+
 	domainSuffix := e.DomainSuffix
 	defaultClusterLocalHosts := make([]host.Name, 0)
 	for _, n := range defaultClusterLocalNamespaces {
@@ -113,8 +100,7 @@ func (c *clusterLocalProvider) onMeshUpdated(e *Environment) {
 				for i, defaultClusterLocalHost := range defaultClusterLocalHosts {
 					if len(defaultClusterLocalHost) > 0 {
 						if h == string(defaultClusterLocalHost) ||
-							(defaultClusterLocalHost.IsWildCarded() &&
-								strings.HasSuffix(h, string(defaultClusterLocalHost[1:]))) {
+							(defaultClusterLocalHost.IsWildCarded() && strings.HasSuffix(h, string(defaultClusterLocalHost[1:]))) {
 							// This default was explicitly overridden, so remove it.
 							defaultClusterLocalHosts[i] = ""
 						}
@@ -148,4 +134,17 @@ func (c *clusterLocalProvider) onMeshUpdated(e *Environment) {
 	c.mutex.Lock()
 	c.hosts = hosts
 	c.mutex.Unlock()
+}
+
+func NewClusterLocalProvider(e *Environment) ClusterLocalProvider {
+	c := &clusterLocalProvider{}
+
+	// Register a handler to update the environment when the mesh config is updated.
+	e.AddMeshHandler(func() {
+		c.onMeshUpdated(e)
+	})
+
+	// Update the cluster-local hosts now.
+	c.onMeshUpdated(e)
+	return c
 }

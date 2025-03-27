@@ -35,6 +35,7 @@ var CloudPlatform = env.Register("CLOUD_PLATFORM", "", "Cloud Platform on which 
 // `Unknown` if a platform cannot be discovered.
 func Discover(ipv6 bool) Environment {
 	// First check if user has specified platform - use it if provided.
+
 	if len(CloudPlatform) > 0 {
 		switch strings.ToLower(CloudPlatform) {
 		case "aws":

@@ -12,7 +12,7 @@ metadata:
     app.kubernetes.io/name: "istio-ingressgateway"
     {{- include "istio.labels" . | nindent 4 }}
 rules:
-- apiGroups: [""]
-  resources: ["secrets"]
-  verbs: ["get", "watch", "list"]
+  - apiGroups: [ "" ]
+    resources: [ "secrets" ]
+    verbs: [ "get", "watch", "list" ]
 ---

@@ -17,8 +17,8 @@ package annotations
 import (
 	"strings"
 
-	"istio.io/api/annotation"
-	"istio.io/api/label"
+	"istio.io/istio/istio.io/api/annotation"
+	"istio.io/istio/istio.io/api/label"
 	"istio.io/istio/pkg/config"
 	"istio.io/istio/pkg/config/analysis"
 	"istio.io/istio/pkg/config/analysis/analyzers/maturity"
@@ -143,6 +143,7 @@ outer:
 // istioAnnotation is true if the annotation is in Istio's namespace
 func istioAnnotation(ann string) bool {
 	// We document this Kubernetes annotation, we should analyze it as well
+
 	if ann == "kubernetes.io/ingress.class" {
 		return true
 	}

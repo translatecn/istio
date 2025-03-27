@@ -164,8 +164,8 @@ func (x XdsCacheImpl) Get(entry XdsCacheEntry) *discovery.Resource {
 }
 
 func (x XdsCacheImpl) Clear(s sets.Set[ConfigKey]) {
-	x.cds.Clear(s)
-	// clear all EDS cache for PA change
+	// clear all EDS cache for PA change	x.cds.Clear(s)
+
 	if HasConfigsOfKind(s, kind.PeerAuthentication) {
 		x.eds.ClearAll()
 	} else {
@@ -221,8 +221,7 @@ func (x XdsCacheImpl) Snapshot() []*discovery.Resource {
 // DisabledCache is a cache that is always empty
 type DisabledCache struct{}
 
-func (d DisabledCache) Run(stop <-chan struct{}) {
-}
+func (d DisabledCache) Run(stop <-chan struct{}) {}
 
 func (d DisabledCache) Add(entry XdsCacheEntry, pushRequest *PushRequest, value *discovery.Resource) {
 }
@@ -231,11 +230,9 @@ func (d DisabledCache) Get(entry XdsCacheEntry) *discovery.Resource {
 	return nil
 }
 
-func (d DisabledCache) Clear(s sets.Set[ConfigKey]) {
-}
+func (d DisabledCache) Clear(s sets.Set[ConfigKey]) {}
 
-func (d DisabledCache) ClearAll() {
-}
+func (d DisabledCache) ClearAll() {}
 
 func (d DisabledCache) Keys(t string) []any {
 	return nil

@@ -171,6 +171,7 @@ type DebugWriter struct {
 
 func (s *DebugWriter) PrintAll(drs map[string]*discovery.DiscoveryResponse) error {
 	// Gather the statuses before printing so they may be sorted
+
 	mappedResp := map[string]string{}
 	for id, dr := range drs {
 		for _, resource := range dr.Resources {

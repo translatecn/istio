@@ -43,30 +43,6 @@ type NetlinkIpsetDeps interface {
 	listEntriesByIP(name string) ([]netip.Addr, error)
 }
 
-// TODO this should actually create v6 and v6 subsets of type `hash:ip`, add them both to a
-// superset of type `list:set` - we can then query the superset directly in iptables (with the same rule),
-// and iptables will be smart enough to pick the correct underlying set (v4 or v6, based on context),
-// reducing the # of rules we need.
-//
-// BUT netlink lib doesn't support adding things to `list:set` types yet, and current tagged release
-// doesn't support creating `list:set` types yet (is in main branch tho).
-// So this will actually create 2 underlying ipsets, one for v4 and one for v6
-func NewIPSet(name string, v6 bool, deps NetlinkIpsetDeps) (IPSet, error) {
-	var err error
-	set := IPSet{
-		V4Name: fmt.Sprintf(V4Name, name),
-		Deps:   deps,
-		Prefix: name,
-	}
-	err = deps.ipsetIPHashCreate(set.V4Name, false)
-	if v6 {
-		set.V6Name = fmt.Sprintf(V6Name, name)
-		v6err := deps.ipsetIPHashCreate(set.V6Name, true)
-		err = errors.Join(err, v6err)
-	}
-	return set, err
-}
-
 func (m *IPSet) DestroySet() error {
 	var err error
 	err = m.Deps.destroySet(m.V4Name)
@@ -138,6 +114,30 @@ func (m *IPSet) ListEntriesByIP() ([]netip.Addr, error) {
 		v6set, v6err := m.Deps.listEntriesByIP(m.V6Name)
 		err = errors.Join(err, v6err)
 		set = append(set, v6set...)
+	}
+	return set, err
+}
+
+// TODO this should actually create v6 and v6 subsets of type `hash:ip`, add them both to a
+// superset of type `list:set` - we can then query the superset directly in iptables (with the same rule),
+// and iptables will be smart enough to pick the correct underlying set (v4 or v6, based on context),
+// reducing the # of rules we need.
+//
+// BUT netlink lib doesn't support adding things to `list:set` types yet, and current tagged release
+// doesn't support creating `list:set` types yet (is in main branch tho).
+// So this will actually create 2 underlying ipsets, one for v4 and one for v6
+func NewIPSet(name string, v6 bool, deps NetlinkIpsetDeps) (IPSet, error) {
+	var err error
+	set := IPSet{
+		V4Name: fmt.Sprintf(V4Name, name),
+		Deps:   deps,
+		Prefix: name,
+	}
+	err = deps.ipsetIPHashCreate(set.V4Name, false)
+	if v6 {
+		set.V6Name = fmt.Sprintf(V6Name, name)
+		v6err := deps.ipsetIPHashCreate(set.V6Name, true)
+		err = errors.Join(err, v6err)
 	}
 	return set, err
 }

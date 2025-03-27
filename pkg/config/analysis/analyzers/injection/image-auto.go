@@ -121,6 +121,7 @@ func matchesWebhooks(nsLabels, podLabels map[string]string, istioWebhooks []admi
 
 func selectorMatches(selector *metav1.LabelSelector, labels klabels.Set) bool {
 	// From webhook spec: "Default to the empty LabelSelector, which matchesWebhooks everything."
+
 	if selector == nil {
 		return true
 	}

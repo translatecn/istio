@@ -48,6 +48,7 @@ func GenKeyCertK8sCA(client clientset.Interface, dnsName,
 	caFilePath string, signerName string, approveCsr bool, requestedLifetime time.Duration,
 ) ([]byte, []byte, []byte, error) {
 	// 1. Generate a CSR
+
 	options := util.CertOptions{
 		Host:       dnsName,
 		RSAKeySize: keySize,
@@ -81,6 +82,7 @@ func SignCSRK8s(client clientset.Interface, csrData []byte, signerName string, u
 	dnsName, caFilePath string, approveCsr, appendCaCert bool, requestedLifetime time.Duration,
 ) ([]byte, []byte, error) {
 	// 1. Submit the CSR
+
 	csr, err := submitCSR(client, csrData, signerName, usages, requestedLifetime)
 	if err != nil {
 		return nil, nil, err
@@ -185,6 +187,7 @@ func readSignedCertificate(client clientset.Interface, csr *cert.CertificateSign
 	watchTimeout time.Duration, caCertPath string, appendCaCert bool,
 ) ([]byte, []byte, error) {
 	// First try to read the signed CSR through a watching mechanism
+
 	certPEM, err := readSignedCsr(client, csr.Name, watchTimeout)
 	if err != nil {
 		return nil, nil, err

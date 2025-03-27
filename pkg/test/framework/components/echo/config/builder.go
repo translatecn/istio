@@ -230,9 +230,8 @@ func replaceNamespaceStrings(s Source) Source {
 }
 
 func (b *Builder) addYAML(s Source) {
-	b.t.Helper()
+	// Ensure all parameters have been set.	b.t.Helper()
 
-	// Ensure all parameters have been set.
 	b.checkMissing(s)
 
 	// Get the namespace where the config should be applied.

@@ -21,10 +21,11 @@
 package workloadapi
 
 import (
-	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
-	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
 	sync "sync"
+
+	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
+	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 )
 
 const (
@@ -618,11 +619,14 @@ type Address_Service struct {
 
 func (*Address_Workload) isAddress_Type() {}
 
-func (*Address_Service) isAddress_Type() {}
+func (*Address_Service) isAddress_Type() {
 
-// Service represents a service - a group of workloads that can be accessed together.
-// The xds primary key is "namespace/hostname".
-// Secondary (alias) keys are the unique `network/IP` pairs that the service can be reached at.
+	// Service represents a service - a group of workloads that can be accessed together.
+	// The xds primary key is "namespace/hostname".
+	// Secondary (alias) keys are the unique `network/IP` pairs that the service can be reached at.
+
+}
+
 type Service struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -1416,9 +1420,12 @@ type GatewayAddress_Address struct {
 
 func (*GatewayAddress_Hostname) isGatewayAddress_Destination() {}
 
-func (*GatewayAddress_Address) isGatewayAddress_Destination() {}
+func (*GatewayAddress_Address) isGatewayAddress_Destination() {
 
-// NetworkAddress represents an address bound to a specific network.
+	// NetworkAddress represents an address bound to a specific network.
+
+}
+
 type NetworkAddress struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache

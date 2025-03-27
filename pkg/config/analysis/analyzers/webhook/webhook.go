@@ -22,7 +22,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	klabels "k8s.io/apimachinery/pkg/labels"
 
-	"istio.io/api/label"
+	"istio.io/istio/istio.io/api/label"
 	"istio.io/istio/pkg/config"
 	"istio.io/istio/pkg/config/analysis"
 	"istio.io/istio/pkg/config/analysis/msg"
@@ -70,6 +70,7 @@ func getObjectLabels() []klabels.Set {
 
 func (a *Analyzer) Analyze(context analysis.Context) {
 	// First, extract and index all webhooks we found
+
 	webhooks := map[string][]v1.MutatingWebhook{}
 	resources := map[string]*resource.Instance{}
 	revisions := sets.New[string]()
@@ -199,6 +200,7 @@ func isDefaultRevisionedWebhook(wh *v1.MutatingWebhookConfiguration) bool {
 
 func selectorMatches(selector *metav1.LabelSelector, labels klabels.Set) bool {
 	// From webhook spec: "Default to the empty LabelSelector, which matches everything."
+
 	if selector == nil {
 		return true
 	}

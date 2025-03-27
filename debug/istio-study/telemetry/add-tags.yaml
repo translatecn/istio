@@ -1,0 +1,24 @@
+#add-tags.yaml
+apiVersion: telemetry.istio.io/v1alpha1
+kind: Telemetry
+metadata:
+  name: add-tags
+spec:
+  metrics:
+    - overrides:
+        - match:
+            metric: REQUEST_COUNT
+            mode: CLIENT
+          tagOverrides:
+            destination_x:
+              operation: UPSERT
+              value: "upstream_peer.labels['app'].value" # 必须加上双引号
+        - match:
+            metric: REQUEST_COUNT
+          tagOverrides:
+            destination_port:
+              value: "string(destination.port)"
+            request_host:
+              value: "request.host"
+      providers:
+        - name: prometheus

@@ -14,7 +14,9 @@
 
 package platform
 
-import "istio.io/istio/pkg/env"
+import (
+	"istio.io/istio/pkg/env"
+)
 
 const (
 	Default   = ""
@@ -22,16 +24,9 @@ const (
 	GCP       = "gcp"
 )
 
-var Platform = env.Register(
-	"PLATFORM",
-	Default,
-	"Platform where Istio is deployed. Possible values are \"openshift\" and \"gcp\"",
-)
+var Platform = env.Register("PLATFORM", Default, "Platform where Istio is deployed. Possible values are \"openshift\" and \"gcp\"")
 
 // IsDefault returns true if the platform is the Default one
-func IsDefault() bool {
-	return Platform.Get() == Default
-}
 
 // IsOpenShift returns true if the platform is OpenShift
 func IsOpenShift() bool {
@@ -39,6 +34,3 @@ func IsOpenShift() bool {
 }
 
 // IsGCP returns true if the platform is GCP
-func IsGCP() bool {
-	return Platform.Get() == GCP
-}

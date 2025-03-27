@@ -110,6 +110,7 @@ func Clone[S ~[]E, E any](s S) S {
 func Delete[S ~[]E, E any](s S, i int) S {
 	// Since Go 1.22, "slices.Delete zeroes the elements s[len(s)-(j-i):len(s)]"
 	// (no memory leak)
+
 	return slices.Delete(s, i, i+1)
 }
 
@@ -121,9 +122,6 @@ func Contains[E comparable](s []E, v E) bool {
 // Max returns the maximal value in x. It panics if x is empty.
 // For floating-point E, Max propagates NaNs (any NaN value in x
 // forces the output to be NaN).
-func Max[S ~[]E, E cmp.Ordered](x S) E {
-	return slices.Max(x)
-}
 
 // FindFunc finds the first element matching the function, or nil if none do
 func FindFunc[E any](s []E, f func(E) bool) *E {
@@ -159,6 +157,7 @@ func BinarySearch[S ~[]E, E cmp.Ordered](x S, target E) (int, bool) {
 // Use Filter to avoid mutation
 func FilterInPlace[E any](s []E, keep func(E) bool) []E {
 	// find the first to filter index
+
 	i := slices.IndexFunc(s, func(e E) bool {
 		return !keep(e)
 	})
@@ -260,37 +259,10 @@ func Reference[E any](s []E) []*E {
 }
 
 // Dereference returns all non-nil references, dereferenced
-func Dereference[E any](s []*E) []E {
-	res := make([]E, 0, len(s))
-	for _, v := range s {
-		if v != nil {
-			res = append(res, *v)
-		}
-	}
-	return res
-}
 
 // Flatten merges a slice of slices into a single slice.
-func Flatten[E any](s [][]E) []E {
-	if s == nil {
-		return nil
-	}
-	res := make([]E, 0)
-	for _, v := range s {
-		res = append(res, v...)
-	}
-	return res
-}
 
 // Group groups a slice by a key.
-func Group[T any, K comparable](data []T, f func(T) K) map[K][]T {
-	res := make(map[K][]T, len(data))
-	for _, e := range data {
-		k := f(e)
-		res[k] = append(res[k], e)
-	}
-	return res
-}
 
 // GroupUnique groups a slice by a key. Each key must be unique or data will be lost. To allow multiple use Group.
 func GroupUnique[T any, K comparable](data []T, f func(T) K) map[K]T {

@@ -19,4 +19,4 @@ import "embed"
 // FS embeds the manifests
 //
 //go:embed dataset/*
-var FS embed.FS
+var _ embed.FS

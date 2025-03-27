@@ -3,4 +3,6 @@ kind: IstioOperator
 metadata:
   namespace: istio-system
 spec:
+  hub: registry.cn-hangzhou.aliyuncs.com/acejilam
   values:
+

@@ -23,7 +23,7 @@ import (
 	"sync"
 	"time"
 
-	meshconfig "istio.io/api/mesh/v1alpha1"
+	meshconfig "istio.io/istio/istio.io/api/mesh/v1alpha1"
 	"istio.io/istio/pkg/config/mesh"
 	"istio.io/istio/pkg/log"
 	"istio.io/istio/pkg/slices"
@@ -84,37 +84,6 @@ var (
 	remoteTimeout  = 10 * time.Second
 )
 
-// NewTrustBundle returns a new trustbundle
-func NewTrustBundle(remoteCaCertPool *x509.CertPool, meshConfig mesh.Watcher) *TrustBundle {
-	var err error
-	tb := &TrustBundle{
-		sourceConfig: map[Source]TrustAnchorConfig{
-			SourceIstioCA:         {Certs: []string{}},
-			SourceMeshConfig:      {Certs: []string{}},
-			SourceIstioRA:         {Certs: []string{}},
-			sourceSpiffeEndpoints: {Certs: []string{}},
-		},
-		mergedCerts:        []string{},
-		updatecb:           nil,
-		endpointUpdateChan: make(chan struct{}, 1),
-		endpoints:          []string{},
-		meshConfig:         meshConfig,
-	}
-	if remoteCaCertPool == nil {
-		tb.remoteCaCertPool, err = x509.SystemCertPool()
-		if err != nil {
-			trustBundleLog.Errorf("failed to initialize remote Cert pool: %v", err)
-		}
-	} else {
-		tb.remoteCaCertPool = remoteCaCertPool
-	}
-	return tb
-}
-
-func (tb *TrustBundle) UpdateCb(updatecb func()) {
-	tb.updatecb = updatecb
-}
-
 // GetTrustBundle : Retrieves all the trustAnchors for current Spiffee Trust Domain
 func (tb *TrustBundle) GetTrustBundle() []string {
 	tb.mutex.RLock()
@@ -155,45 +124,6 @@ func (tb *TrustBundle) mergeInternal() {
 	}
 	tb.mergedCerts = mergeCerts
 	sort.Strings(tb.mergedCerts)
-}
-
-// UpdateTrustAnchor : External Function to merge a TrustAnchor config with the existing TrustBundle
-func (tb *TrustBundle) UpdateTrustAnchor(anchorConfig *TrustAnchorUpdate) error {
-	var ok bool
-	var err error
-
-	tb.mutex.RLock()
-	cachedConfig, ok := tb.sourceConfig[anchorConfig.Source]
-	tb.mutex.RUnlock()
-	if !ok {
-		return fmt.Errorf("invalid source of TrustBundle configuration %v", anchorConfig.Source)
-	}
-
-	// Check if anything needs to be changed at all
-	if slices.Equal(anchorConfig.Certs, cachedConfig.Certs) {
-		trustBundleLog.Debugf("no change to trustAnchor configuration after recent update")
-		return nil
-	}
-
-	for _, cert := range anchorConfig.Certs {
-		err = verifyTrustAnchor(cert)
-		if err != nil {
-			return err
-		}
-	}
-	tb.mutex.Lock()
-	tb.sourceConfig[anchorConfig.Source] = anchorConfig.TrustAnchorConfig
-	tb.mutex.Unlock()
-	tb.mergeInternal()
-
-	trustBundleLog.Infof("updating Source %v with certs %v",
-		anchorConfig.Source,
-		strings.Join(anchorConfig.TrustAnchorConfig.Certs, "\n"))
-
-	if tb.updatecb != nil {
-		tb.updatecb()
-	}
-	return nil
 }
 
 func (tb *TrustBundle) updateRemoteEndpoint(spiffeEndpoints []string) {
@@ -272,6 +202,33 @@ func (tb *TrustBundle) fetchRemoteTrustAnchors() {
 	}
 }
 
+// NewTrustBundle returns a new trustbundle 信任包
+func NewTrustBundle(remoteCaCertPool *x509.CertPool, meshConfig mesh.Watcher) *TrustBundle {
+	var err error
+	tb := &TrustBundle{
+		sourceConfig: map[Source]TrustAnchorConfig{
+			SourceIstioCA:         {Certs: []string{}},
+			SourceMeshConfig:      {Certs: []string{}},
+			SourceIstioRA:         {Certs: []string{}},
+			sourceSpiffeEndpoints: {Certs: []string{}},
+		},
+		mergedCerts:        []string{},
+		updatecb:           nil,
+		endpointUpdateChan: make(chan struct{}, 1),
+		endpoints:          []string{},
+		meshConfig:         meshConfig,
+	}
+	if remoteCaCertPool == nil {
+		tb.remoteCaCertPool, err = x509.SystemCertPool()
+		if err != nil {
+			trustBundleLog.Errorf("failed to initialize remote Cert pool: %v", err)
+		}
+	} else {
+		tb.remoteCaCertPool = remoteCaCertPool
+	}
+	return tb
+}
+
 func (tb *TrustBundle) ProcessRemoteTrustAnchors(stop <-chan struct{}, pollInterval time.Duration) {
 	ticker := time.NewTicker(pollInterval)
 	defer ticker.Stop()
@@ -288,4 +245,46 @@ func (tb *TrustBundle) ProcessRemoteTrustAnchors(stop <-chan struct{}, pollInter
 			trustBundleLog.Infof("processing endpoint trustAnchor Updates for config change")
 		}
 	}
+}
+
+func (tb *TrustBundle) UpdateCb(updatecb func()) {
+	tb.updatecb = updatecb
+}
+
+func (tb *TrustBundle) UpdateTrustAnchor(anchorConfig *TrustAnchorUpdate) error {
+	var ok bool
+	var err error
+
+	tb.mutex.RLock()
+	cachedConfig, ok := tb.sourceConfig[anchorConfig.Source]
+	tb.mutex.RUnlock()
+	if !ok {
+		return fmt.Errorf("invalid source of TrustBundle configuration %v", anchorConfig.Source)
+	}
+
+	// Check if anything needs to be changed at all
+	if slices.Equal(anchorConfig.Certs, cachedConfig.Certs) {
+		trustBundleLog.Debugf("no change to trustAnchor configuration after recent update")
+		return nil
+	}
+
+	for _, cert := range anchorConfig.Certs {
+		err = verifyTrustAnchor(cert)
+		if err != nil {
+			return err
+		}
+	}
+	tb.mutex.Lock()
+	tb.sourceConfig[anchorConfig.Source] = anchorConfig.TrustAnchorConfig
+	tb.mutex.Unlock()
+	tb.mergeInternal()
+
+	trustBundleLog.Infof("updating Source %v with certs %v",
+		anchorConfig.Source,
+		strings.Join(anchorConfig.TrustAnchorConfig.Certs, "\n"))
+
+	if tb.updatecb != nil {
+		tb.updatecb()
+	}
+	return nil
 }

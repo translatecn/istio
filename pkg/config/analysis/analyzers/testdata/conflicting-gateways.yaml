@@ -6,12 +6,12 @@ spec:
   selector:
     istio: ingressgateway
   servers:
-  - port:
-      number: 80
-      name: tcp
-      protocol: TCP
-    hosts:
-    - "foo.bar"
+    - port:
+        number: 80
+        name: tcp
+        protocol: TCP
+      hosts:
+        - "foo.bar"
 ---
 apiVersion: networking.istio.io/v1
 kind: Gateway
@@ -21,9 +21,9 @@ spec:
   selector:
     istio: ingressgateway
   servers:
-  - port:
-      number: 80
-      name: http
-      protocol: HTTP
-    hosts:
-    - "foo.bar"
+    - port:
+        number: 80
+        name: http
+        protocol: HTTP
+      hosts:
+        - "foo.bar"

@@ -15,26 +15,19 @@
 package ambient
 
 import (
-	"errors"
 	"fmt"
 	"io"
-	"time"
 
 	v1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"istio.io/api/label"
+	"istio.io/istio/istio.io/api/label"
 	"istio.io/istio/pkg/config/constants"
 	istioKube "istio.io/istio/pkg/kube"
-	"istio.io/istio/pkg/maps"
-	"istio.io/istio/pkg/test/framework"
 	"istio.io/istio/pkg/test/framework/components/crd"
 	"istio.io/istio/pkg/test/framework/components/istioctl"
 	"istio.io/istio/pkg/test/framework/components/namespace"
 	"istio.io/istio/pkg/test/framework/resource"
 	testKube "istio.io/istio/pkg/test/kube"
-	"istio.io/istio/pkg/test/scopes"
-	"istio.io/istio/pkg/test/util/retry"
 )
 
 var _ io.Closer = &kubeComponent{}
@@ -147,100 +140,3 @@ func NewWaypointProxy(ctx resource.Context, ns namespace.Instance, name string) 
 }
 
 // NewWaypointProxyOrFail calls NewWaypointProxy and fails if an error occurs.
-func NewWaypointProxyOrFail(t framework.TestContext, ns namespace.Instance, name string) WaypointProxy {
-	t.Helper()
-	s, err := NewWaypointProxy(t, ns, name)
-	if err != nil {
-		t.Fatal(err)
-	}
-	return s
-}
-
-func SetWaypointForService(t framework.TestContext, ns namespace.Instance, service, waypoint string) {
-	if service == "" {
-		return
-	}
-
-	cs := t.AllClusters()
-	for _, c := range cs {
-		oldSvc, err := c.Kube().CoreV1().Services(ns.Name()).Get(t.Context(), service, metav1.GetOptions{})
-		if err != nil {
-			t.Fatalf("error getting svc %s, err %v", service, err)
-		}
-		oldLabels := oldSvc.ObjectMeta.GetLabels()
-		if oldLabels == nil {
-			oldLabels = make(map[string]string, 1)
-		}
-		newLabels := maps.Clone(oldLabels)
-		if waypoint != "" {
-			newLabels[label.IoIstioUseWaypoint.Name] = waypoint
-		} else {
-			delete(newLabels, label.IoIstioUseWaypoint.Name)
-		}
-
-		doLabel := func(labels map[string]string) error {
-			// update needs the latest version
-			svc, err := c.Kube().CoreV1().Services(ns.Name()).Get(t.Context(), service, metav1.GetOptions{})
-			if err != nil {
-				return err
-			}
-			svc.ObjectMeta.SetLabels(labels)
-			_, err = c.Kube().CoreV1().Services(ns.Name()).Update(t.Context(), svc, metav1.UpdateOptions{})
-			return err
-		}
-
-		if err = doLabel(newLabels); err != nil {
-			t.Fatalf("error updating svc %s, err %v", service, err)
-		}
-		t.Cleanup(func() {
-			if err := doLabel(oldLabels); err != nil {
-				scopes.Framework.Errorf("failed resetting waypoint for %s/%s; this will likely break other tests", ns.Name(), service)
-			}
-		})
-
-	}
-}
-
-func DeleteWaypoint(t framework.TestContext, ns namespace.Instance, waypoint string) {
-	istioctl.NewOrFail(t, istioctl.Config{}).InvokeOrFail(t, []string{
-		"waypoint",
-		"delete",
-		"--namespace",
-		ns.Name(),
-		waypoint,
-	})
-	waypointError := retry.UntilSuccess(func() error {
-		fetch := testKube.NewPodFetch(t.AllClusters()[0], ns.Name(), label.IoK8sNetworkingGatewayGatewayName.Name+"="+waypoint)
-		pods, err := testKube.CheckPodsAreReady(fetch)
-		if err != nil && !errors.Is(err, testKube.ErrNoPodsFetched) {
-			return fmt.Errorf("cannot fetch pod: %v", err)
-		} else if len(pods) != 0 {
-			return fmt.Errorf("waypoint pod is not deleted")
-		}
-		return nil
-	}, retry.Timeout(time.Minute), retry.BackoffDelay(time.Millisecond*100))
-	if waypointError != nil {
-		t.Fatal(waypointError)
-	}
-}
-
-func RemoveWaypointFromService(t framework.TestContext, ns namespace.Instance, service, waypoint string) {
-	if service != "" {
-		cs := t.AllClusters().Configs()
-		for _, c := range cs {
-			oldSvc, err := c.Kube().CoreV1().Services(ns.Name()).Get(t.Context(), service, metav1.GetOptions{})
-			if err != nil {
-				t.Fatalf("error getting svc %s, err %v", service, err)
-			}
-			labels := oldSvc.ObjectMeta.GetLabels()
-			if labels != nil {
-				delete(labels, label.IoIstioUseWaypoint.Name)
-				oldSvc.ObjectMeta.SetLabels(labels)
-			}
-			_, err = c.Kube().CoreV1().Services(ns.Name()).Update(t.Context(), oldSvc, metav1.UpdateOptions{})
-			if err != nil {
-				t.Fatalf("error updating svc %s, err %v", service, err)
-			}
-		}
-	}
-}

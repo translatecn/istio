@@ -22,8 +22,8 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 
-	"istio.io/api/label"
-	networking "istio.io/api/networking/v1alpha3"
+	"istio.io/istio/istio.io/api/label"
+	networking "istio.io/istio/istio.io/api/networking/v1alpha3"
 	"istio.io/istio/pilot/pkg/model"
 	"istio.io/istio/pkg/cluster"
 	"istio.io/istio/pkg/config/host"

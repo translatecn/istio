@@ -17,7 +17,7 @@ package health
 import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
-	"istio.io/api/meta/v1alpha1"
+	"istio.io/istio/istio.io/api/meta/v1alpha1"
 	"istio.io/istio/pilot/pkg/autoregistration/internal/state"
 	"istio.io/istio/pilot/pkg/model"
 	"istio.io/istio/pilot/pkg/model/status"
@@ -68,6 +68,7 @@ func (c *Controller) QueueWorkloadEntryHealth(proxy *model.Proxy, event HealthEv
 	// we assume that the workload entry exists
 	// if auto registration does not exist, try looking
 	// up in NodeMetadata
+
 	entryName, _ := proxy.WorkloadEntry()
 	if entryName == "" {
 		log.Errorf("unable to derive WorkloadEntry for health update for %v", proxy.ID)

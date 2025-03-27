@@ -6,7 +6,7 @@ spec:
   hosts:
     - reviews
   http:
-  - route:
-    - destination:
-        host: reviews
-        subset: v3
+    - route:
+        - destination:
+            host: reviews
+            subset: v3

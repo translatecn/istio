@@ -18,7 +18,7 @@ syntax = "proto3";
 // URL: /PACKAGE.SERVICE/METHOD
 package istio.workload.zds;
 
-option go_package="pkg/zdsapi";
+option go_package = "pkg/zdsapi";
 
 enum Version {
   NOT_USED = 0;

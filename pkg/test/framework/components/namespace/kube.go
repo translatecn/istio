@@ -29,7 +29,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 
-	"istio.io/api/label"
+	"istio.io/istio/istio.io/api/label"
 	"istio.io/istio/pkg/log"
 	"istio.io/istio/pkg/test/framework/components/cluster"
 	"istio.io/istio/pkg/test/framework/resource"
@@ -126,6 +126,7 @@ func (n *kubeNamespace) ID() resource.ID {
 
 func (n *kubeNamespace) Close() error {
 	// Get the cleanup funcs and clear the array to prevent us from cleaning up multiple times.
+
 	n.cleanupMutex.Lock()
 	cleanupFuncs := n.cleanupFuncs
 	n.cleanupFuncs = nil
@@ -175,6 +176,7 @@ func claimKube(ctx resource.Context, cfg Config) (Instance, error) {
 // setNamespaceLabel labels a namespace with the given key, value pair
 func (n *kubeNamespace) setNamespaceLabel(key, value string) error {
 	// need to convert '/' to '~1' as per the JSON patch spec http://jsonpatch.com/#operations
+
 	jsonPatchEscapedKey := strings.ReplaceAll(key, "/", "~1")
 	nsLabelPatch := fmt.Sprintf(`[{"op":"replace","path":"/metadata/labels/%s","value":"%s"}]`, jsonPatchEscapedKey, value)
 
@@ -187,6 +189,7 @@ func (n *kubeNamespace) setNamespaceLabel(key, value string) error {
 // removeNamespaceLabel removes namespace label with the given key
 func (n *kubeNamespace) removeNamespaceLabel(key string) error {
 	// need to convert '/' to '~1' as per the JSON patch spec http://jsonpatch.com/#operations
+
 	jsonPatchEscapedKey := strings.ReplaceAll(key, "/", "~1")
 	nsLabelPatch := fmt.Sprintf(`[{"op":"remove","path":"/metadata/labels/%s"}]`, jsonPatchEscapedKey)
 	name := n.name
@@ -278,6 +281,7 @@ func (n *kubeNamespace) addCleanup(fn func() error) {
 
 func (n *kubeNamespace) IsAmbient() bool {
 	// TODO cache labels and invalidate on SetLabel to avoid a ton of kube calls
+
 	labels, err := n.Labels()
 	if err != nil {
 		scopes.Framework.Warnf("failed getting labels for namespace %s, assuming ambient is on", n.name)

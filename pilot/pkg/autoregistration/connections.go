@@ -44,12 +44,9 @@ type adsConnections struct {
 	byProxy map[proxyKey]map[string]connection
 }
 
-func newAdsConnections() *adsConnections {
-	return &adsConnections{byProxy: map[proxyKey]map[string]connection{}}
-}
-
 func (m *adsConnections) ConnectionsForGroup(wg types.NamespacedName) []connection {
 	// collect the proxies that should be disconnected (don't remove them, OnDisconnect will)
+
 	m.Lock()
 	defer m.Unlock()
 	var conns []connection
@@ -59,19 +56,6 @@ func (m *adsConnections) ConnectionsForGroup(wg types.NamespacedName) []connecti
 		}
 	}
 	return conns
-}
-
-func (m *adsConnections) Connect(conn connection) {
-	m.Lock()
-	defer m.Unlock()
-	k := makeProxyKey(conn.Proxy())
-
-	connections := m.byProxy[k]
-	if connections == nil {
-		connections = make(map[string]connection)
-		m.byProxy[k] = connections
-	}
-	connections[conn.ID()] = conn
 }
 
 // Disconnect tracks disconnect events of ads clients.
@@ -111,4 +95,21 @@ func makeProxyKey(proxy *model.Proxy) proxyKey {
 		GroupName: proxy.Metadata.AutoRegisterGroup,
 		Namespace: proxy.Metadata.Namespace,
 	}
+}
+
+func (m *adsConnections) Connect(conn connection) {
+	m.Lock()
+	defer m.Unlock()
+	k := makeProxyKey(conn.Proxy())
+
+	connections := m.byProxy[k]
+	if connections == nil {
+		connections = make(map[string]connection)
+		m.byProxy[k] = connections
+	}
+	connections[conn.ID()] = conn
+}
+
+func newAdsConnections() *adsConnections {
+	return &adsConnections{byProxy: map[proxyKey]map[string]connection{}}
 }

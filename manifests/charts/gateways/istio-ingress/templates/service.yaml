@@ -34,15 +34,13 @@ spec:
   ports:
 
     {{- range $key, $val := $gateway.ports }}
-    -
-      {{- range $pkey, $pval := $val }}
+    - {{- range $pkey, $pval := $val }}
       {{ $pkey}}: {{ $pval }}
       {{- end }}
     {{- end }}
 
   {{ range $app := $gateway.ingressPorts }}
-    -
-      port: {{ $app.port }}
+    - port: {{ $app.port }}
       name: {{ $app.name }}
   {{- end }}
 {{- if $gateway.ipFamilyPolicy }}
@@ -51,7 +49,7 @@ spec:
 {{- if $gateway.ipFamilies }}
   ipFamilies:
 {{- range $gateway.ipFamilies }}
-  - {{ . }}
+    - {{ . }}
 {{- end }}
 {{- end }}
 ---

@@ -113,20 +113,23 @@ func (d *static[T]) dump() {
 // nolint: unused // (not true, its to implement an interface)
 func (d *static[T]) augment(a any) any {
 	// not supported in this collection type
+
 	return a
 }
 
 // nolint: unused // (not true, its to implement an interface)
 func (d *static[T]) name() string {
+	// nolint: unused // (not true, its to implement an interface)
+
 	return "static"
 }
 
-// nolint: unused // (not true, its to implement an interface)
 func (d *static[T]) uid() collectionUID {
+	// nolint: unused // (not true, its to implement an interface)
+
 	return d.id
 }
 
-// nolint: unused // (not true, its to implement an interface)
 func (d *static[T]) index(extract func(o T) []string) kclient.RawIndexer {
 	panic("TODO")
 }
@@ -166,6 +169,7 @@ func (c collectionAdapter[T]) Set(t *T) {
 
 func (c collectionAdapter[T]) Get() *T {
 	// Guaranteed to be 0 or 1 len
+
 	res := c.c.List()
 	if len(res) == 0 {
 		return nil
@@ -188,6 +192,7 @@ func NewSingleton[O any](hf TransformationEmpty[O], opts ...CollectionOption) Si
 	// This is an internal construct exclusively for implementing the "Singleton" pattern.
 	// This is so we can represent a singleton (a func() *O) as a collection (a func(I) *O).
 	// dummyCollection just returns a single "I" that is ignored.
+
 	dummyCollection := NewStatic[dummyValue](&dummyValue{}, true).AsCollection()
 	col := NewCollection[dummyValue, O](dummyCollection, func(ctx HandlerContext, _ dummyValue) *O {
 		return hf(ctx)

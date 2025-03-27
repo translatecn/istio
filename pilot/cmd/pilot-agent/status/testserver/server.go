@@ -14,43 +14,4 @@
 
 package testserver
 
-import (
-	"net"
-	"net/http"
-	"net/http/httptest"
-)
-
 // CreateAndStartServer starts a server and returns the response passed.
-func CreateAndStartServer(response string) *httptest.Server {
-	return createHTTPServer(createDefaultFuncMap(response))
-}
-
-func createHTTPServer(handlers map[string]func(rw http.ResponseWriter, _ *http.Request)) *httptest.Server {
-	mux := http.NewServeMux()
-	for k, v := range handlers {
-		mux.HandleFunc(k, http.HandlerFunc(v))
-	}
-
-	// Start a local HTTP server
-	server := httptest.NewUnstartedServer(mux)
-
-	l, err := net.Listen("tcp", ":0")
-	if err != nil {
-		panic("Could not create listener for test: " + err.Error())
-	}
-	server.Listener = l
-	server.Start()
-	return server
-}
-
-func createDefaultFuncMap(statsToReturn string) map[string]func(rw http.ResponseWriter, _ *http.Request) {
-	return map[string]func(rw http.ResponseWriter, _ *http.Request){
-		"/stats": func(rw http.ResponseWriter, _ *http.Request) {
-			// Send response to be tested
-			_, err := rw.Write([]byte(statsToReturn))
-			if err != nil {
-				panic("Could not write response: " + err.Error())
-			}
-		},
-	}
-}

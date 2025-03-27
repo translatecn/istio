@@ -31,32 +31,12 @@ import (
 func (s *DiscoveryServer) SvcUpdate(shard model.ShardKey, hostname string, namespace string, event model.Event) {
 	// When a service deleted, we should cleanup the endpoint shards and also remove keys from EndpointIndex to
 	// prevent memory leaks.
+
 	if event == model.EventDelete {
 		inboundServiceDeletes.Increment()
 		s.Env.EndpointIndex.DeleteServiceShard(shard, hostname, namespace, false)
 	} else {
 		inboundServiceUpdates.Increment()
-	}
-}
-
-// EDSUpdate computes destination address membership across all clusters and networks.
-// This is the main method implementing EDS.
-// It replaces InstancesByPort in model - instead of iterating over all endpoints it uses
-// the hostname-keyed map. And it avoids the conversion from Endpoint to ServiceEntry to envoy
-// on each step: instead the conversion happens once, when an endpoint is first discovered.
-func (s *DiscoveryServer) EDSUpdate(shard model.ShardKey, serviceName string, namespace string,
-	istioEndpoints []*model.IstioEndpoint,
-) {
-	inboundEDSUpdates.Increment()
-	// Update the endpoint shards
-	pushType := s.Env.EndpointIndex.UpdateServiceEndpoints(shard, serviceName, namespace, istioEndpoints)
-	if pushType == model.IncrementalPush || pushType == model.FullPush {
-		// Trigger a push
-		s.ConfigUpdate(&model.PushRequest{
-			Full:           pushType == model.FullPush,
-			ConfigsUpdated: sets.New(model.ConfigKey{Kind: kind.ServiceEntry, Name: serviceName, Namespace: namespace}),
-			Reason:         model.NewReasonStats(model.EndpointUpdate),
-		})
 	}
 }
 
@@ -110,6 +90,7 @@ var skippedEdsConfigs = sets.New(
 
 func edsNeedsPush(updates model.XdsUpdates) bool {
 	// If none set, we will always push
+
 	if len(updates) == 0 {
 		return true
 	}
@@ -155,6 +136,7 @@ func shouldUseDeltaEds(req *model.PushRequest) bool {
 // This allows us to perform more efficient pushes where we only update the endpoints that did change.
 func canSendPartialFullPushes(req *model.PushRequest) bool {
 	// If we don't know what configs are updated, just send a full push
+
 	if len(req.ConfigsUpdated) == 0 {
 		return false
 	}
@@ -290,5 +272,25 @@ func (eds *EdsGenerator) buildDeltaEndpoints(proxy *model.Proxy,
 	return resources, removed, model.XdsLogDetails{
 		Incremental:    len(edsUpdatedServices) != 0,
 		AdditionalInfo: fmt.Sprintf("empty:%v cached:%v/%v", empty, cached, cached+regenerated),
+	}
+}
+
+// EDSUpdate computes destination address membership across all clusters and networks.
+// This is the main method implementing EDS.
+// It replaces InstancesByPort in model - instead of iterating over all endpoints it uses
+// the hostname-keyed map. And it avoids the conversion from Endpoint to ServiceEntry to envoy
+// on each step: instead the conversion happens once, when an endpoint is first discovered.
+func (s *DiscoveryServer) EDSUpdate(shard model.ShardKey, serviceName string, namespace string, istioEndpoints []*model.IstioEndpoint) { // endpoint
+
+	inboundEDSUpdates.Increment()
+	// Update the endpoint shards
+	pushType := s.Env.EndpointIndex.UpdateServiceEndpoints(shard, serviceName, namespace, istioEndpoints)
+	if pushType == model.IncrementalPush || pushType == model.FullPush {
+		// Trigger a push
+		s.ConfigUpdate(&model.PushRequest{ // ✅
+			Full:           pushType == model.FullPush,
+			ConfigsUpdated: sets.New(model.ConfigKey{Kind: kind.ServiceEntry, Name: serviceName, Namespace: namespace}),
+			Reason:         model.NewReasonStats(model.EndpointUpdate),
+		})
 	}
 }

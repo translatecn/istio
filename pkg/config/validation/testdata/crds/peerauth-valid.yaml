@@ -18,4 +18,4 @@ kind: PeerAuthentication
 metadata:
   name: partial-selector
 spec:
-  selector: {}
+  selector: { }

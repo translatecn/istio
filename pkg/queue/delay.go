@@ -105,11 +105,6 @@ func DelayQueueBuffer(bufferSize int) DelayQueueOption {
 
 // DelayQueueWorkers sets the number of background worker goroutines await tasks to execute. Effectively the
 // maximum number of concurrent tasks.
-func DelayQueueWorkers(workers int) DelayQueueOption {
-	return func(queue *delayQueue) {
-		queue.workers = workers
-	}
-}
 
 // workerChanBuf determines whether the channel of a worker should be a buffered channel
 // to get the best performance.

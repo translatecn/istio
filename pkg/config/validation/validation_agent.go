@@ -18,7 +18,7 @@
 package validation
 
 import (
-	telemetry "istio.io/api/telemetry/v1alpha1"
+	telemetry "istio.io/istio/istio.io/api/telemetry/v1alpha1"
 )
 
 // NOP validation that isolated `go-cel` package for istio-agent binary

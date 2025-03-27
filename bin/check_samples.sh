@@ -17,7 +17,7 @@
 shopt -s globstar
 set -e
 
-SCRIPTPATH=$( cd "$(dirname "$0")" && pwd -P )
+SCRIPTPATH=$(cd "$(dirname "$0")" && pwd -P)
 ROOTDIR=$SCRIPTPATH/..
 cd "$ROOTDIR" || exit
 
@@ -26,12 +26,12 @@ ISTIOCTL=bin/istioctl
 go build -o $ISTIOCTL ./istioctl/cmd/istioctl
 
 for f in samples/**/*.yaml; do
-  if grep -q -e "{{" "$f" ; then
-    echo "Skipping check for helm template $f"
-    continue
-  else
-    echo "Validating $f..."
-  $ISTIOCTL validate -x \
-    -f "$f"
-  fi
+	if grep -q -e "{{" "$f"; then
+		echo "Skipping check for helm template $f"
+		continue
+	else
+		echo "Validating $f..."
+		$ISTIOCTL validate -x \
+			-f "$f"
+	fi
 done

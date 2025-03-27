@@ -56,7 +56,19 @@ type KubeJWTAuthenticator struct {
 
 var _ security.Authenticator = &KubeJWTAuthenticator{}
 
-// NewKubeJWTAuthenticator creates a new kubeJWTAuthenticator.
+func (a *KubeJWTAuthenticator) AuthenticatorType() string {
+	return KubeJWTAuthenticatorType
+}
+
+func (a *KubeJWTAuthenticator) authenticateHTTP(req *http.Request) (*security.Caller, error) {
+	targetJWT, err := security.ExtractRequestToken(req)
+	if err != nil {
+		return nil, fmt.Errorf("target JWT extraction error: %v", err)
+	}
+	clusterID := cluster.ID(req.Header.Get(clusterIDMeta))
+	return a.authenticate(targetJWT, clusterID)
+}
+
 func NewKubeJWTAuthenticator(
 	meshHolder mesh.Holder,
 	client kubernetes.Interface,
@@ -71,10 +83,6 @@ func NewKubeJWTAuthenticator(
 	}
 }
 
-func (a *KubeJWTAuthenticator) AuthenticatorType() string {
-	return KubeJWTAuthenticatorType
-}
-
 // Authenticate authenticates the call using the K8s JWT from the context.
 // The returned Caller.Identities is in SPIFFE format.
 func (a *KubeJWTAuthenticator) Authenticate(authRequest security.AuthContext) (*security.Caller, error) {
@@ -85,68 +93,6 @@ func (a *KubeJWTAuthenticator) Authenticate(authRequest security.AuthContext) (*
 		return a.authenticateHTTP(authRequest.Request)
 	}
 	return nil, nil
-}
-
-func (a *KubeJWTAuthenticator) authenticateHTTP(req *http.Request) (*security.Caller, error) {
-	targetJWT, err := security.ExtractRequestToken(req)
-	if err != nil {
-		return nil, fmt.Errorf("target JWT extraction error: %v", err)
-	}
-	clusterID := cluster.ID(req.Header.Get(clusterIDMeta))
-	return a.authenticate(targetJWT, clusterID)
-}
-
-func (a *KubeJWTAuthenticator) authenticateGrpc(ctx context.Context) (*security.Caller, error) {
-	targetJWT, err := security.ExtractBearerToken(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("target JWT extraction error: %v", err)
-	}
-	clusterID := ExtractClusterID(ctx)
-
-	return a.authenticate(targetJWT, clusterID)
-}
-
-func (a *KubeJWTAuthenticator) authenticate(targetJWT string, clusterID cluster.ID) (*security.Caller, error) {
-	kubeClient := a.getKubeClient(clusterID)
-	if kubeClient == nil {
-		return nil, fmt.Errorf("client claims to be in cluster %q, but we only know about local cluster %q and remote clusters %v",
-			clusterID, a.clusterID, a.remoteKubeClientGetter.ListClusters())
-	}
-
-	id, err := tokenreview.ValidateK8sJwt(kubeClient, targetJWT, security.TokenAudiences)
-	if err != nil {
-		return nil, fmt.Errorf("failed to validate the JWT from cluster %q: %v", clusterID, err)
-	}
-	if id.PodServiceAccount == "" {
-		return nil, fmt.Errorf("failed to parse the JWT; service account required")
-	}
-	if id.PodNamespace == "" {
-		return nil, fmt.Errorf("failed to parse the JWT; namespace required")
-	}
-	return &security.Caller{
-		AuthSource:     security.AuthSourceIDToken,
-		Identities:     []string{spiffe.MustGenSpiffeURI(a.meshHolder.Mesh(), id.PodNamespace, id.PodServiceAccount)},
-		KubernetesInfo: id,
-	}, nil
-}
-
-func (a *KubeJWTAuthenticator) getKubeClient(clusterID cluster.ID) kubernetes.Interface {
-	// first match local/primary cluster
-	// or if clusterID is not sent (we assume that its a single cluster)
-	if a.clusterID == clusterID || clusterID == "" {
-		return a.kubeClient
-	}
-
-	// secondly try other remote clusters
-	if a.remoteKubeClientGetter != nil {
-		if res := a.remoteKubeClientGetter.GetRemoteKubeClient(clusterID); res != nil {
-			return res
-		}
-	}
-
-	// we did not find the kube client for this cluster.
-	// return nil so that logs will show that this cluster is not available in istiod
-	return nil
 }
 
 func ExtractClusterID(ctx context.Context) cluster.ID {
@@ -164,4 +110,57 @@ func ExtractClusterID(ctx context.Context) cluster.ID {
 		return cluster.ID(clusterIDHeader[0])
 	}
 	return ""
+}
+
+func (a *KubeJWTAuthenticator) authenticateGrpc(ctx context.Context) (*security.Caller, error) {
+	targetJWT, err := security.ExtractBearerToken(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("target JWT extraction error: %v", err)
+	}
+	clusterID := ExtractClusterID(ctx)
+
+	return a.authenticate(targetJWT, clusterID)
+}
+
+func (a *KubeJWTAuthenticator) getKubeClient(clusterID cluster.ID) kubernetes.Interface {
+	// first match local/primary cluster
+	// or if clusterID is not sent (we assume that its a single cluster)
+
+	if a.clusterID == clusterID || clusterID == "" {
+		return a.kubeClient
+	}
+
+	// secondly try other remote clusters
+	if a.remoteKubeClientGetter != nil {
+		if res := a.remoteKubeClientGetter.GetRemoteKubeClient(clusterID); res != nil {
+			return res
+		}
+	}
+
+	// we did not find the kube client for this cluster.
+	// return nil so that logs will show that this cluster is not available in istiod
+	return nil
+}
+
+func (a *KubeJWTAuthenticator) authenticate(targetJWT string, clusterID cluster.ID) (*security.Caller, error) {
+	kubeClient := a.getKubeClient(clusterID)
+	if kubeClient == nil {
+		return nil, fmt.Errorf("client claims to be in cluster %q, but we only know about local cluster %q and remote clusters %v", clusterID, a.clusterID, a.remoteKubeClientGetter.ListClusters())
+	}
+
+	id, err := tokenreview.ValidateK8sJwt(kubeClient, targetJWT, security.TokenAudiences)
+	if err != nil {
+		return nil, fmt.Errorf("failed to validate the JWT from cluster %q: %v", clusterID, err)
+	}
+	if id.PodServiceAccount == "" {
+		return nil, fmt.Errorf("failed to parse the JWT; service account required")
+	}
+	if id.PodNamespace == "" {
+		return nil, fmt.Errorf("failed to parse the JWT; namespace required")
+	}
+	return &security.Caller{
+		AuthSource:     security.AuthSourceIDToken,
+		Identities:     []string{spiffe.MustGenSpiffeURI(a.meshHolder.Mesh(), id.PodNamespace, id.PodServiceAccount)},
+		KubernetesInfo: id,
+	}, nil
 }

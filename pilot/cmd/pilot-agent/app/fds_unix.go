@@ -17,7 +17,9 @@
 
 package app
 
-import "golang.org/x/sys/unix"
+import (
+	"golang.org/x/sys/unix"
+)
 
 func raiseFileLimits() (uint64, error) {
 	rlimit := unix.Rlimit{}

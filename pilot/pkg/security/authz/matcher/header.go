@@ -25,6 +25,7 @@ import (
 func HeaderMatcher(k, v string) *routepb.HeaderMatcher {
 	// We must check "*" first to make sure we'll generate a non empty value in the prefix/suffix case.
 	// Empty prefix/suffix value is invalid in HeaderMatcher.
+
 	if v == "*" {
 		return &routepb.HeaderMatcher{
 			Name: k,
@@ -59,6 +60,7 @@ func HeaderMatcher(k, v string) *routepb.HeaderMatcher {
 func HostMatcher(k, v string) *routepb.HeaderMatcher {
 	// We must check "*" first to make sure we'll generate a non empty value in the prefix/suffix case.
 	// Empty prefix/suffix value is invalid in HeaderMatcher.
+
 	if v == "*" {
 		return &routepb.HeaderMatcher{
 			Name: k,

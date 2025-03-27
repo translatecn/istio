@@ -210,6 +210,7 @@ func (t *testImpl) RunParallel(fn func(ctx TestContext)) {
 
 func (t *testImpl) runInternal(fn func(ctx TestContext), parallel bool) {
 	// Disallow running the same test more than once.
+
 	if t.ctx != nil {
 		testName := t.name
 		if testName == "" && t.goTest != nil {

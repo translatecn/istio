@@ -19,14 +19,11 @@ package k8sresourcelock
 import (
 	"context"
 	"fmt"
-	"time"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	clientset "k8s.io/client-go/kubernetes"
 	coordinationv1 "k8s.io/client-go/kubernetes/typed/coordination/v1"
 	corev1 "k8s.io/client-go/kubernetes/typed/core/v1"
-	restclient "k8s.io/client-go/rest"
 )
 
 const (
@@ -157,14 +154,3 @@ func New(lockType string, ns string, name string, coreClient corev1.CoreV1Interf
 // RenewDeadline to keep a single hung request from forcing a leader loss.
 // Setting it to max(time.Second, RenewDeadline/2) as a reasonable heuristic.
 // nolint: lll
-func NewFromKubeconfig(lockType string, ns string, name string, rlc ResourceLockConfig, kubeconfig *restclient.Config, renewDeadline time.Duration) (Interface, error) {
-	// shallow copy, do not modify the kubeconfig
-	config := *kubeconfig
-	timeout := renewDeadline / 2
-	if timeout < time.Second {
-		timeout = time.Second
-	}
-	config.Timeout = timeout
-	leaderElectionClient := clientset.NewForConfigOrDie(restclient.AddUserAgent(&config, "leader-election"))
-	return New(lockType, ns, name, leaderElectionClient.CoreV1(), leaderElectionClient.CoordinationV1(), rlc)
-}

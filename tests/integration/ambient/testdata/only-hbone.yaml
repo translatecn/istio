@@ -4,8 +4,8 @@ metadata:
   name: only-hbone
 spec:
   policyTypes:
-  - Ingress
+    - Ingress
   ingress:
-  - ports:
-    - protocol: TCP
-      port: 15008
+    - ports:
+        - protocol: TCP
+          port: 15008

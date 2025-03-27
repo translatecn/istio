@@ -19,28 +19,34 @@ type disabledMetric struct {
 }
 
 // Decrement implements Metric
-func (dm *disabledMetric) Decrement() {}
+func (dm *disabledMetric) Decrement() {
+	// Increment implements Metric
+}
 
-// Increment implements Metric
-func (dm *disabledMetric) Increment() {}
+func (dm *disabledMetric) Increment() {
+	// Name implements Metric
+}
 
-// Name implements Metric
 func (dm *disabledMetric) Name() string {
+	// Record implements Metric
+
 	return dm.name
 }
 
-// Record implements Metric
-func (dm *disabledMetric) Record(value float64) {}
+func (dm *disabledMetric) Record(value float64) {
+	// RecordInt implements Metric
+}
 
-// RecordInt implements Metric
-func (dm *disabledMetric) RecordInt(value int64) {}
+func (dm *disabledMetric) RecordInt(value int64) {
+	// Register implements Metric
+}
 
-// Register implements Metric
 func (dm *disabledMetric) Register() error {
+	// With implements Metric
+
 	return nil
 }
 
-// With implements Metric
 func (dm *disabledMetric) With(labelValues ...LabelValue) Metric {
 	return dm
 }

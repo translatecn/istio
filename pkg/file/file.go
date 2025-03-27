@@ -48,30 +48,6 @@ func AtomicCopy(srcFilepath, targetDir, targetFilename string) error {
 	return AtomicWriteReader(filepath.Join(targetDir, targetFilename), in, perm.Mode())
 }
 
-func Copy(srcFilepath, targetDir, targetFilename string) error {
-	in, err := os.Open(srcFilepath)
-	if err != nil {
-		return err
-	}
-	defer in.Close()
-
-	perm, err := in.Stat()
-	if err != nil {
-		return err
-	}
-
-	out, err := os.OpenFile(filepath.Join(targetDir, targetFilename), os.O_WRONLY|os.O_CREATE|os.O_TRUNC, perm.Mode())
-	if err != nil {
-		return err
-	}
-	defer out.Close()
-
-	if _, err := io.Copy(out, in); err != nil {
-		return err
-	}
-	return nil
-}
-
 // Write atomically by writing to a temporary file in the same directory then renaming
 func AtomicWrite(path string, data []byte, mode os.FileMode) error {
 	return AtomicWriteReader(path, bytes.NewReader(data), mode)
@@ -116,14 +92,10 @@ func AtomicWriteReader(path string, data io.Reader, mode os.FileMode) error {
 func Exists(name string) bool {
 	// We must explicitly check if the error is due to the file not existing (as opposed to a
 	// permissions error).
+
 	_, err := os.Stat(name)
 	return !errors.Is(err, fs.ErrNotExist)
 }
-
-const (
-	// PrivateFileMode grants owner to read/write a file.
-	PrivateFileMode = 0o600
-)
 
 // DirEquals check if two directories are referring to the same directory
 func DirEquals(a, b string) (bool, error) {
@@ -140,6 +112,7 @@ func DirEquals(a, b string) (bool, error) {
 
 func tryMarkLargeFileAsNotNeeded(size int64, in *os.File) {
 	// Somewhat arbitrary value to not bother with this on small files
+
 	const largeFileThreshold = 16 * 1024
 	if size < largeFileThreshold {
 		return

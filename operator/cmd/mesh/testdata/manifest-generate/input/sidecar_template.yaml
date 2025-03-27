@@ -1,9 +1,10 @@
 apiVersion: install.istio.io/v1alpha1
 kind: IstioOperator
 spec:
+  hub: registry.cn-hangzhou.aliyuncs.com/acejilam
   values:
     sidecarInjectorWebhook:
-      defaultTemplates: ["sidecar", "credential-volume"]
+      defaultTemplates: [ "sidecar", "credential-volume" ]
       templates:
         credential-volume: |
           spec:
@@ -17,3 +18,4 @@ spec:
               - name: application-credentials
                 mountPath: /etc/istio/application-credentials
                 readOnly: true
+

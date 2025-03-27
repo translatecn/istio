@@ -21,7 +21,7 @@ import (
 	core "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 	tls "github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3"
 
-	networking "istio.io/api/networking/v1alpha3"
+	networking "istio.io/istio/istio.io/api/networking/v1alpha3"
 	"istio.io/istio/pilot/pkg/model"
 	"istio.io/istio/pilot/pkg/model/credentials"
 	"istio.io/istio/pilot/pkg/networking/util"
@@ -31,8 +31,6 @@ import (
 )
 
 const (
-	// SDSClusterName is the name of the cluster for SDS connections
-	SDSClusterName = pm.SDSClusterName
 
 	// SDSDefaultResourceName is the default name in sdsconfig, used for fetching normal key/cert.
 	SDSDefaultResourceName = pm.SDSDefaultResourceName
@@ -132,6 +130,7 @@ func ApplyToCommonTLSContext(tlsContext *tls.CommonTlsContext, proxy *model.Prox
 	// These are certs being mounted from within the pod. Rather than reading directly in Envoy,
 	// which does not support rotation, we will serve them over SDS by reading the files.
 	// We should check if these certs have values, if yes we should use them or otherwise fall back to defaults.
+
 	res := security.SdsCertificateConfig{
 		CertificatePath:   proxy.Metadata.TLSServerCertChain,
 		PrivateKeyPath:    proxy.Metadata.TLSServerKey,
@@ -207,6 +206,7 @@ func ApplyCredentialSDSToServerCommonTLSContext(tlsContext *tls.CommonTlsContext
 	tlsOpts *networking.ServerTLSSettings, credentialSocketExist bool,
 ) {
 	// create SDS config for gateway/sidecar to fetch key/cert from agent.
+
 	tlsContext.TlsCertificateSdsSecretConfigs = []*tls.SdsSecretConfig{
 		ConstructSdsSecretConfigForCredential(tlsOpts.CredentialName, credentialSocketExist),
 	}

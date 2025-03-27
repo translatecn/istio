@@ -15,7 +15,10 @@
 # limitations under the License.
 
 WD=$(dirname "$0")
-WD=$(cd "$WD"; pwd)
+WD=$(
+	cd "$WD"
+	pwd
+)
 
 set -eux
 
@@ -31,74 +34,74 @@ GRAFANA_VERSION=${GRAFANA_VERSION:-"8.5.8"}
 
 # Set up kiali
 {
-helm3 template kiali-server \
-  --namespace istio-system \
-  --version 2.0.0 \
-  --set deployment.image_version=v2.0 \
-  --include-crds \
-  kiali-server \
-  --repo https://kiali.org/helm-charts \
-  -f "${WD}/values-kiali.yaml"
-} > "${ADDONS}/kiali.yaml"
+	helm3 template kiali-server \
+		--namespace istio-system \
+		--version 2.0.0 \
+		--set deployment.image_version=v2.0 \
+		--include-crds \
+		kiali-server \
+		--repo https://kiali.org/helm-charts \
+		-f "${WD}/values-kiali.yaml"
+} >"${ADDONS}/kiali.yaml"
 
 # Set up prometheus
 helm3 template prometheus prometheus \
-  --namespace istio-system \
-  --version 25.27.0 \
-  --repo https://prometheus-community.github.io/helm-charts \
-  -f "${WD}/values-prometheus.yaml" \
-  > "${ADDONS}/prometheus.yaml"
+	--namespace istio-system \
+	--version 25.27.0 \
+	--repo https://prometheus-community.github.io/helm-charts \
+	-f "${WD}/values-prometheus.yaml" \
+	>"${ADDONS}/prometheus.yaml"
 
 function compressDashboard() {
-  < "${DASHBOARDS}/$1" jq -c  > "${TMP}/$1"
+	<"${DASHBOARDS}/$1" jq -c >"${TMP}/$1"
 }
 
 # Set up grafana
 {
-  # Generate all dynamic dashboards
-  (
-    pushd "${DASHBOARDS}" > /dev/null
-    jb install
-    for file in *.libsonnet; do
-      dashboard="${file%.*}"
-      jsonnet -J vendor -J lib "${file}" > "${dashboard}-dashboard.gen.json"
-    done
-  )
-  helm3 template grafana grafana \
-    --namespace istio-system \
-    --version "${GRAFANA_VERSION}" \
-    --repo https://grafana.github.io/helm-charts \
-    -f "${WD}/values-grafana.yaml"
+	# Generate all dynamic dashboards
+	(
+		pushd "${DASHBOARDS}" >/dev/null
+		jb install
+		for file in *.libsonnet; do
+			dashboard="${file%.*}"
+			jsonnet -J vendor -J lib "${file}" >"${dashboard}-dashboard.gen.json"
+		done
+	)
+	helm3 template grafana grafana \
+		--namespace istio-system \
+		--version "${GRAFANA_VERSION}" \
+		--repo https://grafana.github.io/helm-charts \
+		-f "${WD}/values-grafana.yaml"
 
-  # Set up grafana dashboards. Split into 2 and compress to single line json to avoid Kubernetes size limits
-  compressDashboard "pilot-dashboard.gen.json"
-  compressDashboard "istio-performance-dashboard.json"
-  compressDashboard "istio-workload-dashboard.json"
-  compressDashboard "istio-service-dashboard.json"
-  compressDashboard "istio-mesh-dashboard.gen.json"
-  compressDashboard "istio-extension-dashboard.json"
-  compressDashboard "ztunnel-dashboard.gen.json"
-  echo -e "\n---\n"
-  kubectl create configmap -n istio-system istio-grafana-dashboards \
-    --dry-run=client -oyaml \
-    --from-file=pilot-dashboard.json="${TMP}/pilot-dashboard.gen.json" \
-    --from-file=ztunnel-dashboard.json="${TMP}/ztunnel-dashboard.gen.json" \
-    --from-file=istio-performance-dashboard.json="${TMP}/istio-performance-dashboard.json"
+	# Set up grafana dashboards. Split into 2 and compress to single line json to avoid Kubernetes size limits
+	compressDashboard "pilot-dashboard.gen.json"
+	compressDashboard "istio-performance-dashboard.json"
+	compressDashboard "istio-workload-dashboard.json"
+	compressDashboard "istio-service-dashboard.json"
+	compressDashboard "istio-mesh-dashboard.gen.json"
+	compressDashboard "istio-extension-dashboard.json"
+	compressDashboard "ztunnel-dashboard.gen.json"
+	echo -e "\n---\n"
+	kubectl create configmap -n istio-system istio-grafana-dashboards \
+		--dry-run=client -oyaml \
+		--from-file=pilot-dashboard.json="${TMP}/pilot-dashboard.gen.json" \
+		--from-file=ztunnel-dashboard.json="${TMP}/ztunnel-dashboard.gen.json" \
+		--from-file=istio-performance-dashboard.json="${TMP}/istio-performance-dashboard.json"
 
-  echo -e "\n---\n"
-  kubectl create configmap -n istio-system istio-services-grafana-dashboards \
-    --dry-run=client -oyaml \
-    --from-file=istio-workload-dashboard.json="${TMP}/istio-workload-dashboard.json" \
-    --from-file=istio-service-dashboard.json="${TMP}/istio-service-dashboard.json" \
-    --from-file=istio-mesh-dashboard.json="${TMP}/istio-mesh-dashboard.gen.json" \
-    --from-file=istio-extension-dashboard.json="${TMP}/istio-extension-dashboard.json"
-} > "${ADDONS}/grafana.yaml"
+	echo -e "\n---\n"
+	kubectl create configmap -n istio-system istio-services-grafana-dashboards \
+		--dry-run=client -oyaml \
+		--from-file=istio-workload-dashboard.json="${TMP}/istio-workload-dashboard.json" \
+		--from-file=istio-service-dashboard.json="${TMP}/istio-service-dashboard.json" \
+		--from-file=istio-mesh-dashboard.json="${TMP}/istio-mesh-dashboard.gen.json" \
+		--from-file=istio-extension-dashboard.json="${TMP}/istio-extension-dashboard.json"
+} >"${ADDONS}/grafana.yaml"
 
 # Set up loki
 {
-  helm3 template loki loki \
-    --namespace istio-system \
-    --version "${LOKI_VERSION}" \
-    --repo https://grafana.github.io/helm-charts \
-    -f "${WD}/values-loki.yaml"
-} > "${ADDONS}/loki.yaml"
+	helm3 template loki loki \
+		--namespace istio-system \
+		--version "${LOKI_VERSION}" \
+		--repo https://grafana.github.io/helm-charts \
+		-f "${WD}/values-loki.yaml"
+} >"${ADDONS}/loki.yaml"

@@ -16,11 +16,6 @@ package profile
 
 import (
 	"flag"
-	"os"
-
-	"github.com/felixge/fgprof"
-
-	"istio.io/istio/pkg/test"
 )
 
 var fprof string
@@ -34,22 +29,3 @@ func init() {
 // FullProfile runs a "Full" profile (https://github.com/felixge/fgprof). This differs from standard
 // CPU profile, as it includes both IO blocking and CPU usage in one profile, giving a full view of
 // the application.
-func FullProfile(t test.Failer) {
-	if fprof == "" {
-		return
-	}
-	f, err := os.Create(fprof)
-	if err != nil {
-		t.Fatalf("%v", err)
-	}
-	stop := fgprof.Start(f, fgprof.FormatPprof)
-
-	t.Cleanup(func() {
-		if err := stop(); err != nil {
-			t.Fatal(err)
-		}
-		if err := f.Close(); err != nil {
-			t.Fatal(err)
-		}
-	})
-}

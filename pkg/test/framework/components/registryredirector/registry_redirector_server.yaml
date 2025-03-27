@@ -20,8 +20,8 @@ metadata:
 spec:
   type: LoadBalancer
   ports:
-  - name: http
-    port: 1338
+    - name: http
+      port: 1338
   selector:
     app: registry-redirector
 ---
@@ -40,18 +40,18 @@ spec:
         app: registry-redirector
     spec:
       containers:
-      - image: {{ or .Image "gcr.io/istio-testing/fake-registry:1.4"}}
-        name: registry-redirector
-        {{- if .TargetRegistry }}
-        args: ["--registry", {{ .TargetRegistry }}, "--scheme", {{ or .Scheme "https" }}]
-        {{- end }}
-        ports:
-        - containerPort: 1338
-        readinessProbe:
-          httpGet:
-            path: /ready
-            port: 1338
-          initialDelaySeconds: 1
-          periodSeconds: 1
-          failureThreshold: 10
+        - image: { { or .Image "gcr.io/istio-testing/fake-registry:1.4" } }
+          name: registry-redirector
+          { { - if .TargetRegistry } }
+          args: [ "--registry", { { .TargetRegistry } }, "--scheme", { { or .Scheme "https" } } ]
+          { { - end } }
+          ports:
+            - containerPort: 1338
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 1338
+            initialDelaySeconds: 1
+            periodSeconds: 1
+            failureThreshold: 10
 ---

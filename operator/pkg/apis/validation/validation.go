@@ -255,6 +255,7 @@ func checkServicePorts(values *apis.Values, spec apis.IstioOperatorSpec) (Warnin
 
 func validateGateways(gws []apis.GatewayComponentSpec, name string) util.Errors {
 	// nolint: lll
+
 	format := "port %v/%v in gateway %v invalid: targetPort is set to %d, which requires root. Set targetPort to be greater than 1024 or configure values.gateways.%s.runAsRoot=true"
 	var errs util.Errors
 	for _, gw := range gws {

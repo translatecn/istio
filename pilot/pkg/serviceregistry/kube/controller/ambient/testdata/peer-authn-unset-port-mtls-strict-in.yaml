@@ -9,5 +9,5 @@ spec:
   mtls:
     mode: UNSET
   portLevelMtls:
-    8080: 
+    8080:
       mode: STRICT

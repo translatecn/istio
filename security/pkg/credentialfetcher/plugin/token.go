@@ -50,5 +50,4 @@ func (t KubernetesTokenPlugin) GetIdentityProvider() string {
 	return ""
 }
 
-func (t KubernetesTokenPlugin) Stop() {
-}
+func (t KubernetesTokenPlugin) Stop() {}

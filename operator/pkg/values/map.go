@@ -78,13 +78,6 @@ func MakeMap(contents any, path ...string) Map {
 }
 
 // MapFromObject is a helper to construct a map from an object, through a roundtrip JSON
-func MapFromObject[T any](contents T) (Map, error) {
-	b, err := json.Marshal(contents)
-	if err != nil {
-		return nil, err
-	}
-	return MapFromJSON(b)
-}
 
 // CastAsMap casts a value to a Map, if possible.
 func CastAsMap(cur any) (Map, bool) {
@@ -277,6 +270,7 @@ func (m Map) GetPathMap(name string) (Map, bool) {
 // DeepClone performs a deep clone of the map
 func (m Map) DeepClone() Map {
 	// TODO: More efficient way?
+
 	res, err := ConvertMap[Map](m)
 	if err != nil {
 		panic("deep clone should not fail")

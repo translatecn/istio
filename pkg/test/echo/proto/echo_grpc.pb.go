@@ -24,6 +24,7 @@ package proto
 
 import (
 	context "context"
+
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
@@ -98,11 +99,14 @@ func (UnimplementedEchoTestServiceServer) ForwardEcho(context.Context, *ForwardE
 	return nil, status.Errorf(codes.Unimplemented, "method ForwardEcho not implemented")
 }
 func (UnimplementedEchoTestServiceServer) mustEmbedUnimplementedEchoTestServiceServer() {}
-func (UnimplementedEchoTestServiceServer) testEmbeddedByValue()                         {}
+func (UnimplementedEchoTestServiceServer) testEmbeddedByValue() {
 
-// UnsafeEchoTestServiceServer may be embedded to opt out of forward compatibility for this service.
-// Use of this interface is not recommended, as added methods to EchoTestServiceServer will
-// result in compilation errors.
+	// UnsafeEchoTestServiceServer may be embedded to opt out of forward compatibility for this service.
+	// Use of this interface is not recommended, as added methods to EchoTestServiceServer will
+	// result in compilation errors.
+
+}
+
 type UnsafeEchoTestServiceServer interface {
 	mustEmbedUnimplementedEchoTestServiceServer()
 }
@@ -112,6 +116,7 @@ func RegisterEchoTestServiceServer(s grpc.ServiceRegistrar, srv EchoTestServiceS
 	// embedded by pointer and is nil.  This will cause panics if an
 	// unimplemented method is ever invoked, so we test this at initialization
 	// time to prevent it from happening at runtime later due to I/O.
+
 	if t, ok := srv.(interface{ testEmbeddedByValue() }); ok {
 		t.testEmbeddedByValue()
 	}

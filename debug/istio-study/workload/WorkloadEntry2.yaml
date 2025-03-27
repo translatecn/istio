@@ -1,0 +1,13 @@
+apiVersion: networking.istio.io/v1beta1
+kind: WorkloadEntry
+metadata:
+  name: vm2
+spec:
+  address: 192.168.0.107
+  labels:
+    app: foo
+    version: v2
+  ports:
+    http: 8002
+    #  weight: 80
+  locality: az2

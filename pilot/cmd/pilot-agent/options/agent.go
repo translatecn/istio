@@ -19,7 +19,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	meshconfig "istio.io/api/mesh/v1alpha1"
+	meshconfig "istio.io/istio/istio.io/api/mesh/v1alpha1"
 	"istio.io/istio/pkg/bootstrap/platform"
 	istioagent "istio.io/istio/pkg/istio-agent"
 	"istio.io/istio/pkg/ptr"

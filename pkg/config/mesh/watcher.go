@@ -20,7 +20,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	meshconfig "istio.io/api/mesh/v1alpha1"
+	meshconfig "istio.io/istio/istio.io/api/mesh/v1alpha1"
 	"istio.io/istio/pkg/filewatcher"
 	"istio.io/istio/pkg/log"
 	"istio.io/istio/pkg/slices"
@@ -53,16 +53,6 @@ type MultiWatcher struct {
 	internalNetworkWatcher
 }
 
-func NewMultiWatcher(config *meshconfig.MeshConfig) *MultiWatcher {
-	iw := &internalWatcher{}
-	iw.MeshConfig.Store(config)
-	return &MultiWatcher{
-		internalWatcher: iw,
-	}
-}
-
-var _ Watcher = &internalWatcher{}
-
 type internalWatcher struct {
 	mutex    sync.Mutex
 	handlers []*WatcherHandlerRegistration
@@ -71,14 +61,6 @@ type internalWatcher struct {
 
 	userMeshConfig string
 	revMeshConfig  string
-}
-
-// NewFixedWatcher creates a new Watcher that always returns the given mesh config. It will never
-// fire any events, since the config never changes.
-func NewFixedWatcher(mesh *meshconfig.MeshConfig) Watcher {
-	iw := internalWatcher{}
-	iw.MeshConfig.Store(mesh)
-	return &iw
 }
 
 // NewFileWatcher creates a new Watcher for changes to the given mesh config file. Returns an error
@@ -94,7 +76,7 @@ func NewFileWatcher(fileWatcher filewatcher.FileWatcher, filename string, multiW
 		return nil, err
 	}
 
-	w := &internalWatcher{
+	w := &internalWatcher{ // ignore
 		revMeshConfig: meshConfigYaml,
 	}
 	w.MeshConfig.Store(meshConfig)
@@ -126,18 +108,6 @@ func (w *internalWatcher) Mesh() *meshconfig.MeshConfig {
 	return w.MeshConfig.Load()
 }
 
-// AddMeshHandler registers a callback handler for changes to the mesh config.
-func (w *internalWatcher) AddMeshHandler(h func()) *WatcherHandlerRegistration {
-	w.mutex.Lock()
-	defer w.mutex.Unlock()
-
-	handler := &WatcherHandlerRegistration{
-		handler: h,
-	}
-	w.handlers = append(w.handlers, handler)
-	return handler
-}
-
 func (w *internalWatcher) DeleteMeshHandler(registration *WatcherHandlerRegistration) {
 	w.mutex.Lock()
 	defer w.mutex.Unlock()
@@ -149,80 +119,6 @@ func (w *internalWatcher) DeleteMeshHandler(registration *WatcherHandlerRegistra
 	w.handlers = slices.FilterInPlace(w.handlers, func(handler *WatcherHandlerRegistration) bool {
 		return handler != registration
 	})
-}
-
-// HandleMeshConfigData keeps track of the standard mesh config. These are merged with the user
-// mesh config, but takes precedence.
-func (w *internalWatcher) HandleMeshConfigData(yaml string) {
-	w.mutex.Lock()
-	defer w.mutex.Unlock()
-	w.revMeshConfig = yaml
-	merged := w.merged()
-	w.handleMeshConfigInternal(merged)
-}
-
-// HandleUserMeshConfig keeps track of user mesh config overrides. These are merged with the standard
-// mesh config, which takes precedence.
-func (w *internalWatcher) HandleUserMeshConfig(yaml string) {
-	w.mutex.Lock()
-	defer w.mutex.Unlock()
-	w.userMeshConfig = yaml
-	merged := w.merged()
-	w.handleMeshConfigInternal(merged)
-}
-
-// merged returns the merged user and revision config.
-func (w *internalWatcher) merged() *meshconfig.MeshConfig {
-	mc := DefaultMeshConfig()
-	if w.userMeshConfig != "" {
-		mc1, err := ApplyMeshConfig(w.userMeshConfig, mc)
-		if err != nil {
-			log.Errorf("user config invalid, ignoring it %v %s", err, w.userMeshConfig)
-		} else {
-			mc = mc1
-			log.Infof("Applied user config: %s", PrettyFormatOfMeshConfig(mc))
-		}
-	}
-	if w.revMeshConfig != "" {
-		mc1, err := ApplyMeshConfig(w.revMeshConfig, mc)
-		if err != nil {
-			log.Errorf("revision config invalid, ignoring it %v %s", err, w.userMeshConfig)
-		} else {
-			mc = mc1
-			log.Infof("Applied revision mesh config: %s", PrettyFormatOfMeshConfig(mc))
-		}
-	}
-	return mc
-}
-
-// HandleMeshConfig calls all handlers for a given mesh configuration update. This must be called
-// with a lock on w.Mutex, or updates may be applied out of order.
-func (w *internalWatcher) HandleMeshConfig(meshConfig *meshconfig.MeshConfig) {
-	w.mutex.Lock()
-	defer w.mutex.Unlock()
-	w.handleMeshConfigInternal(meshConfig)
-}
-
-// handleMeshConfigInternal behaves the same as HandleMeshConfig but must be called under a lock
-func (w *internalWatcher) handleMeshConfigInternal(meshConfig *meshconfig.MeshConfig) {
-	var handlers []*WatcherHandlerRegistration
-
-	current := w.MeshConfig.Load()
-	if !reflect.DeepEqual(meshConfig, current) {
-		log.Infof("mesh configuration updated to: %s", PrettyFormatOfMeshConfig(meshConfig))
-		if !reflect.DeepEqual(meshConfig.ConfigSources, current.ConfigSources) {
-			log.Info("mesh configuration sources have changed")
-			// TODO Need to recreate or reload initConfigController()
-		}
-
-		w.MeshConfig.Store(meshConfig)
-		handlers = append(handlers, w.handlers...)
-	}
-
-	// TODO hack: the first handler added is the ConfigPush, other handlers affect what will be pushed, so reversing iteration
-	for i := len(handlers) - 1; i >= 0; i-- {
-		handlers[i].handler()
-	}
 }
 
 // Add to the FileWatcher the provided file and execute the provided function
@@ -251,4 +147,104 @@ func addFileWatcher(fileWatcher filewatcher.FileWatcher, file string, callback f
 func PrettyFormatOfMeshConfig(meshConfig *meshconfig.MeshConfig) string {
 	meshConfigDump, _ := protomarshal.ToJSONWithIndent(meshConfig, "    ")
 	return meshConfigDump
+}
+
+// merged returns the merged user and revision config.
+func (w *internalWatcher) merged() *meshconfig.MeshConfig {
+	mc := DefaultMeshConfig()
+	if w.userMeshConfig != "" {
+		mc1, err := ApplyMeshConfig(w.userMeshConfig, mc)
+		if err != nil {
+			log.Errorf("user config invalid, ignoring it %v %s", err, w.userMeshConfig)
+		} else {
+			mc = mc1
+			log.Infof("Applied user config: %s", PrettyFormatOfMeshConfig(mc))
+		}
+	}
+	if w.revMeshConfig != "" {
+		mc1, err := ApplyMeshConfig(w.revMeshConfig, mc)
+		if err != nil {
+			log.Errorf("revision config invalid, ignoring it %v %s", err, w.userMeshConfig)
+		} else {
+			mc = mc1
+			log.Infof("Applied revision mesh config: %s", PrettyFormatOfMeshConfig(mc))
+		}
+	}
+	return mc
+}
+
+// HandleMeshConfigData keeps track of the standard mesh config. These are merged with the user
+// mesh config, but takes precedence.
+func (w *internalWatcher) HandleMeshConfigData(yaml string) {
+	w.mutex.Lock()
+	defer w.mutex.Unlock()
+	w.revMeshConfig = yaml
+	merged := w.merged()
+	w.handleMeshConfigInternal(merged)
+}
+
+// HandleUserMeshConfig keeps track of user mesh config overrides. These are merged with the standard
+// mesh config, which takes precedence.
+func (w *internalWatcher) HandleUserMeshConfig(yaml string) {
+	w.mutex.Lock()
+	defer w.mutex.Unlock()
+	w.userMeshConfig = yaml
+	merged := w.merged()
+	w.handleMeshConfigInternal(merged)
+}
+
+// HandleMeshConfig calls all handlers for a given mesh configuration update. This must be called
+// with a lock on w.Mutex, or updates may be applied out of order.
+func (w *internalWatcher) HandleMeshConfig(meshConfig *meshconfig.MeshConfig) {
+	w.mutex.Lock()
+	defer w.mutex.Unlock()
+	w.handleMeshConfigInternal(meshConfig)
+}
+
+// handleMeshConfigInternal behaves the same as HandleMeshConfig but must be called under a lock
+func (w *internalWatcher) handleMeshConfigInternal(meshConfig *meshconfig.MeshConfig) {
+	var handlers []*WatcherHandlerRegistration
+
+	current := w.MeshConfig.Load()
+	if !reflect.DeepEqual(meshConfig, current) {
+		// log.Infof("mesh configuration updated to: %s", PrettyFormatOfMeshConfig(meshConfig))
+		if !reflect.DeepEqual(meshConfig.ConfigSources, current.ConfigSources) {
+			log.Info("mesh configuration sources have changed")
+			// TODO Need to recreate or reload initConfigController()
+		}
+
+		w.MeshConfig.Store(meshConfig)
+		handlers = append(handlers, w.handlers...)
+	}
+
+	// TODO hack: the first handler added is the ConfigPush, other handlers affect what will be pushed, so reversing iteration
+	for i := len(handlers) - 1; i >= 0; i-- {
+		handlers[i].handler()
+	}
+}
+
+// AddMeshHandler registers a callback handler for changes to the mesh config.
+func (w *internalWatcher) AddMeshHandler(h func()) *WatcherHandlerRegistration {
+	w.mutex.Lock()
+	defer w.mutex.Unlock()
+
+	handler := &WatcherHandlerRegistration{
+		handler: h,
+	}
+	w.handlers = append(w.handlers, handler)
+	return handler
+}
+
+func NewFixedWatcher(mesh *meshconfig.MeshConfig) Watcher {
+	iw := internalWatcher{}
+	iw.MeshConfig.Store(mesh)
+	return &iw
+}
+
+func NewMultiWatcher(config *meshconfig.MeshConfig) *MultiWatcher {
+	iw := &internalWatcher{}
+	iw.MeshConfig.Store(config)
+	return &MultiWatcher{
+		internalWatcher: iw,
+	}
 }

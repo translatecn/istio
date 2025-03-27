@@ -37,6 +37,24 @@ type kubeconfig struct {
 	Redacted string
 }
 
+// writeKubeConfigFile will rewrite/replace the kubeconfig used by the CNI plugin.
+// We are the only consumers of this file and it resides in our owned rundir on the host node,
+// so we are good to simply write it out if our watched svcacct token changes.
+func writeKubeConfigFile(cfg *config.InstallConfig) error {
+	kc, err := createKubeConfig(cfg)
+	if err != nil {
+		return err
+	}
+
+	kubeconfigFilepath := filepath.Join(cfg.CNIAgentRunDir, constants.CNIPluginKubeconfName)
+	if err := file.AtomicWrite(kubeconfigFilepath, []byte(kc.Full), os.FileMode(cfg.KubeconfigMode)); err != nil {
+		installLog.Debugf("error writing kubeconfig: %w", err)
+		return err
+	}
+	installLog.Infof("wrote kubeconfig file %s with: \n%+v", kubeconfigFilepath, kc.Redacted)
+	return nil
+}
+
 func createKubeConfig(cfg *config.InstallConfig) (kubeconfig, error) {
 	if len(cfg.K8sServiceHost) == 0 {
 		return kubeconfig{}, fmt.Errorf("KUBERNETES_SERVICE_HOST not set. Is this not running within a pod?")
@@ -123,22 +141,4 @@ func createKubeConfig(cfg *config.InstallConfig) (kubeconfig, error) {
 		Full:     string(fullYaml),
 		Redacted: string(redacted),
 	}, nil
-}
-
-// writeKubeConfigFile will rewrite/replace the kubeconfig used by the CNI plugin.
-// We are the only consumers of this file and it resides in our owned rundir on the host node,
-// so we are good to simply write it out if our watched svcacct token changes.
-func writeKubeConfigFile(cfg *config.InstallConfig) error {
-	kc, err := createKubeConfig(cfg)
-	if err != nil {
-		return err
-	}
-
-	kubeconfigFilepath := filepath.Join(cfg.CNIAgentRunDir, constants.CNIPluginKubeconfName)
-	if err := file.AtomicWrite(kubeconfigFilepath, []byte(kc.Full), os.FileMode(cfg.KubeconfigMode)); err != nil {
-		installLog.Debugf("error writing kubeconfig: %w", err)
-		return err
-	}
-	installLog.Infof("wrote kubeconfig file %s with: \n%+v", kubeconfigFilepath, kc.Redacted)
-	return nil
 }

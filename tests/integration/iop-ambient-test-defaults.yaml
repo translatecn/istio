@@ -4,6 +4,7 @@ kind: IstioOperator
 metadata:
   name: install
 spec:
+  hub: registry.cn-hangzhou.aliyuncs.com/acejilam
   profile: ambient
   components:
     ingressGateways:
@@ -32,6 +33,7 @@ spec:
       accessLogFile: /dev/stdout
       # Just used to exclude for testing
       discoverySelectors:
-      - matchExpressions:
-        - key: istio.io/test-exclude-namespace
-          operator: DoesNotExist
+        - matchExpressions:
+            - key: istio.io/test-exclude-namespace
+              operator: DoesNotExist
+

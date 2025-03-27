@@ -23,6 +23,7 @@ var unsafeValue = regexp.MustCompile(`[^\\w@%+=:,./-]`)
 
 func Quote(s string) string {
 	// ported from https://github.com/chrissimpkins/shellescape/blob/master/lib/shellescape/main.py
+
 	if len(s) == 0 {
 		return "''"
 	}

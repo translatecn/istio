@@ -3,7 +3,7 @@ templates:
     spec:
       initContainers:
       - name: istio-init
-        image: docker.io/istio/proxy_init:unittest-{{.Values.global.suffix}}
+        image: registry.cn-hangzhou.aliyuncs.com/acejilam/proxy_init:unittest-{{.Values.global.suffix}}
       containers:
       - name: istio-proxy
-        image: docker.io/istio/proxy_debug:unittest
+        image: registry.cn-hangzhou.aliyuncs.com/acejilam/proxy_debug:unittest

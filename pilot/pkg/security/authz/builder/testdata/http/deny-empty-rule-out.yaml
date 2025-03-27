@@ -6,11 +6,11 @@ typedConfig:
     policies:
       ns[foo]-policy[deny-all]-rule[0]:
         permissions:
-        - andRules:
-            rules:
-            - any: true
+          - andRules:
+              rules:
+                - any: true
         principals:
-        - andIds:
-            ids:
-            - any: true
+          - andIds:
+              ids:
+                - any: true
   shadowRulesStatPrefix: istio_dry_run_allow_

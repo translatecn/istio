@@ -61,6 +61,7 @@ type instance struct {
 
 func (i *instance) WriteTo(templateFile string, w io.Writer) error {
 	// Get the input bootstrap template.
+
 	t, err := newTemplate(templateFile)
 	if err != nil {
 		return err
@@ -110,6 +111,7 @@ func GetEffectiveTemplatePath(pc *model.NodeMetaProxyConfig) string {
 
 func (i *instance) CreateFile() (string, error) {
 	// Create the output file.
+
 	if err := os.MkdirAll(i.Metadata.ProxyConfig.ConfigPath, 0o700); err != nil {
 		return "", err
 	}
@@ -132,8 +134,10 @@ func (i *instance) CreateFile() (string, error) {
 }
 
 func configFile(config string, templateFile string) string {
-	suffix := "json"
 	// Envoy will interpret the file extension to determine the type. We should detect yaml inputs
+
+	suffix := "json"
+
 	if strings.HasSuffix(templateFile, ".yaml.tmpl") || strings.HasSuffix(templateFile, ".yaml") {
 		suffix = "yaml"
 	}

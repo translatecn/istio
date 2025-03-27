@@ -4,7 +4,7 @@ metadata:
   name: bookinfo
   labels:
     istio-injection: "enabled"
-spec: {}
+spec: { }
 ---
 # Deployment should generate a warning: two services using that deployment
 # using the same port but different protocol.
@@ -31,7 +31,7 @@ spec:
       serviceAccountName: bookinfo-details
       containers:
         - name: details
-          image: docker.io/istio/examples-bookinfo-details-v1:1.15.0
+          image: registry.cn-hangzhou.aliyuncs.com/acejilam/examples-bookinfo-details-v1:1.15.0
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 9080
@@ -94,7 +94,7 @@ spec:
       serviceAccountName: bookinfo-details
       containers:
         - name: details
-          image: docker.io/istio/examples-bookinfo-details-v1:1.15.0
+          image: registry.cn-hangzhou.aliyuncs.com/acejilam/examples-bookinfo-details-v1:1.15.0
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 9080
@@ -156,12 +156,12 @@ spec:
       serviceAccountName: bookinfo-reviews
       containers:
         - name: reviews
-          image: docker.io/istio/examples-bookinfo-reviews-v2:1.15.0
+          image: registry.cn-hangzhou.aliyuncs.com/acejilam/examples-bookinfo-reviews-v2:1.15.0
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 9080
         - name: reviews-2
-          image: docker.io/istio/examples-bookinfo-reviews-v2:1.15.0
+          image: registry.cn-hangzhou.aliyuncs.com/acejilam/examples-bookinfo-reviews-v2:1.15.0
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 9090
@@ -176,9 +176,9 @@ metadata:
     service: reviews
 spec:
   ports:
-  - port: 9080
-    name: http
-    protocol: HTTP
+    - port: 9080
+      name: http
+      protocol: HTTP
   selector:
     app: reviews
 ---
@@ -222,7 +222,7 @@ spec:
       serviceAccountName: bookinfo-ratings
       containers:
         - name: ratings
-          image: docker.io/istio/examples-bookinfo-ratings-v1:1.15.0
+          image: registry.cn-hangzhou.aliyuncs.com/acejilam/examples-bookinfo-ratings-v1:1.15.0
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 9080
@@ -252,7 +252,7 @@ spec:
       serviceAccountName: bookinfo-productpage
       containers:
         - name: productpage
-          image: docker.io/istio/examples-bookinfo-productpage-v1:1.15.0
+          image: registry.cn-hangzhou.aliyuncs.com/acejilam/examples-bookinfo-productpage-v1:1.15.0
           imagePullPolicy: IfNotPresent
 ---
 apiVersion: v1
@@ -314,14 +314,14 @@ spec:
       serviceAccountName: bookinfo-productpage
       containers:
         - name: productpage
-          image: docker.io/istio/examples-bookinfo-productpage-v1:1.15.0
+          image: registry.cn-hangzhou.aliyuncs.com/acejilam/examples-bookinfo-productpage-v1:1.15.0
           imagePullPolicy: IfNotPresent
 ---
 apiVersion: v1
 kind: Namespace
 metadata:
   name: injection-disabled-ns
-spec: {}
+spec: { }
 ---
 # Deployment has multiple service attached but using same port but different protocol.
 # Sidecar is enabled although the namespaced doesn't have automatic injection.
@@ -351,7 +351,7 @@ spec:
       serviceAccountName: bookinfo-ratings
       containers:
         - name: ratings
-          image: docker.io/istio/examples-bookinfo-ratings-v1:1.15.0
+          image: registry.cn-hangzhou.aliyuncs.com/acejilam/examples-bookinfo-ratings-v1:1.15.0
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 9080
@@ -379,5 +379,5 @@ spec:
       serviceAccountName: productpage-istio-waypoint
       containers:
         - name: istio-proxy
-          image: docker.io/istio/proxyv2:1.20.0-dev1
+          image: registry.cn-hangzhou.aliyuncs.com/acejilam/proxyv2:1.20.0-dev1
           imagePullPolicy: IfNotPresent

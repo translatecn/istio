@@ -5,9 +5,9 @@ typedConfig:
     policies:
       ns[foo]-policy[allow-none]-rule[0]:
         permissions:
-        - notRule:
-            any: true
+          - notRule:
+              any: true
         principals:
-        - notId:
-            any: true
+          - notId:
+              any: true
   shadowRulesStatPrefix: istio_dry_run_allow_

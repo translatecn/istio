@@ -107,6 +107,7 @@ func (s *serviceInstancesStore) addInstances(key configKeyWithParent, instances 
 
 func (s *serviceInstancesStore) updateInstances(key configKeyWithParent, instances []*model.ServiceInstance) {
 	// first delete
+
 	s.deleteInstanceKeys(key, instances)
 
 	// second add

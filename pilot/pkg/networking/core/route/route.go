@@ -34,8 +34,8 @@ import (
 	"google.golang.org/protobuf/types/known/wrapperspb"
 	"k8s.io/apimachinery/pkg/types"
 
-	meshconfig "istio.io/api/mesh/v1alpha1"
-	networking "istio.io/api/networking/v1alpha3"
+	meshconfig "istio.io/istio/istio.io/api/mesh/v1alpha1"
+	networking "istio.io/istio/istio.io/api/networking/v1alpha3"
 	"istio.io/istio/pilot/pkg/features"
 	"istio.io/istio/pilot/pkg/model"
 	"istio.io/istio/pilot/pkg/networking/core/route/retry"
@@ -159,6 +159,7 @@ func separateVSHostsAndServices(virtualService config.Config,
 	// TODO: A further optimization would be to completely rely on the index and not do the loop below
 	// However, that requires assuming that serviceRegistry never got filtered after the
 	// egressListener was created.
+
 	rule := virtualService.Spec.(*networking.VirtualService)
 	// Stores VS hosts that don't correspond to services in the registry
 	// Currently, the only use for this list is to enable VirtualService configuration to affect
@@ -831,6 +832,7 @@ func ApplyDirectResponse(out *route.Route, directResponse *networking.HTTPDirect
 func buildHTTP3AltSvcHeader(port int, h3Alpns []string) *core.HeaderValueOption {
 	// For example, www.cloudflare.com returns the following
 	// alt-svc: h3-27=":443"; ma=86400, h3-28=":443"; ma=86400, h3-29=":443"; ma=86400, h3=":443"; ma=86400
+
 	valParts := make([]string, 0, len(h3Alpns))
 	for _, alpn := range h3Alpns {
 		// Max-age is hardcoded to 1 day for now.
@@ -898,10 +900,11 @@ func MirrorPercentByPolicy(mirror *networking.HTTPMirrorPolicy) *core.RuntimeFra
 
 // Len is i the sort.Interface for SortHeaderValueOption
 func (b SortHeaderValueOption) Len() int {
+	// Less is in the sort.Interface for SortHeaderValueOption
+
 	return len(b)
 }
 
-// Less is in the sort.Interface for SortHeaderValueOption
 func (b SortHeaderValueOption) Less(i, j int) bool {
 	if b[i] == nil || b[i].Header == nil {
 		return false
@@ -1286,6 +1289,7 @@ func buildDefaultHTTPRoute(clusterName string, operation string) *route.Route {
 // setTimeout sets timeout for a route.
 func setTimeout(action *route.RouteAction, vsTimeout *durationpb.Duration, node *model.Proxy) {
 	// Configure timeouts specified by Virtual Service if they are provided, otherwise set it to defaults.
+
 	action.Timeout = Notimeout
 	if vsTimeout != nil {
 		action.Timeout = vsTimeout
@@ -1577,9 +1581,11 @@ func SortVHostRoutes(routes []*route.Route) []*route.Route {
 
 // IsCatchAllRoute returns true if an Envoy route is a catchall route otherwise false.
 func IsCatchAllRoute(r *route.Route) bool {
-	catchall := false
 	// A Match is catch all if and only if it has no header/query param match
 	// and URI has a prefix `/` or regex `.*`.
+
+	catchall := false
+
 	switch ir := r.Match.PathSpecifier.(type) {
 	case *route.RouteMatch_Prefix:
 		catchall = ir.Prefix == "/"

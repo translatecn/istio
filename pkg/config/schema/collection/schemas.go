@@ -47,17 +47,6 @@ type SchemasBuilder struct {
 	schemas Schemas
 }
 
-// NewSchemasBuilder returns a new instance of SchemasBuilder.
-func NewSchemasBuilder() *SchemasBuilder {
-	s := Schemas{
-		byCollection: make(map[config.GroupVersionKind]resource.Schema),
-	}
-
-	return &SchemasBuilder{
-		schemas: s,
-	}
-}
-
 // Add a new collection to the schemas.
 func (b *SchemasBuilder) Add(s resource.Schema) error {
 	if _, found := b.schemas.byCollection[s.GroupVersionKind()]; found {
@@ -79,9 +68,10 @@ func (b *SchemasBuilder) MustAdd(s resource.Schema) *SchemasBuilder {
 
 // Build a new schemas from this SchemasBuilder.
 func (b *SchemasBuilder) Build() Schemas {
+	// Avoid modify after Build.
+
 	s := b.schemas
 
-	// Avoid modify after Build.
 	b.schemas = Schemas{}
 
 	return s
@@ -245,4 +235,15 @@ func (s Schemas) Validate() (err error) {
 
 func (s Schemas) Equal(o Schemas) bool {
 	return cmp.Equal(s.byAddOrder, o.byAddOrder)
+}
+
+// NewSchemasBuilder returns a new instance of SchemasBuilder.
+func NewSchemasBuilder() *SchemasBuilder {
+	s := Schemas{
+		byCollection: make(map[config.GroupVersionKind]resource.Schema),
+	}
+
+	return &SchemasBuilder{
+		schemas: s,
+	}
 }

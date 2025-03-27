@@ -24,8 +24,8 @@ metadata:
     service: ratings
 spec:
   ports:
-  - port: 9080
-    name: http
+    - port: 9080
+      name: http
   selector:
     app: ratings
 ---

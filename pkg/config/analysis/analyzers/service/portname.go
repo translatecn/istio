@@ -19,7 +19,7 @@ import (
 
 	v1 "k8s.io/api/core/v1"
 
-	"istio.io/api/label"
+	"istio.io/istio/istio.io/api/label"
 	"istio.io/istio/pkg/config"
 	"istio.io/istio/pkg/config/analysis"
 	"istio.io/istio/pkg/config/analysis/analyzers/util"
@@ -70,7 +70,6 @@ func (s *PortNameAnalyzer) analyzeService(r *resource.Instance, c analysis.Conte
 	for i, port := range svc.Ports {
 		instance := configKube.ConvertProtocol(port.Port, port.Name, port.Protocol, port.AppProtocol)
 		if instance.IsUnsupported() || port.Name == "tcp" && svc.Type == "ExternalName" {
-
 			m := msg.NewPortNameIsNotUnderNamingConvention(
 				r, port.Name, int(port.Port), port.TargetPort.String())
 

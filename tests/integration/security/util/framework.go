@@ -22,7 +22,7 @@ import (
 	"os"
 	"path"
 
-	"istio.io/api/annotation"
+	"istio.io/istio/istio.io/api/annotation"
 	"istio.io/istio/pkg/config/protocol"
 	"istio.io/istio/pkg/test/echo/common"
 	"istio.io/istio/pkg/test/env"

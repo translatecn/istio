@@ -32,6 +32,28 @@ type CaSecretController struct {
 	client corev1.CoreV1Interface
 }
 
+// UpdateCASecretWithRetry updates CA secret with retries until timeout.
+func (csc *CaSecretController) UpdateCASecretWithRetry(caSecret *v1.Secret,
+	retryInterval, timeout time.Duration,
+) error {
+	start := time.Now()
+	for {
+		_, scrtErr := csc.client.Secrets(caSecret.Namespace).Update(context.TODO(), caSecret, metav1.UpdateOptions{})
+		if scrtErr == nil {
+			return nil
+		}
+		k8sControllerLog.Errorf("Failed on updating CA secret %s:%s.",
+			caSecret.Namespace, caSecret.Name)
+
+		if time.Since(start) > timeout {
+			k8sControllerLog.Errorf("Timeout on updating CA secret %s:%s.",
+				caSecret.Namespace, caSecret.Name)
+			return scrtErr
+		}
+		time.Sleep(retryInterval)
+	}
+}
+
 // NewCaSecretController returns a pointer to a newly constructed SecretController instance.
 func NewCaSecretController(core corev1.CoreV1Interface) *CaSecretController {
 	cs := &CaSecretController{
@@ -59,28 +81,6 @@ func (csc *CaSecretController) LoadCASecretWithRetry(secretName, namespace strin
 			k8sControllerLog.Errorf("Timeout on loading CA secret %s:%s.",
 				namespace, secretName)
 			return caSecret, scrtErr
-		}
-		time.Sleep(retryInterval)
-	}
-}
-
-// UpdateCASecretWithRetry updates CA secret with retries until timeout.
-func (csc *CaSecretController) UpdateCASecretWithRetry(caSecret *v1.Secret,
-	retryInterval, timeout time.Duration,
-) error {
-	start := time.Now()
-	for {
-		_, scrtErr := csc.client.Secrets(caSecret.Namespace).Update(context.TODO(), caSecret, metav1.UpdateOptions{})
-		if scrtErr == nil {
-			return nil
-		}
-		k8sControllerLog.Errorf("Failed on updating CA secret %s:%s.",
-			caSecret.Namespace, caSecret.Name)
-
-		if time.Since(start) > timeout {
-			k8sControllerLog.Errorf("Timeout on updating CA secret %s:%s.",
-				caSecret.Namespace, caSecret.Name)
-			return scrtErr
 		}
 		time.Sleep(retryInterval)
 	}

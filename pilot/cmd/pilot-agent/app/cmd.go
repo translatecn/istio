@@ -24,15 +24,16 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"istio.io/api/annotation"
-	meshconfig "istio.io/api/mesh/v1alpha1"
+	_ "istio.io/istio/debug/agent"
+	"istio.io/istio/istio.io/api/annotation"
+	meshconfig "istio.io/istio/istio.io/api/mesh/v1alpha1"
 	"istio.io/istio/pilot/cmd/pilot-agent/config"
 	"istio.io/istio/pilot/cmd/pilot-agent/options"
 	"istio.io/istio/pilot/cmd/pilot-agent/status"
 	"istio.io/istio/pilot/pkg/util/network"
 	"istio.io/istio/pkg/bootstrap"
 	"istio.io/istio/pkg/cmd"
-	"istio.io/istio/pkg/collateral"
+	"istio.io/istio/pkg/collateral_over"
 	"istio.io/istio/pkg/config/constants"
 	"istio.io/istio/pkg/envoy"
 	istioagent "istio.io/istio/pkg/istio-agent"
@@ -41,7 +42,7 @@ import (
 	"istio.io/istio/pkg/slices"
 	"istio.io/istio/pkg/util/protomarshal"
 	"istio.io/istio/pkg/util/sets"
-	"istio.io/istio/pkg/version"
+	"istio.io/istio/pkg/version_over"
 	cleaniptables "istio.io/istio/tools/istio-clean-iptables/pkg/cmd"
 	iptables "istio.io/istio/tools/istio-iptables/pkg/cmd"
 	iptableslog "istio.io/istio/tools/istio-iptables/pkg/log"
@@ -61,7 +62,7 @@ func NewRootCommand(sds istioagent.SDSServiceFactory) *cobra.Command {
 	rootCmd := &cobra.Command{
 		Use:          "pilot-agent",
 		Short:        "Istio Pilot agent.",
-		Long:         "Istio Pilot agent runs in the sidecar or gateway container and bootstraps Envoy.",
+		Long:         "Istio Pilot代理运行在sidecar或网关容器中，并引导Envoy。",
 		SilenceUsage: true,
 		FParseErrWhitelist: cobra.FParseErrWhitelist{
 			// Allow unknown flags for backward-compatibility.
@@ -77,13 +78,12 @@ func NewRootCommand(sds istioagent.SDSServiceFactory) *cobra.Command {
 	proxyCmd := newProxyCommand(sds)
 	addFlags(proxyCmd)
 	rootCmd.AddCommand(proxyCmd)
-	rootCmd.AddCommand(requestCmd)
-	rootCmd.AddCommand(waitCmd)
-	rootCmd.AddCommand(version.CobraCommand())
-	rootCmd.AddCommand(iptables.GetCommand(loggingOptions))
-	rootCmd.AddCommand(cleaniptables.GetCommand(loggingOptions))
-
-	rootCmd.AddCommand(collateral.CobraCommand(rootCmd, collateral.Metadata{
+	rootCmd.AddCommand(requestCmd)                               // ✅
+	rootCmd.AddCommand(waitCmd)                                  // ✅
+	rootCmd.AddCommand(version_over.CobraCommand())              // ✅
+	rootCmd.AddCommand(iptables.GetCommand(loggingOptions))      // ✅
+	rootCmd.AddCommand(cleaniptables.GetCommand(loggingOptions)) // ✅
+	rootCmd.AddCommand(collateral_over.CobraCommand(rootCmd, collateral_over.Metadata{
 		Title:   "Istio Pilot Agent",
 		Section: "pilot-agent CLI",
 		Manual:  "Istio Pilot Agent",
@@ -92,7 +92,9 @@ func NewRootCommand(sds istioagent.SDSServiceFactory) *cobra.Command {
 	return rootCmd
 }
 
+// proxy sidecar --domain default.svc.cluster.local --proxyLogLevel=warning --proxyComponentLogLevel=misc:error --log_output_level=default:info
 func newProxyCommand(sds istioagent.SDSServiceFactory) *cobra.Command {
+	// proxy sidecar --domain default.svc.cluster.local --proxyLogLevel=warning --proxyComponentLogLevel=misc:error --log_output_level=default:info
 	return &cobra.Command{
 		Use:   "proxy",
 		Short: "XDS proxy agent",
@@ -103,8 +105,7 @@ func newProxyCommand(sds istioagent.SDSServiceFactory) *cobra.Command {
 		PersistentPreRunE: configureLogging,
 		RunE: func(c *cobra.Command, args []string) error {
 			cmd.PrintFlags(c.Flags())
-			log.Infof("Version %s", version.Info.String())
-
+			log.Infof("Version %s", version_over.Info.String())
 			raiseLimits()
 
 			err := initProxy(args)
@@ -139,6 +140,7 @@ func newProxyCommand(sds istioagent.SDSServiceFactory) *cobra.Command {
 				Sidecar:           proxyArgs.Type == model.SidecarProxy,
 				OutlierLogPath:    proxyArgs.OutlierLogPath,
 			}
+
 			agentOptions := options.NewAgentOptions(&proxyArgs, proxyConfig, sds)
 			agent := istioagent.NewAgent(proxyConfig, agentOptions, secOpts, envoyOptions)
 			ctx, cancel := context.WithCancelCause(context.Background())
@@ -171,42 +173,23 @@ func newProxyCommand(sds istioagent.SDSServiceFactory) *cobra.Command {
 
 func addFlags(proxyCmd *cobra.Command) {
 	proxyArgs = options.NewProxyArgs()
-	proxyCmd.PersistentFlags().StringVar(&proxyArgs.DNSDomain, "domain", "",
-		"DNS domain suffix. If not provided uses ${POD_NAMESPACE}.svc.cluster.local")
-	proxyCmd.PersistentFlags().StringVar(&proxyArgs.MeshConfigFile, "meshConfig", "./etc/istio/config/mesh",
-		"File name for Istio mesh configuration. If not specified, a default mesh will be used. This may be overridden by "+
-			"PROXY_CONFIG environment variable or proxy.istio.io/config annotation.")
-	proxyCmd.PersistentFlags().IntVar(&proxyArgs.StsPort, "stsPort", 0,
-		"HTTP Port on which to serve Security Token Service (STS). If zero, STS service will not be provided.")
-	proxyCmd.PersistentFlags().StringVar(&proxyArgs.TokenManagerPlugin, "tokenManagerPlugin", "",
-		"Token provider specific plugin name.")
+	proxyCmd.PersistentFlags().StringVar(&proxyArgs.DNSDomain, "domain", "", "DNS domain suffix. If not provided uses ${POD_NAMESPACE}.svc.cluster.local")
+	proxyCmd.PersistentFlags().StringVar(&proxyArgs.MeshConfigFile, "meshConfig", "./etc/istio/config/mesh", "File name for Istio mesh configuration. If not specified, a default mesh will be used. This may be overridden by PROXY_CONFIG environment variable or proxy.istio.io/config annotation.")
+	proxyCmd.PersistentFlags().IntVar(&proxyArgs.StsPort, "stsPort", 0, "HTTP Port on which to serve Security Token Service (STS). If zero, STS service will not be provided.")
+	proxyCmd.PersistentFlags().StringVar(&proxyArgs.TokenManagerPlugin, "tokenManagerPlugin", "", "Token provider specific plugin name.")
 	// DEPRECATED. Flags for proxy configuration
 	proxyCmd.PersistentFlags().StringVar(&proxyArgs.ServiceCluster, "serviceCluster", constants.ServiceClusterName, "Service cluster")
 	// Log levels are provided by the library https://github.com/gabime/spdlog, used by Envoy.
-	proxyCmd.PersistentFlags().StringVar(&proxyArgs.ProxyLogLevel, "proxyLogLevel", "warning,misc:error",
-		fmt.Sprintf("The log level used to start the Envoy proxy (choose from {%s, %s, %s, %s, %s, %s, %s})."+
-			"Level may also include one or more scopes, such as 'info,misc:error,upstream:debug'",
-			"trace", "debug", "info", "warning", "error", "critical", "off"))
+	proxyCmd.PersistentFlags().StringVar(&proxyArgs.ProxyLogLevel, "proxyLogLevel", "warning,misc:error", fmt.Sprintf("The log level used to start the Envoy proxy (choose from {%s, %s, %s, %s, %s, %s, %s}).Level may also include one or more scopes, such as 'info,misc:error,upstream:debug'", "trace", "debug", "info", "warning", "error", "critical", "off"))
 	proxyCmd.PersistentFlags().IntVar(&proxyArgs.Concurrency, "concurrency", 0, "number of worker threads to run")
 	// See https://www.envoyproxy.io/docs/envoy/latest/operations/cli#cmdoption-component-log-level
-	proxyCmd.PersistentFlags().StringVar(&proxyArgs.ProxyComponentLogLevel, "proxyComponentLogLevel", "",
-		"The component log level used to start the Envoy proxy. Deprecated, use proxyLogLevel instead")
-	proxyCmd.PersistentFlags().StringVar(&proxyArgs.TemplateFile, "templateFile", "",
-		"Go template bootstrap config")
-	proxyCmd.PersistentFlags().StringVar(&proxyArgs.OutlierLogPath, "outlierLogPath", "",
-		"The log path for outlier detection")
-	proxyCmd.PersistentFlags().BoolVar(&proxyArgs.EnableProfiling, "profiling", true,
-		"Enable profiling via web interface host:port/debug/pprof/.")
+	proxyCmd.PersistentFlags().StringVar(&proxyArgs.ProxyComponentLogLevel, "proxyComponentLogLevel", "", "The component log level used to start the Envoy proxy. Deprecated, use proxyLogLevel instead")
+	proxyCmd.PersistentFlags().StringVar(&proxyArgs.TemplateFile, "templateFile", "", "Go template bootstrap config")
+	proxyCmd.PersistentFlags().StringVar(&proxyArgs.OutlierLogPath, "outlierLogPath", "", "The log path for outlier detection")
+	proxyCmd.PersistentFlags().BoolVar(&proxyArgs.EnableProfiling, "profiling", true, "Enable profiling via web interface host:port/debug/pprof/.")
 }
 
-func initStatusServer(
-	ctx context.Context,
-	proxyConfig *meshconfig.ProxyConfig,
-	envoyPrometheusPort int,
-	enableProfiling bool,
-	agent *istioagent.Agent,
-	shutdown context.CancelCauseFunc,
-) error {
+func initStatusServer(ctx context.Context, proxyConfig *meshconfig.ProxyConfig, envoyPrometheusPort int, enableProfiling bool, agent *istioagent.Agent, shutdown context.CancelCauseFunc) error {
 	o := options.NewStatusServerOptions(proxyArgs.IsIPv6(), proxyArgs.Type, proxyConfig, agent)
 	o.EnvoyPrometheusPort = envoyPrometheusPort
 	o.EnableProfiling = enableProfiling
@@ -216,7 +199,7 @@ func initStatusServer(
 	if err != nil {
 		return err
 	}
-	go statusServer.Run(ctx)
+	go statusServer.Run(ctx) // ✅
 	return nil
 }
 

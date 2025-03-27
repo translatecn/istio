@@ -182,6 +182,7 @@ func NewShutdown() *Shutdown {
 func (s *Shutdown) ReportRequest() {
 	// On every request, reset our shutdown timer. This lets us dynamically drain: if we continue to receive requests, we will
 	// keep alive up to 10s. If not, we will shutdown quickly (shutdownTimer)
+
 	if timer := s.timer.Load(); timer != nil {
 		timer.Reset(shutdownTime)
 	}
@@ -189,6 +190,7 @@ func (s *Shutdown) ReportRequest() {
 
 func (s *Shutdown) WaitForShutdown() {
 	// Wait for the process to be shutdown.
+
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 	<-sigs

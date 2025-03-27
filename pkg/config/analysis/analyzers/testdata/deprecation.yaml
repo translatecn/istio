@@ -4,13 +4,13 @@ metadata:
   name: istio-multicluster-egressgateway
   namespace: istio-system
 spec:
-   # workloadLabels is deprecated
-   workloadLabels:
-     istio: egressgateway
-   # filters is deprecated
-   filters:
-   - listenerMatch:
-       portNumber: 15443
+  # workloadLabels is deprecated
+  workloadLabels:
+    istio: egressgateway
+  # filters is deprecated
+  filters:
+    - listenerMatch:
+        portNumber: 15443
 ---
 apiVersion: networking.istio.io/v1
 kind: VirtualService
@@ -19,11 +19,11 @@ metadata:
   namespace: foo
 spec:
   hosts:
-  - productpage
+    - productpage
   http:
-  - fault:
-      delay:
-        percent: 50
+    - fault:
+        delay:
+          percent: 50
 ---
 apiVersion: networking.istio.io/v1
 kind: Sidecar
@@ -32,12 +32,12 @@ metadata:
   namespace: default
 spec:
   ingress:
-  - port:
-      number: 9080
-    defaultEndpoint: unix:///var/run/some.sock
+    - port:
+        number: 9080
+      defaultEndpoint: unix:///var/run/some.sock
   egress:
-  - hosts:
-    - "./*"
+    - hosts:
+        - "./*"
   outboundTrafficPolicy:
     mode: ALLOW_ANY
     egressProxy:
@@ -52,6 +52,6 @@ metadata:
   namespace: istio-system
 spec:
   rules:
-  - quotas:
-    - charge: 1
-      quota: requestcount
+    - quotas:
+        - charge: 1
+          quota: requestcount

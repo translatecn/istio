@@ -115,65 +115,6 @@ type CertOptions struct {
 	DNSNames string
 }
 
-// GenCertKeyFromOptions generates a X.509 certificate and a private key with the given options.
-func GenCertKeyFromOptions(options CertOptions) (pemCert []byte, pemKey []byte, err error) {
-	// Generate the appropriate private&public key pair based on options.
-	// The public key will be bound to the certificate generated below. The
-	// private key will be used to sign this certificate in the self-signed
-	// case, otherwise the certificate is signed by the signer private key
-	// as specified in the CertOptions.
-	if options.ECSigAlg != "" {
-		var ecPriv *ecdsa.PrivateKey
-
-		switch options.ECSigAlg {
-		case EcdsaSigAlg:
-			var curve elliptic.Curve
-			switch options.ECCCurve {
-			case P384Curve:
-				curve = elliptic.P384()
-			default:
-				curve = elliptic.P256()
-			}
-
-			ecPriv, err = ecdsa.GenerateKey(curve, rand.Reader)
-			if err != nil {
-				return nil, nil, fmt.Errorf("cert generation fails at EC key generation (%v)", err)
-			}
-
-		default:
-			return nil, nil, errors.New("cert generation fails due to unsupported EC signature algorithm")
-		}
-		return genCert(options, ecPriv, &ecPriv.PublicKey)
-	}
-
-	if options.RSAKeySize < MinimumRsaKeySize {
-		return nil, nil, fmt.Errorf("requested key size does not meet the minimum required size of %d (requested: %d)", MinimumRsaKeySize, options.RSAKeySize)
-	}
-	rsaPriv, err := rsa.GenerateKey(rand.Reader, options.RSAKeySize)
-	if err != nil {
-		return nil, nil, fmt.Errorf("cert generation fails at RSA key generation (%v)", err)
-	}
-	return genCert(options, rsaPriv, &rsaPriv.PublicKey)
-}
-
-func genCert(options CertOptions, priv any, key any) ([]byte, []byte, error) {
-	template, err := genCertTemplateFromOptions(options)
-	if err != nil {
-		return nil, nil, fmt.Errorf("cert generation fails at cert template creation (%v)", err)
-	}
-	signerCert, signerKey := template, crypto.PrivateKey(priv)
-	if !options.IsSelfSigned {
-		signerCert, signerKey = options.SignerCert, options.SignerPriv
-	}
-	certBytes, err := x509.CreateCertificate(rand.Reader, template, signerCert, key, signerKey)
-	if err != nil {
-		return nil, nil, fmt.Errorf("cert generation fails at X509 cert creation (%v)", err)
-	}
-
-	pemCert, pemKey, err := encodePem(false, certBytes, priv, options.PKCS8Key)
-	return pemCert, pemKey, err
-}
-
 func publicKey(priv any) any {
 	switch k := priv.(type) {
 	case *rsa.PrivateKey:
@@ -342,6 +283,75 @@ func genCertTemplateFromCSR(csr *x509.CertificateRequest, subjectIDs []string, t
 	}, nil
 }
 
+func genSerialNum() (*big.Int, error) {
+	serialNumLimit := new(big.Int).Lsh(big.NewInt(1), 128)
+	serialNum, err := rand.Int(rand.Reader, serialNumLimit)
+	if err != nil {
+		return nil, fmt.Errorf("serial number generation failure (%v)", err)
+	}
+	return serialNum, nil
+}
+
+// GenCertKeyFromOptions generates a X.509 certificate and a private key with the given options.
+func GenCertKeyFromOptions(options CertOptions) (pemCert []byte, pemKey []byte, err error) {
+	// Generate the appropriate private&public key pair based on options.
+	// The public key will be bound to the certificate generated below. The
+	// private key will be used to sign this certificate in the self-signed
+	// case, otherwise the certificate is signed by the signer private key
+	// as specified in the CertOptions.
+
+	if options.ECSigAlg != "" {
+		var ecPriv *ecdsa.PrivateKey
+
+		switch options.ECSigAlg {
+		case EcdsaSigAlg:
+			var curve elliptic.Curve
+			switch options.ECCCurve {
+			case P384Curve:
+				curve = elliptic.P384()
+			default:
+				curve = elliptic.P256()
+			}
+
+			ecPriv, err = ecdsa.GenerateKey(curve, rand.Reader)
+			if err != nil {
+				return nil, nil, fmt.Errorf("cert generation fails at EC key generation (%v)", err)
+			}
+
+		default:
+			return nil, nil, errors.New("cert generation fails due to unsupported EC signature algorithm")
+		}
+		return genCert(options, ecPriv, &ecPriv.PublicKey)
+	}
+
+	if options.RSAKeySize < MinimumRsaKeySize {
+		return nil, nil, fmt.Errorf("requested key size does not meet the minimum required size of %d (requested: %d)", MinimumRsaKeySize, options.RSAKeySize)
+	}
+	rsaPriv, err := rsa.GenerateKey(rand.Reader, options.RSAKeySize)
+	if err != nil {
+		return nil, nil, fmt.Errorf("cert generation fails at RSA key generation (%v)", err)
+	}
+	return genCert(options, rsaPriv, &rsaPriv.PublicKey)
+}
+
+func genCert(options CertOptions, priv any, key any) ([]byte, []byte, error) {
+	template, err := genCertTemplateFromOptions(options)
+	if err != nil {
+		return nil, nil, fmt.Errorf("cert generation fails at cert template creation (%v)", err)
+	}
+	signerCert, signerKey := template, crypto.PrivateKey(priv)
+	if !options.IsSelfSigned {
+		signerCert, signerKey = options.SignerCert, options.SignerPriv
+	}
+	certBytes, err := x509.CreateCertificate(rand.Reader, template, signerCert, key, signerKey)
+	if err != nil {
+		return nil, nil, fmt.Errorf("cert generation fails at X509 cert creation (%v)", err)
+	}
+
+	pemCert, pemKey, err := encodePem(false, certBytes, priv, options.PKCS8Key)
+	return pemCert, pemKey, err
+}
+
 // genCertTemplateFromoptions generates a certificate template with the given options.
 func genCertTemplateFromOptions(options CertOptions) (*x509.Certificate, error) {
 	var keyUsage x509.KeyUsage
@@ -412,18 +422,7 @@ func genCertTemplateFromOptions(options CertOptions) (*x509.Certificate, error) 
 	}, nil
 }
 
-func genSerialNum() (*big.Int, error) {
-	serialNumLimit := new(big.Int).Lsh(big.NewInt(1), 128)
-	serialNum, err := rand.Int(rand.Reader, serialNumLimit)
-	if err != nil {
-		return nil, fmt.Errorf("serial number generation failure (%v)", err)
-	}
-	return serialNum, nil
-}
-
-func encodePem(isCSR bool, csrOrCert []byte, priv any, pkcs8 bool) (
-	csrOrCertPem []byte, privPem []byte, err error,
-) {
+func encodePem(isCSR bool, csrOrCert []byte, priv any, pkcs8 bool) (csrOrCertPem []byte, privPem []byte, err error) {
 	encodeMsg := "CERTIFICATE"
 	if isCSR {
 		encodeMsg = "CERTIFICATE REQUEST"

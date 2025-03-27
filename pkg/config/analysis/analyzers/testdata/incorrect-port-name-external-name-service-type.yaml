@@ -6,10 +6,10 @@ metadata:
 spec:
   externalName: nginx.example.com
   ports:
-  - name: nginx
-    port: 443
-    protocol: TCP
-    targetPort: 443
+    - name: nginx
+      port: 443
+      protocol: TCP
+      targetPort: 443
   type: ExternalName
 ---
 apiVersion: v1
@@ -20,11 +20,11 @@ metadata:
 spec:
   externalName: nginx.example.com
   ports:
-  - port: 443
-    protocol: TCP
-    targetPort: 443
+    - port: 443
+      protocol: TCP
+      targetPort: 443
   type: ExternalName
---- 
+---
 apiVersion: v1
 kind: Service
 metadata:
@@ -33,8 +33,8 @@ metadata:
 spec:
   externalName: nginx.example.com
   ports:
-  - name: tcp
-    port: 443
-    protocol: TCP
-    targetPort: 443
+    - name: tcp
+      port: 443
+      protocol: TCP
+      targetPort: 443
   type: ExternalName

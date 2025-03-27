@@ -11,7 +11,7 @@ spec:
   rules:
     - from:
         - source:
-            principals: ["cluster.local/ns/rule[0]/sa/from[0]-principal[0]"]
+            principals: [ "cluster.local/ns/rule[0]/sa/from[0]-principal[0]" ]
         - source:
-            principals: ["some-td/ns/rule[0]/sa/from[1]-principal[0]", "cluster.local/ns/rule[0]/sa/from[1]-principal[1]"]
-            namespaces: ["rule[0]-from[1]-ns[0]"]
+            principals: [ "some-td/ns/rule[0]/sa/from[1]-principal[0]", "cluster.local/ns/rule[0]/sa/from[1]-principal[1]" ]
+            namespaces: [ "rule[0]-from[1]-ns[0]" ]

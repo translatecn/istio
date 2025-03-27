@@ -1,0 +1,16 @@
+apiVersion: networking.istio.io/v1beta1
+kind: WorkloadGroup
+metadata:
+  name: test-wg
+spec:
+  metadata:
+    labels:
+      app: test
+  template:
+    ports:
+      http: 8091
+    serviceAccount: default
+  probe:
+    httpGet:
+      path: /health
+      port: 8091

@@ -48,7 +48,7 @@ spec:
   {{- if .Values.ipFamilies }}
   ipFamilies:
   {{- range .Values.ipFamilies }}
-  - {{ . }}
+    - {{ . }}
   {{- end }}
   {{- end }}
 ---

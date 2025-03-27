@@ -15,7 +15,6 @@
 package authz
 
 import (
-	"istio.io/istio/pkg/test/framework"
 	"istio.io/istio/pkg/test/framework/components/namespace"
 	"istio.io/istio/pkg/test/framework/resource"
 )
@@ -34,14 +33,6 @@ func New(ctx resource.Context, ns namespace.Instance) (Server, error) {
 }
 
 // NewOrFail calls New and fails if an error occurs.
-func NewOrFail(t framework.TestContext, ns namespace.Instance) Server {
-	t.Helper()
-	s, err := New(t, ns)
-	if err != nil {
-		t.Fatal(err)
-	}
-	return s
-}
 
 // NewLocal does not deploy a new server, but instead configures Istio
 // to allow calls to a local authz server running as a sidecar to the echo
@@ -51,47 +42,7 @@ func NewLocal(ctx resource.Context, ns namespace.Instance) (Server, error) {
 }
 
 // NewLocalOrFail calls NewLocal and fails if an error occurs.
-func NewLocalOrFail(t framework.TestContext, ns namespace.Instance) Server {
-	t.Helper()
-	s, err := NewLocal(t, ns)
-	if err != nil {
-		t.Fatal(err)
-	}
-	return s
-}
 
 // Setup is a utility function for configuring a global authz Server.
-func Setup(server *Server, ns namespace.Getter) resource.SetupFn {
-	if ns == nil {
-		ns = namespace.NilGetter
-	}
-
-	return func(ctx resource.Context) error {
-		s, err := New(ctx, ns())
-		if err != nil {
-			return err
-		}
-
-		// Store the server.
-		*server = s
-		return err
-	}
-}
 
 // SetupLocal is a utility function for setting a global variable for a local Server.
-func SetupLocal(server *Server, ns namespace.Getter) resource.SetupFn {
-	if ns == nil {
-		ns = namespace.NilGetter
-	}
-
-	return func(ctx resource.Context) error {
-		s, err := NewLocal(ctx, ns())
-		if err != nil {
-			return err
-		}
-
-		// Store the server.
-		*server = s
-		return err
-	}
-}

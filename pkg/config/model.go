@@ -33,12 +33,11 @@ import (
 	kubetypes "k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/yaml"
 
-	"istio.io/api/label"
+	"istio.io/istio/istio.io/api/label"
 	"istio.io/istio/pilot/pkg/util/protoconv"
 	"istio.io/istio/pkg/maps"
 	"istio.io/istio/pkg/util/gogoprotomarshal"
 	"istio.io/istio/pkg/util/protomarshal"
-	"istio.io/istio/pkg/util/sets"
 )
 
 // Meta is metadata attached to each configuration unit.
@@ -123,15 +122,6 @@ func LabelsInRevision(lbls map[string]string, rev string) bool {
 	return configEnv == rev
 }
 
-func LabelsInRevisionOrTags(lbls map[string]string, rev string, tags sets.Set[string]) bool {
-	if LabelsInRevision(lbls, rev) {
-		return true
-	}
-	configEnv := lbls[label.IoIstioRev.Name]
-	// Otherwise, only return true if revisions equal
-	return tags.Contains(configEnv)
-}
-
 func ObjectInRevision(o *Config, rev string) bool {
 	return LabelsInRevision(o.Labels, rev)
 }
@@ -147,6 +137,7 @@ func ToProto(s Spec) (*anypb.Any, error) {
 	// golang protobuf. Use protoreflect.ProtoMessage to distinguish from gogo
 	// golang/protobuf 1.4+ will have this interface. Older golang/protobuf are gogo compatible
 	// but also not used by Istio at all.
+
 	if pb, ok := s.(protoreflect.ProtoMessage); ok {
 		return protoconv.MessageToAnyWithError(pb)
 	}
@@ -172,22 +163,6 @@ func ToProto(s Spec) (*anypb.Any, error) {
 		return nil, err
 	}
 	return protoconv.MessageToAnyWithError(pbs)
-}
-
-func ToMap(s Spec) (map[string]any, error) {
-	js, err := ToJSON(s)
-	if err != nil {
-		return nil, err
-	}
-
-	// Unmarshal from json bytes to go map
-	var data map[string]any
-	err = json.Unmarshal(js, &data)
-	if err != nil {
-		return nil, err
-	}
-
-	return data, nil
 }
 
 func ToRaw(s Spec) (json.RawMessage, error) {
@@ -252,6 +227,7 @@ func ApplyJSONStrict(s Spec, js string) error {
 	// golang protobuf. Use protoreflect.ProtoMessage to distinguish from gogo
 	// golang/protobuf 1.4+ will have this interface. Older golang/protobuf are gogo compatible
 	// but also not used by Istio at all.
+
 	if _, ok := s.(protoreflect.ProtoMessage); ok {
 		if pb, ok := s.(proto.Message); ok {
 			err := protomarshal.ApplyJSONStrict(js, pb)
@@ -274,6 +250,7 @@ func ApplyJSON(s Spec, js string) error {
 	// golang protobuf. Use protoreflect.ProtoMessage to distinguish from gogo
 	// golang/protobuf 1.4+ will have this interface. Older golang/protobuf are gogo compatible
 	// but also not used by Istio at all.
+
 	if _, ok := s.(protoreflect.ProtoMessage); ok {
 		if pb, ok := s.(proto.Message); ok {
 			err := protomarshal.ApplyJSON(js, pb)

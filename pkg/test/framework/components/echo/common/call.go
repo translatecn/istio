@@ -35,6 +35,7 @@ type sendFunc func(req *proto.ForwardEchoRequest) (echoclient.Responses, error)
 
 func callInternal(srcName string, from echo.Caller, opts echo.CallOptions, send sendFunc) (echo.CallResult, error) {
 	// Create the proto request.
+
 	req := newForwardRequest(opts)
 	sendAndValidate := func() (echo.CallResult, error) {
 		responses, err := send(req)

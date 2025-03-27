@@ -24,8 +24,8 @@ import (
 	wrappers "google.golang.org/protobuf/types/known/wrapperspb"
 	"sigs.k8s.io/yaml"
 
-	meshconfig "istio.io/api/mesh/v1alpha1"
-	"istio.io/api/networking/v1alpha3"
+	meshconfig "istio.io/istio/istio.io/api/mesh/v1alpha1"
+	"istio.io/istio/istio.io/api/networking/v1alpha3"
 	"istio.io/istio/pkg/config/constants"
 	"istio.io/istio/pkg/config/validation/agent"
 	"istio.io/istio/pkg/log"
@@ -34,100 +34,10 @@ import (
 	"istio.io/istio/pkg/util/sets"
 )
 
-// DefaultProxyConfig for individual proxies
-func DefaultProxyConfig() *meshconfig.ProxyConfig {
-	// TODO: include revision based on REVISION env
-	// TODO: set default namespace based on POD_NAMESPACE env
-	return &meshconfig.ProxyConfig{
-		ConfigPath:               constants.ConfigPathDir,
-		ClusterName:              &meshconfig.ProxyConfig_ServiceCluster{ServiceCluster: constants.ServiceClusterName},
-		DrainDuration:            durationpb.New(45 * time.Second),
-		TerminationDrainDuration: durationpb.New(5 * time.Second),
-		ProxyAdminPort:           15000,
-		ControlPlaneAuthPolicy:   meshconfig.AuthenticationPolicy_MUTUAL_TLS,
-		DiscoveryAddress:         "istiod.istio-system.svc:15012",
-
-		// Code defaults
-		BinaryPath:     constants.BinaryPathFilename,
-		StatNameLength: 189,
-		StatusPort:     15020,
-	}
-}
-
 // DefaultMeshNetworks returns a default meshnetworks configuration.
 // By default, it is empty.
 func DefaultMeshNetworks() *meshconfig.MeshNetworks {
 	return ptr.Of(EmptyMeshNetworks())
-}
-
-// DefaultMeshConfig returns the default mesh config.
-// This is merged with values from the mesh config map.
-func DefaultMeshConfig() *meshconfig.MeshConfig {
-	proxyConfig := DefaultProxyConfig()
-
-	// Defaults matching the standard install
-	// order matches the generated mesh config.
-	return &meshconfig.MeshConfig{
-		EnableTracing:               true,
-		AccessLogFile:               "",
-		AccessLogEncoding:           meshconfig.MeshConfig_TEXT,
-		AccessLogFormat:             "",
-		EnableEnvoyAccessLogService: false,
-		ProtocolDetectionTimeout:    durationpb.New(0),
-		IngressService:              "istio-ingressgateway",
-		IngressControllerMode:       meshconfig.MeshConfig_STRICT,
-		IngressClass:                "istio",
-		TrustDomain:                 constants.DefaultClusterLocalDomain,
-		TrustDomainAliases:          []string{},
-		EnableAutoMtls:              wrappers.Bool(true),
-		OutboundTrafficPolicy:       &meshconfig.MeshConfig_OutboundTrafficPolicy{Mode: meshconfig.MeshConfig_OutboundTrafficPolicy_ALLOW_ANY},
-		InboundTrafficPolicy:        &meshconfig.MeshConfig_InboundTrafficPolicy{Mode: meshconfig.MeshConfig_InboundTrafficPolicy_PASSTHROUGH},
-		LocalityLbSetting: &v1alpha3.LocalityLoadBalancerSetting{
-			Enabled: wrappers.Bool(true),
-		},
-		Certificates:  []*meshconfig.Certificate{},
-		DefaultConfig: proxyConfig,
-
-		RootNamespace:                  constants.IstioSystemNamespace,
-		ProxyListenPort:                15001,
-		ProxyInboundListenPort:         15006,
-		ConnectTimeout:                 durationpb.New(10 * time.Second),
-		DefaultServiceExportTo:         []string{"*"},
-		DefaultVirtualServiceExportTo:  []string{"*"},
-		DefaultDestinationRuleExportTo: []string{"*"},
-		// DnsRefreshRate is only used when DNS requests fail (NXDOMAIN or SERVFAIL). For success, the TTL
-		// will be used.
-		// https://datatracker.ietf.org/doc/html/rfc2308#section-3 defines how negative DNS results should handle TTLs,
-		// but Envoy does not respect this (https://github.com/envoyproxy/envoy/issues/20885).
-		// To counter this, we bump up the default to 60s to avoid overloading DNS servers.
-		DnsRefreshRate:  durationpb.New(60 * time.Second),
-		ServiceSettings: make([]*meshconfig.MeshConfig_ServiceSettings, 0),
-
-		EnablePrometheusMerge: wrappers.Bool(true),
-		DefaultProviders:      &meshconfig.MeshConfig_DefaultProviders{},
-		ExtensionProviders: []*meshconfig.MeshConfig_ExtensionProvider{
-			{
-				Name: "prometheus",
-				Provider: &meshconfig.MeshConfig_ExtensionProvider_Prometheus{
-					Prometheus: &meshconfig.MeshConfig_ExtensionProvider_PrometheusMetricsProvider{},
-				},
-			},
-			{
-				Name: "stackdriver",
-				Provider: &meshconfig.MeshConfig_ExtensionProvider_Stackdriver{
-					Stackdriver: &meshconfig.MeshConfig_ExtensionProvider_StackdriverProvider{},
-				},
-			},
-			{
-				Name: "envoy",
-				Provider: &meshconfig.MeshConfig_ExtensionProvider_EnvoyFileAccessLog{
-					EnvoyFileAccessLog: &meshconfig.MeshConfig_ExtensionProvider_EnvoyFileAccessLogProvider{
-						Path: "/dev/stdout",
-					},
-				},
-			},
-		},
-	}
 }
 
 // ApplyProxyConfig applies the give proxy config yaml to a mesh config object. The passed in mesh config
@@ -281,18 +191,6 @@ func ApplyMeshConfigDefaults(yaml string) (*meshconfig.MeshConfig, error) {
 	return ApplyMeshConfig(yaml, DefaultMeshConfig())
 }
 
-func DeepCopyMeshConfig(mc *meshconfig.MeshConfig) (*meshconfig.MeshConfig, error) {
-	j, err := protomarshal.ToJSON(mc)
-	if err != nil {
-		return nil, err
-	}
-	nmc := &meshconfig.MeshConfig{}
-	if err := protomarshal.ApplyJSON(j, nmc); err != nil {
-		return nil, err
-	}
-	return nmc, nil
-}
-
 // EmptyMeshNetworks configuration with no networks
 func EmptyMeshNetworks() meshconfig.MeshNetworks {
 	return meshconfig.MeshNetworks{
@@ -314,15 +212,6 @@ func ParseMeshNetworks(yaml string) (*meshconfig.MeshNetworks, error) {
 	return &out, nil
 }
 
-// ReadMeshNetworks gets mesh networks configuration from a config file
-func ReadMeshNetworks(filename string) (*meshconfig.MeshNetworks, error) {
-	yaml, err := os.ReadFile(filename)
-	if err != nil {
-		return nil, multierror.Prefix(err, "cannot read networks config file")
-	}
-	return ParseMeshNetworks(string(yaml))
-}
-
 // ReadMeshConfig gets mesh configuration from a config file
 func ReadMeshConfig(filename string) (*meshconfig.MeshConfig, error) {
 	yaml, err := os.ReadFile(filename)
@@ -339,4 +228,104 @@ func ReadMeshConfigData(filename string) (string, error) {
 		return "", multierror.Prefix(err, "cannot read mesh config file")
 	}
 	return string(yaml), nil
+}
+
+// DefaultProxyConfig for individual proxies
+func DefaultProxyConfig() *meshconfig.ProxyConfig {
+	// TODO: include revision based on REVISION env
+	// TODO: set default namespace based on POD_NAMESPACE env
+
+	return &meshconfig.ProxyConfig{
+		ConfigPath:               constants.ConfigPathDir, // ./etc/istio/proxy
+		ClusterName:              &meshconfig.ProxyConfig_ServiceCluster{ServiceCluster: constants.ServiceClusterName},
+		DrainDuration:            durationpb.New(45 * time.Second),
+		TerminationDrainDuration: durationpb.New(5 * time.Second),
+		ProxyAdminPort:           15000,
+		ControlPlaneAuthPolicy:   meshconfig.AuthenticationPolicy_MUTUAL_TLS,
+		DiscoveryAddress:         "istiod.istio-system.svc:15012",
+
+		// Code defaults
+		BinaryPath:     constants.BinaryPathFilename,
+		StatNameLength: 189,
+		StatusPort:     15020,
+	}
+}
+
+// DefaultMeshConfig returns the default mesh config.
+// This is merged with values from the mesh config map.
+func DefaultMeshConfig() *meshconfig.MeshConfig {
+	proxyConfig := DefaultProxyConfig()
+
+	// Defaults matching the standard install
+	// order matches the generated mesh config.
+	return &meshconfig.MeshConfig{
+		EnableTracing:               true,
+		AccessLogFile:               "",
+		AccessLogEncoding:           meshconfig.MeshConfig_TEXT,
+		AccessLogFormat:             "",
+		EnableEnvoyAccessLogService: false,
+		ProtocolDetectionTimeout:    durationpb.New(0),
+		IngressService:              "istio-ingressgateway",
+		IngressControllerMode:       meshconfig.MeshConfig_STRICT,
+		IngressClass:                "istio",
+		TrustDomain:                 constants.DefaultClusterLocalDomain,
+		TrustDomainAliases:          []string{},
+		EnableAutoMtls:              wrappers.Bool(true),
+		OutboundTrafficPolicy:       &meshconfig.MeshConfig_OutboundTrafficPolicy{Mode: meshconfig.MeshConfig_OutboundTrafficPolicy_ALLOW_ANY},
+		InboundTrafficPolicy:        &meshconfig.MeshConfig_InboundTrafficPolicy{Mode: meshconfig.MeshConfig_InboundTrafficPolicy_PASSTHROUGH},
+		LocalityLbSetting: &v1alpha3.LocalityLoadBalancerSetting{
+			Enabled: wrappers.Bool(true),
+		},
+		Certificates:  []*meshconfig.Certificate{},
+		DefaultConfig: proxyConfig,
+
+		RootNamespace:                  constants.IstioSystemNamespace,
+		ProxyListenPort:                15001,
+		ProxyInboundListenPort:         15006,
+		ConnectTimeout:                 durationpb.New(10 * time.Second),
+		DefaultServiceExportTo:         []string{"*"},
+		DefaultVirtualServiceExportTo:  []string{"*"},
+		DefaultDestinationRuleExportTo: []string{"*"},
+		// DnsRefreshRate is only used when DNS requests fail (NXDOMAIN or SERVFAIL). For success, the TTL
+		// will be used.
+		// https://datatracker.ietf.org/doc/html/rfc2308#section-3 defines how negative DNS results should handle TTLs,
+		// but Envoy does not respect this (https://github.com/envoyproxy/envoy/issues/20885).
+		// To counter this, we bump up the default to 60s to avoid overloading DNS servers.
+		DnsRefreshRate:  durationpb.New(60 * time.Second),
+		ServiceSettings: make([]*meshconfig.MeshConfig_ServiceSettings, 0),
+
+		EnablePrometheusMerge: wrappers.Bool(true),
+		DefaultProviders:      &meshconfig.MeshConfig_DefaultProviders{},
+		ExtensionProviders: []*meshconfig.MeshConfig_ExtensionProvider{
+			{
+				Name: "prometheus",
+				Provider: &meshconfig.MeshConfig_ExtensionProvider_Prometheus{
+					Prometheus: &meshconfig.MeshConfig_ExtensionProvider_PrometheusMetricsProvider{},
+				},
+			},
+			{
+				Name: "stackdriver",
+				Provider: &meshconfig.MeshConfig_ExtensionProvider_Stackdriver{
+					Stackdriver: &meshconfig.MeshConfig_ExtensionProvider_StackdriverProvider{},
+				},
+			},
+			{
+				Name: "envoy",
+				Provider: &meshconfig.MeshConfig_ExtensionProvider_EnvoyFileAccessLog{
+					EnvoyFileAccessLog: &meshconfig.MeshConfig_ExtensionProvider_EnvoyFileAccessLogProvider{
+						Path: "/dev/stdout",
+					},
+				},
+			},
+		},
+	}
+}
+
+// ReadMeshNetworks gets mesh networks configuration from a config file
+func ReadMeshNetworks(filename string) (*meshconfig.MeshNetworks, error) {
+	yaml, err := os.ReadFile(filename)
+	if err != nil {
+		return nil, multierror.Prefix(err, "cannot read networks config file")
+	}
+	return ParseMeshNetworks(string(yaml))
 }

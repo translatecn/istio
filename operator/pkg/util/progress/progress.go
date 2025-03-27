@@ -91,6 +91,7 @@ var testWriter *io.Writer
 func createBar() *pb.ProgressBar {
 	// Don't set a total and use Static so we can explicitly control when you write. This is needed
 	// for handling the multiline issues.
+
 	bar := pb.New(0)
 	bar.Set(pb.Static, true)
 	if testWriter != nil {
@@ -111,7 +112,6 @@ func createBar() *pb.ProgressBar {
 // on a new line, and create a new bar. For example, this becomes "x succeeded", "waiting for y, z".
 func (p *Log) reportProgress(componentName string) func() {
 	return func() {
-		//
 		cmpName := component.Name(componentName)
 		cliName := component.UserFacingComponentName(cmpName)
 		p.mu.Lock()
@@ -170,6 +170,7 @@ func (p *Log) NewComponent(component string) *ManifestLog {
 func (p *Log) SetMessage(status string, finish bool) {
 	// if we are not a terminal and there is no change, do not write
 	// This avoids redundant lines
+
 	if !p.bar.GetBool(pb.Terminal) && status == p.template {
 		return
 	}

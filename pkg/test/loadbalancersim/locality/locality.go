@@ -16,7 +16,6 @@ package locality
 
 import (
 	"fmt"
-	"strings"
 )
 
 type Instance struct {
@@ -26,15 +25,4 @@ type Instance struct {
 
 func (l Instance) String() string {
 	return fmt.Sprintf("%s/%s", l.Region, l.Zone)
-}
-
-func Parse(s string) Instance {
-	parts := strings.Split(s, "/")
-	if len(parts) != 2 {
-		panic("invalid locality string: " + s)
-	}
-	return Instance{
-		Region: parts[0],
-		Zone:   parts[1],
-	}
 }

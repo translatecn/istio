@@ -185,6 +185,7 @@ func (s *localServerImpl) templateArgs() map[string]any {
 
 func (s *localServerImpl) installProviders(ctx resource.Context) error {
 	// Update the mesh config extension provider for the ext-authz service.
+
 	providerYAML, err := tmpl.Evaluate(localProviderTemplate, s.templateArgs())
 	if err != nil {
 		return err

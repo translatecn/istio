@@ -19,4 +19,4 @@ metadata:
   name: empty-selector
 spec:
   selector:
-    matchLabels: {}
+    matchLabels: { }

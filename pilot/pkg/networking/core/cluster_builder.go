@@ -29,7 +29,7 @@ import (
 	"google.golang.org/protobuf/types/known/structpb"
 	wrappers "google.golang.org/protobuf/types/known/wrapperspb"
 
-	networking "istio.io/api/networking/v1alpha3"
+	networking "istio.io/istio/istio.io/api/networking/v1alpha3"
 	"istio.io/istio/pilot/pkg/features"
 	"istio.io/istio/pilot/pkg/model"
 	"istio.io/istio/pilot/pkg/networking/telemetry"
@@ -282,87 +282,6 @@ func (cb *ClusterBuilder) applyMetadataExchange(c *cluster.Cluster) {
 	}
 }
 
-// buildCluster builds the default cluster and also applies global options.
-// It is used for building both inbound and outbound cluster.
-func (cb *ClusterBuilder) buildCluster(name string, discoveryType cluster.Cluster_DiscoveryType,
-	localityLbEndpoints []*endpoint.LocalityLbEndpoints, direction model.TrafficDirection,
-	port *model.Port, service *model.Service, inboundServices []model.ServiceTarget,
-	subset string,
-) *clusterWrapper {
-	c := &cluster.Cluster{
-		Name:                 name,
-		ClusterDiscoveryType: &cluster.Cluster_Type{Type: discoveryType},
-		CommonLbConfig:       &cluster.Cluster_CommonLbConfig{},
-	}
-
-	// Build default alt stat name - This may be overwritten by the MeshConfig options.
-	c.AltStatName = util.DelimitedStatsPrefix(name)
-
-	switch discoveryType {
-	case cluster.Cluster_STRICT_DNS, cluster.Cluster_LOGICAL_DNS:
-		if networkutil.AllIPv4(cb.proxyIPAddresses) {
-			// IPv4 only
-			c.DnsLookupFamily = cluster.Cluster_V4_ONLY
-		} else if networkutil.AllIPv6(cb.proxyIPAddresses) {
-			// IPv6 only
-			c.DnsLookupFamily = cluster.Cluster_V6_ONLY
-			// If we are in this mode, Istio sees ourselves as only have IPv6 addresses, but there is actually a link-local
-			// interface that serves the IPv4. Allow both families.
-			// This ensures we do not break DNS resolution to destinations that are IPv4 only.
-			if features.EnableAdditionalIpv4OutboundListenerForIpv6Only {
-				c.DnsLookupFamily = cluster.Cluster_ALL
-			}
-		} else {
-			// Dual Stack
-			if features.EnableDualStack {
-				// using Cluster_ALL to enable Happy Eyeballsfor upstream connections
-				c.DnsLookupFamily = cluster.Cluster_ALL
-			} else {
-				// keep the original logic if Dual Stack is disable
-				c.DnsLookupFamily = cluster.Cluster_V4_ONLY
-			}
-		}
-		c.DnsRefreshRate = cb.req.Push.Mesh.DnsRefreshRate
-		c.RespectDnsTtl = true
-		// we want to run all the STATIC parts as well to build the load assignment
-		fallthrough
-	case cluster.Cluster_STATIC:
-		if len(localityLbEndpoints) == 0 {
-			log.Debugf("locality endpoints missing for cluster %s", c.Name)
-			cb.req.Push.AddMetric(model.DNSNoEndpointClusters, c.Name, cb.proxyID,
-				fmt.Sprintf("%s cluster without endpoints %s found while pushing CDS", discoveryType.String(), c.Name))
-			return nil
-		}
-		c.LoadAssignment = &endpoint.ClusterLoadAssignment{
-			ClusterName: name,
-			Endpoints:   localityLbEndpoints,
-		}
-	case cluster.Cluster_ORIGINAL_DST:
-		if features.PassthroughTargetPort {
-			if override, f := service.Attributes.PassthroughTargetPorts[uint32(port.Port)]; f {
-				c.LbConfig = &cluster.Cluster_OriginalDstLbConfig_{
-					OriginalDstLbConfig: &cluster.Cluster_OriginalDstLbConfig{
-						UpstreamPortOverride: wrappers.UInt32(override),
-					},
-				}
-			}
-		}
-	}
-
-	ec := newClusterWrapper(c)
-	cb.setUpstreamProtocol(ec, port)
-	addTelemetryMetadata(c, port, service, direction, inboundServices)
-	if direction == model.TrafficDirectionOutbound {
-		// If stat name is configured, build the alternate stats name.
-		if len(cb.req.Push.Mesh.OutboundClusterStatName) != 0 {
-			statPrefix := telemetry.BuildStatPrefix(cb.req.Push.Mesh.OutboundClusterStatName, string(service.Hostname), subset, port, 0, &service.Attributes)
-			ec.cluster.AltStatName = util.DelimitedStatsPrefix(statPrefix)
-		}
-	}
-
-	return ec
-}
-
 // buildInboundCluster constructs a single inbound cluster. The cluster will be bound to
 // `inbound|clusterPort||`, and send traffic to <bind>:<instance.Endpoint.EndpointPort>. A workload
 // will have a single inbound cluster per port. In general this works properly, with the exception of
@@ -374,6 +293,7 @@ func (cb *ClusterBuilder) buildInboundCluster(clusterPort int, bind string,
 	proxy *model.Proxy, inboundServices []model.ServiceTarget,
 ) *clusterWrapper {
 	// should not happen
+
 	if len(inboundServices) == 0 {
 		return nil
 	}
@@ -481,6 +401,7 @@ func (cb *ClusterBuilder) buildInboundPassthroughCluster() *cluster.Cluster {
 	// We need to set a local bind address, which we will match in iptables to avoid looping back to ourselves.
 	// This needs a per-IP-version, since we cannot bind to IPv4 and send to IPv6 (or the inverse).
 	// Fortunately, Envoy can natively handle this by giving it a local v4 and v6 address, and it will pick which to use for us.
+
 	src := InboundPassthroughBindIpv4
 	if !cb.supportsIPv4 {
 		src = InboundPassthroughBindIpv6
@@ -617,6 +538,7 @@ func (cb *ClusterBuilder) setUpstreamProtocol(cluster *clusterWrapper, port *mod
 func (cb *ClusterBuilder) normalizeClusters(clusters []*discovery.Resource) []*discovery.Resource {
 	// resolve cluster name conflicts. there can be duplicate cluster names if there are conflicting service definitions.
 	// for any clusters that share the same name the first cluster is kept and the others are discarded.
+
 	have := sets.String{}
 	out := make([]*discovery.Resource, 0, len(clusters))
 	for _, c := range clusters {
@@ -628,32 +550,6 @@ func (cb *ClusterBuilder) normalizeClusters(clusters []*discovery.Resource) []*d
 		}
 	}
 	return out
-}
-
-// getAllCachedSubsetClusters either fetches all cached clusters for a given key (there may be multiple due to subsets)
-// and returns them along with allFound=True, or returns allFound=False indicating a cache miss. In either case,
-// the cache tokens are returned to allow future writes to the cache.
-// This code will only trigger a cache hit if all subset clusters are present. This simplifies the code a bit,
-// as the non-subset and subset cluster generation are tightly coupled, in exchange for a likely trivial cache hit rate impact.
-func (cb *ClusterBuilder) getAllCachedSubsetClusters(clusterKey clusterCache) ([]*discovery.Resource, bool) {
-	if !features.EnableCDSCaching {
-		return nil, false
-	}
-	destinationRule := CastDestinationRule(clusterKey.destinationRule.GetRule())
-	res := make([]*discovery.Resource, 0, 1+len(destinationRule.GetSubsets()))
-	cachedCluster := cb.cache.Get(&clusterKey)
-	allFound := cachedCluster != nil
-	res = append(res, cachedCluster)
-	dir, _, host, port := model.ParseSubsetKey(clusterKey.clusterName)
-	for _, ss := range destinationRule.GetSubsets() {
-		clusterKey.clusterName = model.BuildSubsetKey(dir, ss.Name, host, port)
-		cachedCluster := cb.cache.Get(&clusterKey)
-		if cachedCluster == nil {
-			allFound = false
-		}
-		res = append(res, cachedCluster)
-	}
-	return res, allFound
 }
 
 // build does any final build operations needed, like marshaling etc.
@@ -750,18 +646,40 @@ func (cb *ClusterBuilder) buildExternalSDSCluster(addr string) *cluster.Cluster 
 	return c
 }
 
-func addTelemetryMetadata(cluster *cluster.Cluster,
-	port *model.Port, service *model.Service,
-	direction model.TrafficDirection, inboundServices []model.ServiceTarget,
-) {
+// getAllCachedSubsetClusters either fetches all cached clusters for a given key (there may be multiple due to subsets)
+// and returns them along with allFound=True, or returns allFound=False indicating a cache miss. In either case,
+// the cache tokens are returned to allow future writes to the cache.
+// This code will only trigger a cache hit if all subset clusters are present. This simplifies the code a bit,
+// as the non-subset and subset cluster generation are tightly coupled, in exchange for a likely trivial cache hit rate impact.
+func (cb *ClusterBuilder) getAllCachedSubsetClusters(clusterKey clusterCache) ([]*discovery.Resource, bool) {
+	if !features.EnableCDSCaching {
+		return nil, false
+	}
+	destinationRule := CastDestinationRule(clusterKey.destinationRule.GetRule())
+	res := make([]*discovery.Resource, 0, 1+len(destinationRule.GetSubsets()))
+	cachedCluster := cb.cache.Get(&clusterKey)
+	allFound := cachedCluster != nil
+	res = append(res, cachedCluster)
+	dir, _, host, port := model.ParseSubsetKey(clusterKey.clusterName)
+	for _, ss := range destinationRule.GetSubsets() {
+		clusterKey.clusterName = model.BuildSubsetKey(dir, ss.Name, host, port)
+		cachedCluster := cb.cache.Get(&clusterKey)
+		if cachedCluster == nil {
+			allFound = false
+		}
+		res = append(res, cachedCluster)
+	}
+	return res, allFound
+}
+
+func addTelemetryMetadata(cluster *cluster.Cluster, port *model.Port, service *model.Service, direction model.TrafficDirection, inboundServices []model.ServiceTarget) {
 	if !features.EnableTelemetryLabel {
 		return
 	}
 	if cluster == nil {
 		return
 	}
-	if direction == model.TrafficDirectionInbound &&
-		(len(inboundServices) == 0 || inboundServices[0].Service.MeshExternal || port == nil) {
+	if direction == model.TrafficDirectionInbound && (len(inboundServices) == 0 || inboundServices[0].Service.MeshExternal || port == nil) {
 		// At inbound, port and local service instance has to be provided
 		return
 	}
@@ -805,4 +723,83 @@ func addTelemetryMetadata(cluster *cluster.Cluster,
 		// For outbound cluster, add telemetry metadata based on the service that the cluster is built for.
 		svcMetaList.Values = append(svcMetaList.Values, buildServiceMetadata(service))
 	}
+}
+
+func (cb *ClusterBuilder) buildCluster(name string, discoveryType cluster.Cluster_DiscoveryType,
+	localityLbEndpoints []*endpoint.LocalityLbEndpoints, direction model.TrafficDirection,
+	port *model.Port, service *model.Service, inboundServices []model.ServiceTarget,
+	subset string,
+) *clusterWrapper {
+	c := &cluster.Cluster{
+		Name:                 name,
+		ClusterDiscoveryType: &cluster.Cluster_Type{Type: discoveryType},
+		CommonLbConfig:       &cluster.Cluster_CommonLbConfig{},
+	}
+
+	// Build default alt stat name - This may be overwritten by the MeshConfig options.
+	c.AltStatName = util.DelimitedStatsPrefix(name)
+
+	switch discoveryType {
+	case cluster.Cluster_STRICT_DNS, cluster.Cluster_LOGICAL_DNS:
+		if networkutil.AllIPv4(cb.proxyIPAddresses) {
+			// IPv4 only
+			c.DnsLookupFamily = cluster.Cluster_V4_ONLY
+		} else if networkutil.AllIPv6(cb.proxyIPAddresses) {
+			// IPv6 only
+			c.DnsLookupFamily = cluster.Cluster_V6_ONLY
+			// If we are in this mode, Istio sees ourselves as only have IPv6 addresses, but there is actually a link-local
+			// interface that serves the IPv4. Allow both families.
+			// This ensures we do not break DNS resolution to destinations that are IPv4 only.
+			if features.EnableAdditionalIpv4OutboundListenerForIpv6Only {
+				c.DnsLookupFamily = cluster.Cluster_ALL
+			}
+		} else {
+			// Dual Stack
+			if features.EnableDualStack {
+				// using Cluster_ALL to enable Happy Eyeballsfor upstream connections
+				c.DnsLookupFamily = cluster.Cluster_ALL
+			} else {
+				// keep the original logic if Dual Stack is disable
+				c.DnsLookupFamily = cluster.Cluster_V4_ONLY
+			}
+		}
+		c.DnsRefreshRate = cb.req.Push.Mesh.DnsRefreshRate
+		c.RespectDnsTtl = true
+		// we want to run all the STATIC parts as well to build the load assignment
+		fallthrough
+	case cluster.Cluster_STATIC:
+		if len(localityLbEndpoints) == 0 {
+			log.Debugf("locality endpoints missing for cluster %s", c.Name)
+			cb.req.Push.AddMetric(model.DNSNoEndpointClusters, c.Name, cb.proxyID,
+				fmt.Sprintf("%s cluster without endpoints %s found while pushing CDS", discoveryType.String(), c.Name))
+			return nil
+		}
+		c.LoadAssignment = &endpoint.ClusterLoadAssignment{
+			ClusterName: name,
+			Endpoints:   localityLbEndpoints,
+		}
+	case cluster.Cluster_ORIGINAL_DST:
+		if features.PassthroughTargetPort {
+			if override, f := service.Attributes.PassthroughTargetPorts[uint32(port.Port)]; f {
+				c.LbConfig = &cluster.Cluster_OriginalDstLbConfig_{
+					OriginalDstLbConfig: &cluster.Cluster_OriginalDstLbConfig{
+						UpstreamPortOverride: wrappers.UInt32(override),
+					},
+				}
+			}
+		}
+	}
+
+	ec := newClusterWrapper(c)
+	cb.setUpstreamProtocol(ec, port)
+	addTelemetryMetadata(c, port, service, direction, inboundServices)
+	if direction == model.TrafficDirectionOutbound {
+		// If stat name is configured, build the alternate stats name.
+		if len(cb.req.Push.Mesh.OutboundClusterStatName) != 0 {
+			statPrefix := telemetry.BuildStatPrefix(cb.req.Push.Mesh.OutboundClusterStatName, string(service.Hostname), subset, port, 0, &service.Attributes)
+			ec.cluster.AltStatName = util.DelimitedStatsPrefix(statPrefix)
+		}
+	}
+
+	return ec
 }

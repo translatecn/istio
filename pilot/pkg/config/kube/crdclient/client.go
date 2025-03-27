@@ -98,44 +98,6 @@ type Option struct {
 
 var _ model.ConfigStoreController = &Client{}
 
-func New(client kube.Client, opts Option) *Client {
-	schemas := collections.Pilot
-	if features.EnableGatewayAPI {
-		schemas = collections.PilotGatewayAPI()
-	}
-	return NewForSchemas(client, opts, schemas)
-}
-
-func NewForSchemas(client kube.Client, opts Option, schemas collection.Schemas) *Client {
-	schemasByCRDName := map[string]resource.Schema{}
-	for _, s := range schemas.All() {
-		// From the spec: "Its name MUST be in the format <.spec.name>.<.spec.group>."
-		name := fmt.Sprintf("%s.%s", s.Plural(), s.Group())
-		schemasByCRDName[name] = s
-	}
-	out := &Client{
-		domainSuffix:     opts.DomainSuffix,
-		schemas:          schemas,
-		schemasByCRDName: schemasByCRDName,
-		revision:         opts.Revision,
-		queue:            queue.NewQueue(1 * time.Second),
-		started:          atomic.NewBool(false),
-		kinds:            map[config.GroupVersionKind]kclient.Untyped{},
-		handlers:         map[config.GroupVersionKind][]model.EventHandler{},
-		client:           client,
-		logger:           scope.WithLabels("controller", opts.Identifier),
-		filtersByGVK:     opts.FiltersByGVK,
-	}
-
-	for _, s := range out.schemas.All() {
-		// From the spec: "Its name MUST be in the format <.spec.name>.<.spec.group>."
-		name := fmt.Sprintf("%s.%s", s.Plural(), s.Group())
-		out.addCRD(name)
-	}
-
-	return out
-}
-
 func (cl *Client) RegisterEventHandler(kind config.GroupVersionKind, handler model.EventHandler) {
 	cl.handlers[kind] = append(cl.handlers[kind], handler)
 }
@@ -328,6 +290,105 @@ func genPatchBytes(oldRes, modRes runtime.Object, patchType types.PatchType) ([]
 	}
 }
 
+// composedFilter offers a way to join multiple different object filters into a single one
+type composedFilter struct {
+	// The primary filter, which has a handler. Optional
+	filter kubetypes.DynamicObjectFilter
+	// Secondary filters (no handler allowed)
+	extra []func(obj any) bool
+}
+
+func (f composedFilter) Filter(obj any) bool {
+	for _, filter := range f.extra {
+		if !filter(obj) {
+			return false
+		}
+	}
+	if f.filter != nil {
+		return f.filter.Filter(obj)
+	}
+	return true
+}
+
+func (f composedFilter) FilterAddHandler(fn func(selected, deselected sets.String)) {
+	if f.filter != nil {
+		f.filter.FilterAddHandler(fn)
+	}
+}
+
+func composeFilters(filter kubetypes.DynamicObjectFilter, extra ...func(obj any) bool) kubetypes.DynamicObjectFilter {
+	return composedFilter{
+		filter: filter,
+		extra: slices.FilterInPlace(extra, func(f func(obj any) bool) bool {
+			return f != nil
+		}),
+	}
+}
+
+func (cl *Client) inRevision(obj any) bool {
+	object := controllers.ExtractObject(obj)
+	if object == nil {
+		return false
+	}
+	return config.LabelsInRevision(object.GetLabels(), cl.revision)
+}
+
+func (cl *Client) onEvent(resourceGVK config.GroupVersionKind, old controllers.Object, curr controllers.Object, event model.Event) {
+	currItem := controllers.ExtractObject(curr)
+	if currItem == nil {
+		return
+	}
+
+	currConfig := TranslateObject(currItem, resourceGVK, cl.domainSuffix)
+
+	var oldConfig config.Config
+	if old != nil {
+		oldConfig = TranslateObject(old, resourceGVK, cl.domainSuffix)
+	}
+
+	for _, f := range cl.handlers[resourceGVK] {
+		f(oldConfig, currConfig, event)
+	}
+}
+
+func New(client kube.Client, opts Option) *Client {
+	schemas := collections.Pilot
+	if features.EnableGatewayAPI {
+		schemas = collections.PilotGatewayAPI()
+	}
+	return NewForSchemas(client, opts, schemas)
+}
+
+func NewForSchemas(client kube.Client, opts Option, schemas collection.Schemas) *Client {
+	schemasByCRDName := map[string]resource.Schema{}
+	for _, s := range schemas.All() {
+		// From the spec: "Its name MUST be in the format <.spec.name>.<.spec.group>."
+		name := fmt.Sprintf("%s.%s", s.Plural(), s.Group())
+		schemasByCRDName[name] = s
+	}
+	out := &Client{
+		domainSuffix:     opts.DomainSuffix,
+		schemas:          schemas,
+		schemasByCRDName: schemasByCRDName,
+		revision:         opts.Revision,
+		queue:            queue.NewQueue(1 * time.Second),
+		started:          atomic.NewBool(false),
+		kinds:            map[config.GroupVersionKind]kclient.Untyped{},
+		handlers:         map[config.GroupVersionKind][]model.EventHandler{},
+		client:           client,
+		logger:           scope.WithLabels("controller", opts.Identifier),
+		filtersByGVK:     opts.FiltersByGVK,
+	}
+
+	for _, s := range out.schemas.All() {
+		// From the spec: "Its name MUST be in the format <.spec.name>.<.spec.group>."
+		name := fmt.Sprintf("%s.%s", s.Plural(), s.Group())
+		out.addCRD(name)
+	}
+
+	return out
+}
+
 func (cl *Client) addCRD(name string) {
 	cl.logger.Debugf("adding CRD %q", name)
 	s, f := cl.schemasByCRDName[name]
@@ -376,12 +437,7 @@ func (cl *Client) addCRD(name string) {
 	if s.IsBuiltin() {
 		kc = kclient.NewUntypedInformer(cl.client, gvr, filter)
 	} else {
-		kc = kclient.NewDelayedInformer[controllers.Object](
-			cl.client,
-			gvr,
-			kubetypes.StandardInformer,
-			filter,
-		)
+		kc = kclient.NewDelayedInformer[controllers.Object](cl.client, gvr, kubetypes.StandardInformer, filter)
 	}
 
 	kind := s.Kind()
@@ -410,65 +466,4 @@ func (cl *Client) addCRD(name string) {
 	})
 
 	cl.kinds[resourceGVK] = kc
-}
-
-// composedFilter offers a way to join multiple different object filters into a single one
-type composedFilter struct {
-	// The primary filter, which has a handler. Optional
-	filter kubetypes.DynamicObjectFilter
-	// Secondary filters (no handler allowed)
-	extra []func(obj any) bool
-}
-
-func (f composedFilter) Filter(obj any) bool {
-	for _, filter := range f.extra {
-		if !filter(obj) {
-			return false
-		}
-	}
-	if f.filter != nil {
-		return f.filter.Filter(obj)
-	}
-	return true
-}
-
-func (f composedFilter) AddHandler(fn func(selected, deselected sets.String)) {
-	if f.filter != nil {
-		f.filter.AddHandler(fn)
-	}
-}
-
-func composeFilters(filter kubetypes.DynamicObjectFilter, extra ...func(obj any) bool) kubetypes.DynamicObjectFilter {
-	return composedFilter{
-		filter: filter,
-		extra: slices.FilterInPlace(extra, func(f func(obj any) bool) bool {
-			return f != nil
-		}),
-	}
-}
-
-func (cl *Client) inRevision(obj any) bool {
-	object := controllers.ExtractObject(obj)
-	if object == nil {
-		return false
-	}
-	return config.LabelsInRevision(object.GetLabels(), cl.revision)
-}
-
-func (cl *Client) onEvent(resourceGVK config.GroupVersionKind, old controllers.Object, curr controllers.Object, event model.Event) {
-	currItem := controllers.ExtractObject(curr)
-	if currItem == nil {
-		return
-	}
-
-	currConfig := TranslateObject(currItem, resourceGVK, cl.domainSuffix)
-
-	var oldConfig config.Config
-	if old != nil {
-		oldConfig = TranslateObject(old, resourceGVK, cl.domainSuffix)
-	}
-
-	for _, f := range cl.handlers[resourceGVK] {
-		f(oldConfig, currConfig, event)
-	}
 }

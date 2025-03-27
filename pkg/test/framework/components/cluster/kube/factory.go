@@ -76,6 +76,7 @@ func BuildKube(origCfg cluster.Config, topology cluster.Topology) (cluster.Clust
 
 func validConfig(cfg cluster.Config) (cluster.Config, error) {
 	// only include kube-specific validation here
+
 	if cfg.Meta.String(kubeconfigMetaKey) == "" {
 		return cfg, fmt.Errorf("missing meta.%s for %s", kubeconfigMetaKey, cfg.Name)
 	}

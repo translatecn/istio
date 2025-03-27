@@ -23,8 +23,8 @@ import (
 
 	"google.golang.org/protobuf/types/known/wrapperspb"
 
-	"istio.io/api/annotation"
-	meshconfig "istio.io/api/mesh/v1alpha1"
+	"istio.io/istio/istio.io/api/annotation"
+	meshconfig "istio.io/istio/istio.io/api/mesh/v1alpha1"
 	"istio.io/istio/pilot/pkg/util/network"
 	"istio.io/istio/pkg/bootstrap"
 	"istio.io/istio/pkg/config/mesh"

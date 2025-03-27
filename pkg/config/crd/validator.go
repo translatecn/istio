@@ -19,7 +19,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"path/filepath"
 	"regexp"
 	"strings"
 	"sync"
@@ -43,8 +42,6 @@ import (
 	"sigs.k8s.io/yaml"
 
 	"istio.io/istio/pkg/slices"
-	"istio.io/istio/pkg/test"
-	"istio.io/istio/pkg/test/env"
 	"istio.io/istio/pkg/test/util/yml"
 	"istio.io/istio/pkg/util/sets"
 )
@@ -65,19 +62,6 @@ type ValidationIgnorer struct {
 }
 
 // NewValidationIgnorer initializes the ignorer for the validatior, pairs are in namespace/namePattern format.
-func NewValidationIgnorer(pairs ...string) *ValidationIgnorer {
-	vi := &ValidationIgnorer{
-		patternsByNamespace: make(map[string]sets.String),
-	}
-	for _, pair := range pairs {
-		parts := strings.SplitN(pair, "/", 2)
-		if len(parts) != 2 {
-			continue
-		}
-		vi.Add(parts[0], parts[1])
-	}
-	return vi
-}
 
 func (iv *ValidationIgnorer) Add(namespace, pattern string) {
 	iv.mu.Lock()
@@ -279,15 +263,4 @@ func NewValidatorFromCRDs(crds ...apiextensions.CustomResourceDefinition) (*Vali
 	}
 
 	return v, nil
-}
-
-func NewIstioValidator(t test.Failer) *Validator {
-	v, err := NewValidatorFromFiles(
-		filepath.Join(env.IstioSrc, "tests/integration/pilot/testdata/gateway-api-crd.yaml"),
-		filepath.Join(env.IstioSrc, "manifests/charts/base/files/crd-all.gen.yaml"),
-	)
-	if err != nil {
-		t.Fatal(err)
-	}
-	return v
 }

@@ -21,54 +21,55 @@
 # to 5 times.
 
 function fail {
-  echo "${1}" >&2
-  exit 1
+	echo "${1}" >&2
+	exit 1
 }
 
 function isatty() {
- if [ -t 1 ] ; then
-   return 0
-  else
-   return 1
-  fi
+	if [ -t 1 ]; then
+		return 0
+	else
+		return 1
+	fi
 }
 
 function retry {
-  local tmpFile
-  tmpFile=$(mktemp)
-  trap 'rm -f "${tmpFile}"' EXIT
+	local tmpFile
+	tmpFile=$(mktemp)
+	trap 'rm -f "${tmpFile}"' EXIT
 
-  local failureRegex="$1"
-  shift
-  local n=1
-  local max=5
-  while true; do
-    unset SHELL # Don't let environment control which shell to use
-    if isatty; then
-      if [ "$(uname)" == "Darwin" ]; then
-        script -q -r "${tmpFile}" "${*}"
-      else
-        script --flush --quiet --return "${tmpFile}" --command "${*}"
-      fi
-    else
-      # if we aren't a TTY, run directly as script will always run with a tty, which may output content that
-      # we cannot display
-      set -o pipefail; "$@" 2>&1 | tee "${tmpFile}"
-    fi
-    # shellcheck disable=SC2181
-    if [[ $? == 0 ]]; then
-      break
-    fi
-    if ! grep -Eq "${failureRegex}" "${tmpFile}"; then
-      fail "Unexpected failure"
-    fi
-    if [[ $n -lt $max ]]; then
-      ((n++))
-      echo "Command failed. Attempt $n/$max:"
-    else
-      fail "The command has failed after $n attempts."
-    fi
-  done
+	local failureRegex="$1"
+	shift
+	local n=1
+	local max=5
+	while true; do
+		unset SHELL # Don't let environment control which shell to use
+		if isatty; then
+			if [ "$(uname)" == "Darwin" ]; then
+				script -q -r "${tmpFile}" "${*}"
+			else
+				script --flush --quiet --return "${tmpFile}" --command "${*}"
+			fi
+		else
+			# if we aren't a TTY, run directly as script will always run with a tty, which may output content that
+			# we cannot display
+			set -o pipefail
+			"$@" 2>&1 | tee "${tmpFile}"
+		fi
+		# shellcheck disable=SC2181
+		if [[ $? == 0 ]]; then
+			break
+		fi
+		if ! grep -Eq "${failureRegex}" "${tmpFile}"; then
+			fail "Unexpected failure"
+		fi
+		if [[ $n -lt $max ]]; then
+			((n++))
+			echo "Command failed. Attempt $n/$max:"
+		else
+			fail "The command has failed after $n attempts."
+		fi
+	done
 }
 
 retry "$@"

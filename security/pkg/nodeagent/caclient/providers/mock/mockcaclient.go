@@ -17,20 +17,13 @@ package mock
 import (
 	"encoding/pem"
 	"fmt"
-	"path"
 	"sync/atomic"
 	"time"
 
 	"istio.io/istio/security/pkg/pki/util"
 )
 
-var (
-	sampleKeyCertsPath = "../../../../samples/certs/"
-	caCertPath         = path.Join(sampleKeyCertsPath, "ca-cert.pem")
-	caKeyPath          = path.Join(sampleKeyCertsPath, "ca-key.pem")
-	certChainPath      = []string{path.Join(sampleKeyCertsPath, "cert-chain.pem")}
-	rootCertPath       = path.Join(sampleKeyCertsPath, "root-cert.pem")
-)
+var sampleKeyCertsPath = "../../../../samples/certs/"
 
 // CAClient is the mocked CAClient for testing.
 type CAClient struct {
@@ -43,25 +36,11 @@ type CAClient struct {
 
 // NewMockCAClient creates an instance of CAClient. errors is used to specify the number of errors
 // before CSRSign returns a valid response. certLifetime specifies the TTL for the newly issued workload cert.
-func NewMockCAClient(certLifetime time.Duration, mockTrustAnchor bool) (*CAClient, error) {
-	cl := CAClient{
-		SignInvokeCount: 0,
-		certLifetime:    certLifetime,
-		mockTrustAnchor: mockTrustAnchor,
-	}
-	bundle, err := util.NewVerifiedKeyCertBundleFromFile(caCertPath, caKeyPath, certChainPath, rootCertPath)
-	if err != nil {
-		return nil, fmt.Errorf("mock ca client creation error: %v", err)
-	}
-	cl.bundle = bundle
 
-	atomic.StoreUint64(&cl.SignInvokeCount, 0)
-	return &cl, nil
+func (c *CAClient) Close() {
+	// CSRSign returns the certificate or errors depending on the settings.
 }
 
-func (c *CAClient) Close() {}
-
-// CSRSign returns the certificate or errors depending on the settings.
 func (c *CAClient) CSRSign(csrPEM []byte, certValidTTLInSec int64) ([]string, error) {
 	atomic.AddUint64(&c.SignInvokeCount, 1)
 	signingCert, signingKey, certChain, rootCert := c.bundle.GetAll()

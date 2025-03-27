@@ -36,10 +36,6 @@ const (
 )
 
 // FillInDefaults fills in the timeout and count if not specified in the given message.
-func FillInDefaults(request *proto.ForwardEchoRequest) {
-	request.TimeoutMicros = DurationToMicros(GetTimeout(request))
-	request.Count = int32(GetCount(request))
-}
 
 // GetTimeout returns the timeout value as a time.Duration or DefaultRequestTimeout if not set.
 func GetTimeout(request *proto.ForwardEchoRequest) time.Duration {

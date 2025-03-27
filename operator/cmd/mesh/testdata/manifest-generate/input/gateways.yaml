@@ -1,6 +1,7 @@
 apiVersion: install.istio.io/v1alpha1
 kind: IstioOperator
 spec:
+  hub: registry.cn-hangzhou.aliyuncs.com/acejilam
   profile: empty
   components:
     ingressGateways:
@@ -36,18 +37,19 @@ spec:
             cloud.google.com/load-balancer-type: "internal"
           service:
             ports:
-            ## You can add custom gateway ports - google ILB default quota is 5 ports,
-            - port: 15011
-              name: grpc-pilot-mtls
-            - port: 8060
-              targetPort: 8060
-              name: tcp-citadel-grpc-tls
-            # Port 5353 is forwarded to kube-dns
-            - port: 5353
-              name: tcp-dns
+              ## You can add custom gateway ports - google ILB default quota is 5 ports,
+              - port: 15011
+                name: grpc-pilot-mtls
+              - port: 8060
+                targetPort: 8060
+                name: tcp-citadel-grpc-tls
+              # Port 5353 is forwarded to kube-dns
+              - port: 5353
+                name: tcp-dns
           overlays:
             - kind: Deployment
               name: ilb-gateway
               patches:
                 - path: spec.template.spec.containers.[name:istio-proxy].env.[name:PILOT_CERT_PROVIDER].value
                   value: foobar # OVERRIDDEN
+

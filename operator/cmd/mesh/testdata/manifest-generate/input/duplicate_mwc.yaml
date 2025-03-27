@@ -4,6 +4,8 @@ metadata:
   name: istiod
   namespace: istio-system
 spec:
+  hub: registry.cn-hangzhou.aliyuncs.com/acejilam
   profile: default
   namespace: istio-system
+
 

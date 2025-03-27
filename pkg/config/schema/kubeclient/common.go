@@ -29,14 +29,12 @@ import (
 	"k8s.io/client-go/tools/cache"
 	gatewayapiclient "sigs.k8s.io/gateway-api/pkg/client/clientset/versioned"
 
-	istioclient "istio.io/client-go/pkg/clientset/versioned"
+	istioclient "istio.io/istio/istio.io/client-go/pkg/clientset/versioned"
 	"istio.io/istio/pilot/pkg/util/informermetric"
-	"istio.io/istio/pkg/config"
 	"istio.io/istio/pkg/config/schema/kubetypes"
 	"istio.io/istio/pkg/kube/informerfactory"
 	ktypes "istio.io/istio/pkg/kube/kubetypes"
 	"istio.io/istio/pkg/log"
-	"istio.io/istio/pkg/ptr"
 	"istio.io/istio/pkg/typemap"
 )
 
@@ -150,6 +148,7 @@ func getInformerFilteredMetadata(c ClientGetter, opts ktypes.InformerOptions, g 
 func setupInformer(opts ktypes.InformerOptions, inf cache.SharedIndexInformer) {
 	// It is important to set this in the newFunc rather than after InformerFor to avoid
 	// https://github.com/kubernetes/kubernetes/issues/117869
+
 	if opts.ObjectTransform != nil {
 		_ = inf.SetTransform(opts.ObjectTransform)
 	} else {
@@ -177,21 +176,6 @@ var registerTypes = typemap.NewTypeMap()
 
 // Register provides the TypeRegistration to the underlying
 // store to enable dynamic object translation
-func Register[T runtime.Object](
-	gvr schema.GroupVersionResource,
-	gvk schema.GroupVersionKind,
-	list func(c ClientGetter, namespace string, o metav1.ListOptions) (runtime.Object, error),
-	watch func(c ClientGetter, namespace string, o metav1.ListOptions) (watch.Interface, error),
-) {
-	reg := &internalTypeReg[T]{
-		gvr:   gvr,
-		gvk:   config.FromKubernetesGVK(gvk),
-		list:  list,
-		watch: watch,
-	}
-	kubetypes.Register[T](reg)
-	typemap.Set[TypeRegistration[T]](registerTypes, reg)
-}
 
 // TypeRegistration represents the necessary methods
 // to provide a custom type to the kubeclient informer mechanism
@@ -201,38 +185,4 @@ type TypeRegistration[T runtime.Object] interface {
 	// ListWatchFunc provides the necessary methods for list and
 	// watch for the informer
 	ListWatch(c ClientGetter, opts ktypes.InformerOptions) cache.ListerWatcher
-}
-
-type internalTypeReg[T runtime.Object] struct {
-	list  func(c ClientGetter, namespace string, o metav1.ListOptions) (runtime.Object, error)
-	watch func(c ClientGetter, namespace string, o metav1.ListOptions) (watch.Interface, error)
-	gvr   schema.GroupVersionResource
-	gvk   config.GroupVersionKind
-}
-
-func (t *internalTypeReg[T]) GetGVK() config.GroupVersionKind {
-	return t.gvk
-}
-
-func (t *internalTypeReg[T]) GetGVR() schema.GroupVersionResource {
-	return t.gvr
-}
-
-func (t *internalTypeReg[T]) ListWatch(c ClientGetter, o ktypes.InformerOptions) cache.ListerWatcher {
-	return &cache.ListWatch{
-		ListFunc: func(options metav1.ListOptions) (runtime.Object, error) {
-			options.FieldSelector = o.FieldSelector
-			options.LabelSelector = o.LabelSelector
-			return t.list(c, o.Namespace, options)
-		},
-		WatchFunc: func(options metav1.ListOptions) (watch.Interface, error) {
-			options.FieldSelector = o.FieldSelector
-			options.LabelSelector = o.LabelSelector
-			return t.watch(c, o.Namespace, options)
-		},
-	}
-}
-
-func (t *internalTypeReg[T]) Object() T {
-	return ptr.Empty[T]()
 }

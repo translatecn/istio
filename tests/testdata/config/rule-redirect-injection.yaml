@@ -4,14 +4,14 @@ metadata:
   name: redirect
   namespace: testns
 spec:
-   hosts:
-   - redirect.test.istio.io
-   ports:
-   - number: 8080
-     name: http
-     protocol: HTTP
-   resolution: STATIC
-   endpoints:
+  hosts:
+    - redirect.test.istio.io
+  ports:
+    - number: 8080
+      name: http
+      protocol: HTTP
+  resolution: STATIC
+  endpoints:
     - address: 127.0.0.2
       ports:
         http: 8080
@@ -26,9 +26,9 @@ spec:
     - redirect.test.istio.io
   http:
     - match:
-      - headers:
-          testredirect:
-            exact: enabled
+        - headers:
+            testredirect:
+              exact: enabled
       redirect:
         uri: /new/path
         authority: redirect2.test.istio.io

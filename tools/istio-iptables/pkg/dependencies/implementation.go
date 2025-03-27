@@ -97,96 +97,14 @@ func (v IptablesVersion) IsWriteCmd(cmd constants.IptablesCmd) bool {
 	}
 }
 
-// Constants for iptables commands
-// These should not be used directly/assumed to be present, but should be contextually detected
 const (
-	iptablesBin         = "iptables"
-	iptablesNftBin      = "iptables-nft"
-	iptablesLegacyBin   = "iptables-legacy"
-	ip6tablesBin        = "ip6tables"
-	ip6tablesNftBin     = "ip6tables-nft"
-	ip6tablesLegacyBin  = "ip6tables-legacy"
-	iptablesRestoreBin  = "iptables-restore"
-	ip6tablesRestoreBin = "ip6tables-restore"
+	iptablesBin        = "iptables"
+	iptablesNftBin     = "iptables-nft"
+	iptablesLegacyBin  = "iptables-legacy"
+	ip6tablesBin       = "ip6tables"
+	ip6tablesNftBin    = "ip6tables-nft"
+	ip6tablesLegacyBin = "ip6tables-legacy"
 )
-
-// It is not sufficient to check for the presence of one binary or the other in $PATH -
-// we must choose a binary that is
-// 1. Available in our $PATH
-// 2. Matches where rules are actually defined in the netns we're operating in
-// (legacy or nft, with a preference for the latter if both present)
-//
-// This is designed to handle situations where, for instance, the host has nft-defined rules, and our default container
-// binary is `legacy`, or vice-versa - we must match the binaries we have in our $PATH to what rules are actually defined
-// in our current netns context.
-//
-// Q: Why not simply "use the host default binary" at $PATH/iptables?
-// A: Because we are running in our own container and do not have access to the host default binary.
-// We are using our local binaries to update host rules, and we must pick the right match.
-//
-// Basic selection logic is as follows:
-// 1. see if we have `nft` binary set in our $PATH
-// 2. see if we have existing rules in `nft` in our netns
-// 3. If so, use `nft` binary set
-// 4. Otherwise, see if we have `legacy` binary set, and use that.
-// 5. Otherwise, see if we have `iptables` binary set, and use that (detecting whether it's nft or legacy).
-func (r *RealDependencies) DetectIptablesVersion(ipV6 bool) (IptablesVersion, error) {
-	// Begin detecting
-	//
-	// iptables variants all have ipv6 variants, so decide which set we're looking for
-	var nftBin, legacyBin, plainBin string
-	if ipV6 {
-		nftBin = ip6tablesNftBin
-		legacyBin = ip6tablesLegacyBin
-		plainBin = ip6tablesBin
-	} else {
-		nftBin = iptablesNftBin
-		legacyBin = iptablesLegacyBin
-		plainBin = iptablesBin
-	}
-
-	// 1. What binaries we have
-	// 2. What binary we should use, based on existing rules defined in our current context.
-	// does the nft binary set exist, and are nft rules present?
-	nftVer, err := shouldUseBinaryForCurrentContext(nftBin)
-	if err == nil && nftVer.ExistingRules {
-		// if so, immediately use it.
-		return nftVer, nil
-	}
-	// not critical, may find another.
-	log.Debugf("did not find (or cannot use) iptables binary, error was %w: %+v", err, nftVer)
-
-	// Check again
-	// does the legacy binary set exist, and are legacy rules present?
-	legVer, err := shouldUseBinaryForCurrentContext(legacyBin)
-	if err == nil && legVer.ExistingRules {
-		// if so, immediately use it
-		return legVer, nil
-	}
-	// not critical, may find another.
-	log.Debugf("did not find (or cannot use) iptables binary, error was %w: %+v", err, legVer)
-
-	// regular non-suffixed binary set is our last resort.
-	//
-	// If it's there, and rules do not already exist for a specific variant,
-	// we should use the default non-suffixed binary.
-	// If it's NOT there, just propagate the error, we can't do anything, no iptables here
-	return shouldUseBinaryForCurrentContext(plainBin)
-}
-
-// TODO BML verify this won't choke on "-save" binaries having slightly diff. version string prefixes
-func parseIptablesVer(rawVer string) (*utilversion.Version, error) {
-	versionMatcher := regexp.MustCompile(iptablesVersionPattern)
-	match := versionMatcher.FindStringSubmatch(rawVer)
-	if match == nil {
-		return nil, fmt.Errorf("no iptables version found for: %q", rawVer)
-	}
-	version, err := utilversion.ParseGeneric(match[1])
-	if err != nil {
-		return nil, fmt.Errorf("iptables version %q is not a valid version string: %v", match[1], err)
-	}
-	return version, nil
-}
 
 // transformToXTablesErrorMessage returns an updated error message with explicit xtables error hints, if applicable.
 func transformToXTablesErrorMessage(stderr string, err error) string {
@@ -229,4 +147,83 @@ func (r *RealDependencies) RunWithOutput(cmd constants.IptablesCmd, iptVer *Ipta
 // RunQuietlyAndIgnore runs a command quietly and ignores errors
 func (r *RealDependencies) RunQuietlyAndIgnore(cmd constants.IptablesCmd, iptVer *IptablesVersion, stdin io.ReadSeeker, args ...string) {
 	_ = r.executeXTables(cmd, iptVer, true, stdin, args...)
+}
+
+// TODO BML verify this won't choke on "-save" binaries having slightly diff. version string prefixes
+func parseIptablesVer(rawVer string) (*utilversion.Version, error) {
+	versionMatcher := regexp.MustCompile(iptablesVersionPattern)
+	match := versionMatcher.FindStringSubmatch(rawVer)
+	if match == nil {
+		return nil, fmt.Errorf("no iptables version found for: %q", rawVer)
+	}
+	version, err := utilversion.ParseGeneric(match[1])
+	if err != nil {
+		return nil, fmt.Errorf("iptables version %q is not a valid version string: %v", match[1], err)
+	}
+	return version, nil
+}
+
+// It is not sufficient to check for the presence of one binary or the other in $PATH -
+// we must choose a binary that is
+// 1. Available in our $PATH
+// 2. Matches where rules are actually defined in the netns we're operating in
+// (legacy or nft, with a preference for the latter if both present)
+//
+// This is designed to handle situations where, for instance, the host has nft-defined rules, and our default container
+// binary is `legacy`, or vice-versa - we must match the binaries we have in our $PATH to what rules are actually defined
+// in our current netns context.
+//
+// Q: Why not simply "use the host default binary" at $PATH/iptables?
+// A: Because we are running in our own container and do not have access to the host default binary.
+// We are using our local binaries to update host rules, and we must pick the right match.
+//
+// Basic selection logic is as follows:
+// 1. see if we have `nft` binary set in our $PATH
+// 2. see if we have existing rules in `nft` in our netns
+// 3. If so, use `nft` binary set
+// 4. Otherwise, see if we have `legacy` binary set, and use that.
+// 5. Otherwise, see if we have `iptables` binary set, and use that (detecting whether it's nft or legacy).
+func (r *RealDependencies) DetectIptablesVersion(ipV6 bool) (IptablesVersion, error) {
+	// Begin detecting
+	//
+	// iptables variants all have ipv6 variants, so decide which set we're looking for
+
+	var nftBin, legacyBin, plainBin string
+	if ipV6 {
+		nftBin = ip6tablesNftBin
+		legacyBin = ip6tablesLegacyBin
+		plainBin = ip6tablesBin
+	} else {
+		nftBin = iptablesNftBin
+		legacyBin = iptablesLegacyBin
+		plainBin = iptablesBin
+	}
+
+	// 1. What binaries we have
+	// 2. What binary we should use, based on existing rules defined in our current context.
+	// does the nft binary set exist, and are nft rules present?
+	nftVer, err := shouldUseBinaryForCurrentContext(nftBin)
+	if err == nil && nftVer.ExistingRules {
+		// if so, immediately use it.
+		return nftVer, nil
+	}
+	// not critical, may find another.
+	log.Debugf("did not find (or cannot use) iptables binary, error was %w: %+v", err, nftVer)
+
+	// Check again
+	// does the legacy binary set exist, and are legacy rules present?
+	legVer, err := shouldUseBinaryForCurrentContext(legacyBin)
+	if err == nil && legVer.ExistingRules {
+		// if so, immediately use it
+		return legVer, nil
+	}
+	// not critical, may find another.
+	log.Debugf("did not find (or cannot use) iptables binary, error was %w: %+v", err, legVer)
+
+	// regular non-suffixed binary set is our last resort.
+	//
+	// If it's there, and rules do not already exist for a specific variant,
+	// we should use the default non-suffixed binary.
+	// If it's NOT there, just propagate the error, we can't do anything, no iptables here
+	return shouldUseBinaryForCurrentContext(plainBin)
 }

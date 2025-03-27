@@ -141,6 +141,7 @@ func validateTagKey(k string) error {
 
 func (i Instance) String() string {
 	// Ensure stable ordering
+
 	keys := slices.Sort(maps.Keys(i))
 
 	var buffer strings.Builder

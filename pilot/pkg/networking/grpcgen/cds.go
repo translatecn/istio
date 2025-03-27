@@ -22,7 +22,7 @@ import (
 	tls "github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3"
 	discovery "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
 
-	networking "istio.io/api/networking/v1alpha3"
+	networking "istio.io/istio/istio.io/api/networking/v1alpha3"
 	"istio.io/istio/pilot/pkg/model"
 	corexds "istio.io/istio/pilot/pkg/networking/core"
 	"istio.io/istio/pilot/pkg/networking/util"
@@ -201,6 +201,7 @@ func (b *clusterBuilder) applyDestinationRule(defaultCluster *cluster.Cluster) (
 // applyTrafficPolicy mutates the give cluster (if not-nil) so that the given merged traffic policy applies.
 func (b *clusterBuilder) applyTrafficPolicy(c *cluster.Cluster, trafficPolicy *networking.TrafficPolicy) {
 	// cluster can be nil if it wasn't requested
+
 	if c == nil {
 		return
 	}
@@ -225,6 +226,7 @@ func (b *clusterBuilder) applyTLS(c *cluster.Cluster, policy *networking.Traffic
 	// 2. We cannot reach servers in PERMISSIVE mode; gRPC doesn't allow us to override the alpn to one of Istio's
 	// 3. Once we support gRPC servers, we have no good way to detect if a server is implemented with xds.NewGrpcServer and will actually support our config
 	// For these reasons, support only explicit tls configuration.
+
 	switch policy.GetTls().GetMode() {
 	case networking.ClientTLSSettings_DISABLE:
 		// nothing to do

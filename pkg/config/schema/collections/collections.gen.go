@@ -20,13 +20,13 @@ import (
 	sigsk8siogatewayapiapisv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 	sigsk8siogatewayapiapisv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 
-	istioioapiextensionsv1alpha1 "istio.io/api/extensions/v1alpha1"
-	istioioapimeshv1alpha1 "istio.io/api/mesh/v1alpha1"
-	istioioapimetav1alpha1 "istio.io/api/meta/v1alpha1"
-	istioioapinetworkingv1alpha3 "istio.io/api/networking/v1alpha3"
-	istioioapinetworkingv1beta1 "istio.io/api/networking/v1beta1"
-	istioioapisecurityv1beta1 "istio.io/api/security/v1beta1"
-	istioioapitelemetryv1alpha1 "istio.io/api/telemetry/v1alpha1"
+	istioioapiextensionsv1alpha1 "istio.io/istio/istio.io/api/extensions/v1alpha1"
+	istioioapimeshv1alpha1 "istio.io/istio/istio.io/api/mesh/v1alpha1"
+	istioioapimetav1alpha1 "istio.io/istio/istio.io/api/meta/v1alpha1"
+	istioioapinetworkingv1alpha3 "istio.io/istio/istio.io/api/networking/v1alpha3"
+	istioioapinetworkingv1beta1 "istio.io/istio/istio.io/api/networking/v1beta1"
+	istioioapisecurityv1beta1 "istio.io/istio/istio.io/api/security/v1beta1"
+	istioioapitelemetryv1alpha1 "istio.io/istio/istio.io/api/telemetry/v1alpha1"
 	"istio.io/istio/pkg/config/schema/collection"
 	"istio.io/istio/pkg/config/schema/resource"
 	"istio.io/istio/pkg/config/validation"
@@ -45,7 +45,7 @@ var (
 		},
 		Proto: "istio.security.v1beta1.AuthorizationPolicy", StatusProto: "istio.meta.v1alpha1.IstioStatus",
 		ReflectType: reflect.TypeOf(&istioioapisecurityv1beta1.AuthorizationPolicy{}).Elem(), StatusType: reflect.TypeOf(&istioioapimetav1alpha1.IstioStatus{}).Elem(),
-		ProtoPackage: "istio.io/api/security/v1beta1", StatusPackage: "istio.io/api/meta/v1alpha1",
+		ProtoPackage: "istio.io/istio/istio.io/api/security/v1beta1", StatusPackage: "istio.io/istio/istio.io/api/meta/v1alpha1",
 		ClusterScoped: false,
 		Synthetic:     false,
 		Builtin:       false,
@@ -139,7 +139,7 @@ var (
 		},
 		Proto: "istio.networking.v1alpha3.DestinationRule", StatusProto: "istio.meta.v1alpha1.IstioStatus",
 		ReflectType: reflect.TypeOf(&istioioapinetworkingv1alpha3.DestinationRule{}).Elem(), StatusType: reflect.TypeOf(&istioioapimetav1alpha1.IstioStatus{}).Elem(),
-		ProtoPackage: "istio.io/api/networking/v1alpha3", StatusPackage: "istio.io/api/meta/v1alpha1",
+		ProtoPackage: "istio.io/istio/istio.io/api/networking/v1alpha3", StatusPackage: "istio.io/istio/istio.io/api/meta/v1alpha1",
 		ClusterScoped: false,
 		Synthetic:     false,
 		Builtin:       false,
@@ -184,7 +184,7 @@ var (
 		Version:    "v1alpha3",
 		Proto:      "istio.networking.v1alpha3.EnvoyFilter", StatusProto: "istio.meta.v1alpha1.IstioStatus",
 		ReflectType: reflect.TypeOf(&istioioapinetworkingv1alpha3.EnvoyFilter{}).Elem(), StatusType: reflect.TypeOf(&istioioapimetav1alpha1.IstioStatus{}).Elem(),
-		ProtoPackage: "istio.io/api/networking/v1alpha3", StatusPackage: "istio.io/api/meta/v1alpha1",
+		ProtoPackage: "istio.io/istio/istio.io/api/networking/v1alpha3", StatusPackage: "istio.io/istio/istio.io/api/meta/v1alpha1",
 		ClusterScoped: false,
 		Synthetic:     false,
 		Builtin:       false,
@@ -221,7 +221,7 @@ var (
 		},
 		Proto: "istio.networking.v1alpha3.Gateway", StatusProto: "istio.meta.v1alpha1.IstioStatus",
 		ReflectType: reflect.TypeOf(&istioioapinetworkingv1alpha3.Gateway{}).Elem(), StatusType: reflect.TypeOf(&istioioapimetav1alpha1.IstioStatus{}).Elem(),
-		ProtoPackage: "istio.io/api/networking/v1alpha3", StatusPackage: "istio.io/api/meta/v1alpha1",
+		ProtoPackage: "istio.io/istio/istio.io/api/networking/v1alpha3", StatusPackage: "istio.io/istio/istio.io/api/meta/v1alpha1",
 		ClusterScoped: false,
 		Synthetic:     false,
 		Builtin:       false,
@@ -338,7 +338,7 @@ var (
 		Version:       "v1alpha1",
 		Proto:         "istio.mesh.v1alpha1.MeshConfig",
 		ReflectType:   reflect.TypeOf(&istioioapimeshv1alpha1.MeshConfig{}).Elem(),
-		ProtoPackage:  "istio.io/api/mesh/v1alpha1",
+		ProtoPackage:  "istio.io/istio/istio.io/api/mesh/v1alpha1",
 		ClusterScoped: false,
 		Synthetic:     true,
 		Builtin:       false,
@@ -353,7 +353,7 @@ var (
 		Version:       "v1alpha1",
 		Proto:         "istio.mesh.v1alpha1.MeshNetworks",
 		ReflectType:   reflect.TypeOf(&istioioapimeshv1alpha1.MeshNetworks{}).Elem(),
-		ProtoPackage:  "istio.io/api/mesh/v1alpha1",
+		ProtoPackage:  "istio.io/istio/istio.io/api/mesh/v1alpha1",
 		ClusterScoped: false,
 		Synthetic:     true,
 		Builtin:       false,
@@ -416,7 +416,7 @@ var (
 		},
 		Proto: "istio.security.v1beta1.PeerAuthentication", StatusProto: "istio.meta.v1alpha1.IstioStatus",
 		ReflectType: reflect.TypeOf(&istioioapisecurityv1beta1.PeerAuthentication{}).Elem(), StatusType: reflect.TypeOf(&istioioapimetav1alpha1.IstioStatus{}).Elem(),
-		ProtoPackage: "istio.io/api/security/v1beta1", StatusPackage: "istio.io/api/meta/v1alpha1",
+		ProtoPackage: "istio.io/istio/istio.io/api/security/v1beta1", StatusPackage: "istio.io/istio/istio.io/api/meta/v1alpha1",
 		ClusterScoped: false,
 		Synthetic:     false,
 		Builtin:       false,
@@ -446,7 +446,7 @@ var (
 		Version:    "v1beta1",
 		Proto:      "istio.networking.v1beta1.ProxyConfig", StatusProto: "istio.meta.v1alpha1.IstioStatus",
 		ReflectType: reflect.TypeOf(&istioioapinetworkingv1beta1.ProxyConfig{}).Elem(), StatusType: reflect.TypeOf(&istioioapimetav1alpha1.IstioStatus{}).Elem(),
-		ProtoPackage: "istio.io/api/networking/v1beta1", StatusPackage: "istio.io/api/meta/v1alpha1",
+		ProtoPackage: "istio.io/istio/istio.io/api/networking/v1beta1", StatusPackage: "istio.io/istio/istio.io/api/meta/v1alpha1",
 		ClusterScoped: false,
 		Synthetic:     false,
 		Builtin:       false,
@@ -482,7 +482,7 @@ var (
 		},
 		Proto: "istio.security.v1beta1.RequestAuthentication", StatusProto: "istio.meta.v1alpha1.IstioStatus",
 		ReflectType: reflect.TypeOf(&istioioapisecurityv1beta1.RequestAuthentication{}).Elem(), StatusType: reflect.TypeOf(&istioioapimetav1alpha1.IstioStatus{}).Elem(),
-		ProtoPackage: "istio.io/api/security/v1beta1", StatusPackage: "istio.io/api/meta/v1alpha1",
+		ProtoPackage: "istio.io/istio/istio.io/api/security/v1beta1", StatusPackage: "istio.io/istio/istio.io/api/meta/v1alpha1",
 		ClusterScoped: false,
 		Synthetic:     false,
 		Builtin:       false,
@@ -546,7 +546,7 @@ var (
 		},
 		Proto: "istio.networking.v1alpha3.ServiceEntry", StatusProto: "istio.networking.v1alpha3.ServiceEntryStatus",
 		ReflectType: reflect.TypeOf(&istioioapinetworkingv1alpha3.ServiceEntry{}).Elem(), StatusType: reflect.TypeOf(&istioioapinetworkingv1alpha3.ServiceEntryStatus{}).Elem(),
-		ProtoPackage: "istio.io/api/networking/v1alpha3", StatusPackage: "istio.io/api/networking/v1alpha3",
+		ProtoPackage: "istio.io/istio/istio.io/api/networking/v1alpha3", StatusPackage: "istio.io/istio/istio.io/api/networking/v1alpha3",
 		ClusterScoped: false,
 		Synthetic:     false,
 		Builtin:       false,
@@ -565,7 +565,7 @@ var (
 		},
 		Proto: "istio.networking.v1alpha3.Sidecar", StatusProto: "istio.meta.v1alpha1.IstioStatus",
 		ReflectType: reflect.TypeOf(&istioioapinetworkingv1alpha3.Sidecar{}).Elem(), StatusType: reflect.TypeOf(&istioioapimetav1alpha1.IstioStatus{}).Elem(),
-		ProtoPackage: "istio.io/api/networking/v1alpha3", StatusPackage: "istio.io/api/meta/v1alpha1",
+		ProtoPackage: "istio.io/istio/istio.io/api/networking/v1alpha3", StatusPackage: "istio.io/istio/istio.io/api/meta/v1alpha1",
 		ClusterScoped: false,
 		Synthetic:     false,
 		Builtin:       false,
@@ -628,7 +628,7 @@ var (
 		},
 		Proto: "istio.telemetry.v1alpha1.Telemetry", StatusProto: "istio.meta.v1alpha1.IstioStatus",
 		ReflectType: reflect.TypeOf(&istioioapitelemetryv1alpha1.Telemetry{}).Elem(), StatusType: reflect.TypeOf(&istioioapimetav1alpha1.IstioStatus{}).Elem(),
-		ProtoPackage: "istio.io/api/telemetry/v1alpha1", StatusPackage: "istio.io/api/meta/v1alpha1",
+		ProtoPackage: "istio.io/istio/istio.io/api/telemetry/v1alpha1", StatusPackage: "istio.io/istio/istio.io/api/meta/v1alpha1",
 		ClusterScoped: false,
 		Synthetic:     false,
 		Builtin:       false,
@@ -677,7 +677,7 @@ var (
 		},
 		Proto: "istio.networking.v1alpha3.VirtualService", StatusProto: "istio.meta.v1alpha1.IstioStatus",
 		ReflectType: reflect.TypeOf(&istioioapinetworkingv1alpha3.VirtualService{}).Elem(), StatusType: reflect.TypeOf(&istioioapimetav1alpha1.IstioStatus{}).Elem(),
-		ProtoPackage: "istio.io/api/networking/v1alpha3", StatusPackage: "istio.io/api/meta/v1alpha1",
+		ProtoPackage: "istio.io/istio/istio.io/api/networking/v1alpha3", StatusPackage: "istio.io/istio/istio.io/api/meta/v1alpha1",
 		ClusterScoped: false,
 		Synthetic:     false,
 		Builtin:       false,
@@ -692,7 +692,7 @@ var (
 		Version:    "v1alpha1",
 		Proto:      "istio.extensions.v1alpha1.WasmPlugin", StatusProto: "istio.meta.v1alpha1.IstioStatus",
 		ReflectType: reflect.TypeOf(&istioioapiextensionsv1alpha1.WasmPlugin{}).Elem(), StatusType: reflect.TypeOf(&istioioapimetav1alpha1.IstioStatus{}).Elem(),
-		ProtoPackage: "istio.io/api/extensions/v1alpha1", StatusPackage: "istio.io/api/meta/v1alpha1",
+		ProtoPackage: "istio.io/istio/istio.io/api/extensions/v1alpha1", StatusPackage: "istio.io/istio/istio.io/api/meta/v1alpha1",
 		ClusterScoped: false,
 		Synthetic:     false,
 		Builtin:       false,
@@ -711,7 +711,7 @@ var (
 		},
 		Proto: "istio.networking.v1alpha3.WorkloadEntry", StatusProto: "istio.meta.v1alpha1.IstioStatus",
 		ReflectType: reflect.TypeOf(&istioioapinetworkingv1alpha3.WorkloadEntry{}).Elem(), StatusType: reflect.TypeOf(&istioioapimetav1alpha1.IstioStatus{}).Elem(),
-		ProtoPackage: "istio.io/api/networking/v1alpha3", StatusPackage: "istio.io/api/meta/v1alpha1",
+		ProtoPackage: "istio.io/istio/istio.io/api/networking/v1alpha3", StatusPackage: "istio.io/istio/istio.io/api/meta/v1alpha1",
 		ClusterScoped: false,
 		Synthetic:     false,
 		Builtin:       false,
@@ -730,7 +730,7 @@ var (
 		},
 		Proto: "istio.networking.v1alpha3.WorkloadGroup", StatusProto: "istio.meta.v1alpha1.IstioStatus",
 		ReflectType: reflect.TypeOf(&istioioapinetworkingv1alpha3.WorkloadGroup{}).Elem(), StatusType: reflect.TypeOf(&istioioapimetav1alpha1.IstioStatus{}).Elem(),
-		ProtoPackage: "istio.io/api/networking/v1alpha3", StatusPackage: "istio.io/api/meta/v1alpha1",
+		ProtoPackage: "istio.io/istio/istio.io/api/networking/v1alpha3", StatusPackage: "istio.io/istio/istio.io/api/meta/v1alpha1",
 		ClusterScoped: false,
 		Synthetic:     false,
 		Builtin:       false,

@@ -15,11 +15,8 @@
 package file
 
 import (
-	"archive/tar"
-	"bytes"
 	"errors"
 	"fmt"
-	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -65,14 +62,6 @@ func AsStringArray(files ...string) ([]string, error) {
 }
 
 // AsStringArrayOrFail calls AsStringOrFail and then converts to string.
-func AsStringArrayOrFail(t test.Failer, files ...string) []string {
-	t.Helper()
-	out, err := AsStringArray(files...)
-	if err != nil {
-		t.Fatal(err)
-	}
-	return out
-}
 
 // AsString is a convenience wrapper around os.ReadFile that converts the content to a string.
 func AsString(filename string) (string, error) {
@@ -84,10 +73,6 @@ func AsString(filename string) (string, error) {
 }
 
 // AsStringOrFail calls AsBytesOrFail and then converts to string.
-func AsStringOrFail(t test.Failer, filename string) string {
-	t.Helper()
-	return string(AsBytesOrFail(t, filename))
-}
 
 // MustAsString calls MustAsBytes and then converts to string.
 func MustAsString(filename string) string {
@@ -135,31 +120,6 @@ func expandHome(path string) (string, error) {
 }
 
 // ReadTarFile reads a tar compress file from the embedded
-func ReadTarFile(filePath string) (string, error) {
-	b, err := os.ReadFile(filePath)
-	if err != nil {
-		return "", err
-	}
-	tr := tar.NewReader(bytes.NewBuffer(b))
-	for {
-		hdr, err := tr.Next()
-		if err == io.EOF {
-			break // End of archive
-		}
-		if err != nil {
-			return "", err
-		}
-		if hdr.Name != strings.TrimSuffix(filepath.Base(filePath), filepath.Ext(filePath)) {
-			continue
-		}
-		contents, err := io.ReadAll(tr)
-		if err != nil {
-			return "", err
-		}
-		return string(contents), nil
-	}
-	return "", fmt.Errorf("file not found %v", filePath)
-}
 
 // ReadDir returns the names of all files in the given directory. This is not recursive.
 // The base path is appended; for example, ReadDir("dir") -> ["dir/file1", "dir/folder1"]
@@ -182,21 +142,4 @@ func ReadDir(filePath string, extensions ...string) ([]string, error) {
 		}
 	}
 	return res, nil
-}
-
-func ReadDirOrFail(t test.Failer, filePath string, extensions ...string) []string {
-	t.Helper()
-	res, err := ReadDir(filePath, extensions...)
-	if err != nil {
-		t.Fatal(err)
-	}
-	return res
-}
-
-func WriteOrFail(t test.Failer, filePath string, contents []byte) {
-	t.Helper()
-	err := os.WriteFile(filePath, contents, os.ModePerm)
-	if err != nil {
-		t.Fatal(err)
-	}
 }

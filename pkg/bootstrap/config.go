@@ -27,8 +27,8 @@ import (
 	core "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 	"google.golang.org/protobuf/types/known/wrapperspb"
 
-	"istio.io/api/annotation"
-	meshAPI "istio.io/api/mesh/v1alpha1"
+	"istio.io/istio/istio.io/api/annotation"
+	meshAPI "istio.io/istio/istio.io/api/mesh/v1alpha1"
 	"istio.io/istio/pilot/pkg/features"
 	"istio.io/istio/pilot/pkg/util/network"
 	"istio.io/istio/pkg/bootstrap/option"
@@ -42,7 +42,7 @@ import (
 	"istio.io/istio/pkg/ptr"
 	"istio.io/istio/pkg/security"
 	"istio.io/istio/pkg/util/sets"
-	"istio.io/istio/pkg/version"
+	"istio.io/istio/pkg/version_over"
 )
 
 const (
@@ -63,12 +63,6 @@ const (
 
 	// required for metrics based on stat_prefix in virtual service.
 	requiredEnvoyStatsMatcherInclusionRegexes = `vhost\..*\.route\..*`
-
-	// Prefixes of V2 metrics.
-	// "reporter" prefix is for istio standard metrics.
-	// "component" suffix is for istio_build metric.
-	v2Prefixes = "reporter=,"
-	v2Suffix   = ",component,istio"
 )
 
 var envoyWellKnownCompressorLibrary = sets.String{
@@ -319,6 +313,7 @@ func lightstepAccessTokenFile(config string) string {
 
 func getNodeMetadataOptions(node *model.Node, policy string) []option.Instance {
 	// Add locality options.
+
 	opts := getLocalityOptions(node.Locality)
 
 	opts = append(opts, getStatsOptions(node.Metadata)...)
@@ -335,6 +330,7 @@ var StripFragment = env.Register("HTTP_STRIP_FRAGMENT_FROM_PATH_UNSAFE_IF_DISABL
 
 func extractRuntimeFlags(cfg *model.NodeMetaProxyConfig, policy string) map[string]any {
 	// Setup defaults
+
 	runtimeFlags := map[string]any{
 		"overload.global_downstream_max_connections": "2147483647",
 		"re2.max_program_size.error_level":           "32768",
@@ -728,7 +724,7 @@ func GetNodeMetaData(options MetadataOptions) (*model.Node, error) {
 
 func SetIstioVersion(meta *model.BootstrapNodeMetadata) *model.BootstrapNodeMetadata {
 	if meta.IstioVersion == "" {
-		meta.IstioVersion = version.Info.Version
+		meta.IstioVersion = version_over.Info.Version
 	}
 	return meta
 }

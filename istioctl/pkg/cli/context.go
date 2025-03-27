@@ -177,75 +177,6 @@ func handleNamespace(ns, defaultNamespace string) string {
 	return ns
 }
 
-type fakeInstance struct {
-	// clients are cached clients for each revision
-	clients   map[string]kube.CLIClient
-	rootFlags *RootFlags
-	results   map[string][]byte
-	objects   []runtime.Object
-	version   string
-}
-
-func (f *fakeInstance) CLIClientWithRevision(rev string) (kube.CLIClient, error) {
-	if _, ok := f.clients[rev]; !ok {
-		var cliclient kube.CLIClient
-		if f.version != "" {
-			cliclient = kube.NewFakeClientWithVersion(f.version, f.objects...)
-		} else {
-			cliclient = kube.NewFakeClient(f.objects...)
-		}
-		if rev != "" {
-			kube.SetRevisionForTest(cliclient, rev)
-		}
-		c := MockClient{
-			CLIClient: cliclient,
-			Results:   f.results,
-		}
-		f.clients[rev] = c
-	}
-	return f.clients[rev], nil
-}
-
-func (f *fakeInstance) CLIClient() (kube.CLIClient, error) {
-	return f.CLIClientWithRevision("")
-}
-
-func (f *fakeInstance) CLIClientsForContexts(contexts []string) ([]kube.CLIClient, error) {
-	c, err := f.CLIClientWithRevision("")
-	if err != nil {
-		return nil, err
-	}
-	return []kube.CLIClient{c}, nil
-}
-
-func (f *fakeInstance) InferPodInfoFromTypedResource(name, namespace string) (pod string, ns string, err error) {
-	client, err := f.CLIClient()
-	if err != nil {
-		return "", "", err
-	}
-	return handlers.InferPodInfoFromTypedResource(name, f.NamespaceOrDefault(namespace), MakeKubeFactory(client))
-}
-
-func (f *fakeInstance) InferPodsFromTypedResource(name, namespace string) ([]string, string, error) {
-	client, err := f.CLIClient()
-	if err != nil {
-		return nil, "", err
-	}
-	return handlers.InferPodsFromTypedResource(name, f.NamespaceOrDefault(namespace), MakeKubeFactory(client))
-}
-
-func (f *fakeInstance) NamespaceOrDefault(namespace string) string {
-	return handleNamespace(namespace, f.rootFlags.defaultNamespace)
-}
-
-func (f *fakeInstance) Namespace() string {
-	return f.rootFlags.Namespace()
-}
-
-func (f *fakeInstance) IstioNamespace() string {
-	return f.rootFlags.IstioNamespace()
-}
-
 type NewFakeContextOption struct {
 	Namespace      string
 	IstioNamespace string
@@ -254,28 +185,4 @@ type NewFakeContextOption struct {
 	Objects []runtime.Object
 	// Version is the version of the fake client
 	Version string
-}
-
-func NewFakeContext(opts *NewFakeContextOption) Context {
-	if opts == nil {
-		opts = &NewFakeContextOption{}
-	}
-	ns := opts.Namespace
-	ins := opts.IstioNamespace
-	return &fakeInstance{
-		clients: map[string]kube.CLIClient{},
-		rootFlags: &RootFlags{
-			kubeconfig:       ptr.Of[string](""),
-			configContext:    ptr.Of[string](""),
-			namespace:        &ns,
-			istioNamespace:   &ins,
-			impersonate:      ptr.Of[string](""),
-			impersonateUID:   ptr.Of[string](""),
-			impersonateGroup: nil,
-			defaultNamespace: "",
-		},
-		results: opts.Results,
-		objects: opts.Objects,
-		version: opts.Version,
-	}
 }

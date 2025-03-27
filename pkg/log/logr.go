@@ -56,8 +56,7 @@ func trimNewline(msg string) string {
 	return msg
 }
 
-func (zl *zapLogger) Init(logr.RuntimeInfo) {
-}
+func (zl *zapLogger) Init(logr.RuntimeInfo) {}
 
 func (zl *zapLogger) Info(level int, msg string, keysAndVals ...any) {
 	if level > debugLevelThreshold {
@@ -90,10 +89,11 @@ func (zl *zapLogger) WithValues(keysAndValues ...any) logr.LogSink {
 }
 
 func (zl *zapLogger) WithName(string) logr.LogSink {
+	// NewLogrAdapter creates a new logr.Logger using the given Zap Logger to log.
+
 	return zl
 }
 
-// NewLogrAdapter creates a new logr.Logger using the given Zap Logger to log.
 func NewLogrAdapter(l *Scope) logr.Logger {
 	zlog := &zapLogger{
 		l: l,

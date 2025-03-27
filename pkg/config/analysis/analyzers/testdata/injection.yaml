@@ -64,10 +64,10 @@ metadata:
   namespace: default
 spec:
   containers:
-  - image: gcr.io/google-samples/microservices-demo/adservice:v0.1.1
-    name: server
-  - image: docker.io/istio/proxyv2:1.3.0-rc.2
-    name: istio-proxy
+    - image: gcr.io/google-samples/microservices-demo/adservice:v0.1.1
+      name: server
+    - image: registry.cn-hangzhou.aliyuncs.com/acejilam/proxyv2:1.3.0-rc.2
+      name: istio-proxy
 ---
 # Pod that's not injected and should be. Should generate warning
 apiVersion: v1
@@ -77,8 +77,8 @@ metadata:
   namespace: default
 spec:
   containers:
-  - image: gcr.io/google-samples/microservices-demo/adservice:v0.1.1
-    name: server
+    - image: gcr.io/google-samples/microservices-demo/adservice:v0.1.1
+      name: server
 ---
 # Pod that explicitly disables injection. Should not generate a warning.
 apiVersion: v1
@@ -90,8 +90,8 @@ metadata:
     sidecar.istio.io/inject: "false"
 spec:
   containers:
-  - image: gcr.io/google-samples/microservices-demo/adservice:v0.1.1
-    name: server
+    - image: gcr.io/google-samples/microservices-demo/adservice:v0.1.1
+      name: server
 ---
 # Control plane pod proving the existence of istio.io/rev 'canary'
 apiVersion: v1
@@ -105,8 +105,8 @@ metadata:
     istio.io/rev: canary
 spec:
   containers:
-  - image: gcr.io/google-samples/microservices-demo/adservice:v0.1.1
-    name: server
+    - image: gcr.io/google-samples/microservices-demo/adservice:v0.1.1
+      name: server
 ---
 # Pod that explicitly disables injection with label. Should not generate a warning.
 apiVersion: v1
@@ -145,8 +145,8 @@ metadata:
 spec:
   hostNetwork: true
   containers:
-  - image: gcr.io/google-samples/microservices-demo/adservice:v0.1.1
-    name: server
+    - image: gcr.io/google-samples/microservices-demo/adservice:v0.1.1
+      name: server
 ---
 apiVersion: v1
 kind: Namespace

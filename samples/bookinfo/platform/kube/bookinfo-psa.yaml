@@ -30,8 +30,8 @@ metadata:
     service: details
 spec:
   ports:
-  - port: 9080
-    name: http
+    - port: 9080
+      name: http
   selector:
     app: details
 ---
@@ -63,17 +63,17 @@ spec:
     spec:
       serviceAccountName: bookinfo-details
       containers:
-      - name: details
-        image: docker.io/istio/examples-bookinfo-details-v1:1.20.2
-        imagePullPolicy: IfNotPresent
-        ports:
-        - containerPort: 9080
-        securityContext:
-          allowPrivilegeEscalation: false
-          capabilities:
-            drop:
-              - all
-          runAsNonRoot: true
+        - name: details
+          image: registry.cn-hangzhou.aliyuncs.com/acejilam/examples-bookinfo-details-v1:1.20.2
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 9080
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - all
+            runAsNonRoot: true
 ---
 ##################################################################################################
 # Ratings service
@@ -87,8 +87,8 @@ metadata:
     service: ratings
 spec:
   ports:
-  - port: 9080
-    name: http
+    - port: 9080
+      name: http
   selector:
     app: ratings
 ---
@@ -120,17 +120,17 @@ spec:
     spec:
       serviceAccountName: bookinfo-ratings
       containers:
-      - name: ratings
-        image: docker.io/istio/examples-bookinfo-ratings-v1:1.20.2
-        imagePullPolicy: IfNotPresent
-        ports:
-        - containerPort: 9080
-        securityContext:
-          allowPrivilegeEscalation: false
-          capabilities:
-            drop:
-              - all
-          runAsNonRoot: true
+        - name: ratings
+          image: registry.cn-hangzhou.aliyuncs.com/acejilam/examples-bookinfo-ratings-v1:1.20.2
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 9080
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - all
+            runAsNonRoot: true
 ---
 ##################################################################################################
 # Reviews service
@@ -144,8 +144,8 @@ metadata:
     service: reviews
 spec:
   ports:
-  - port: 9080
-    name: http
+    - port: 9080
+      name: http
   selector:
     app: reviews
 ---
@@ -177,30 +177,30 @@ spec:
     spec:
       serviceAccountName: bookinfo-reviews
       containers:
-      - name: reviews
-        image: docker.io/istio/examples-bookinfo-reviews-v1:1.20.2
-        imagePullPolicy: IfNotPresent
-        env:
-        - name: LOG_DIR
-          value: "/tmp/logs"
-        ports:
-        - containerPort: 9080
-        volumeMounts:
-        - name: tmp
-          mountPath: /tmp
-        - name: wlp-output
-          mountPath: /opt/ibm/wlp/output
-        securityContext:
-          allowPrivilegeEscalation: false
-          capabilities:
-            drop:
-              - all
-          runAsNonRoot: true
+        - name: reviews
+          image: registry.cn-hangzhou.aliyuncs.com/acejilam/examples-bookinfo-reviews-v1:1.20.2
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: LOG_DIR
+              value: "/tmp/logs"
+          ports:
+            - containerPort: 9080
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+            - name: wlp-output
+              mountPath: /opt/ibm/wlp/output
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - all
+            runAsNonRoot: true
       volumes:
-      - name: wlp-output
-        emptyDir: {}
-      - name: tmp
-        emptyDir: {}
+        - name: wlp-output
+          emptyDir: { }
+        - name: tmp
+          emptyDir: { }
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -223,30 +223,30 @@ spec:
     spec:
       serviceAccountName: bookinfo-reviews
       containers:
-      - name: reviews
-        image: docker.io/istio/examples-bookinfo-reviews-v2:1.20.2
-        imagePullPolicy: IfNotPresent
-        env:
-        - name: LOG_DIR
-          value: "/tmp/logs"
-        ports:
-        - containerPort: 9080
-        volumeMounts:
-        - name: tmp
-          mountPath: /tmp
-        - name: wlp-output
-          mountPath: /opt/ibm/wlp/output
-        securityContext:
-          allowPrivilegeEscalation: false
-          capabilities:
-            drop:
-              - all
-          runAsNonRoot: true
+        - name: reviews
+          image: registry.cn-hangzhou.aliyuncs.com/acejilam/examples-bookinfo-reviews-v2:1.20.2
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: LOG_DIR
+              value: "/tmp/logs"
+          ports:
+            - containerPort: 9080
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+            - name: wlp-output
+              mountPath: /opt/ibm/wlp/output
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - all
+            runAsNonRoot: true
       volumes:
-      - name: wlp-output
-        emptyDir: {}
-      - name: tmp
-        emptyDir: {}
+        - name: wlp-output
+          emptyDir: { }
+        - name: tmp
+          emptyDir: { }
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -269,30 +269,30 @@ spec:
     spec:
       serviceAccountName: bookinfo-reviews
       containers:
-      - name: reviews
-        image: docker.io/istio/examples-bookinfo-reviews-v3:1.20.2
-        imagePullPolicy: IfNotPresent
-        env:
-        - name: LOG_DIR
-          value: "/tmp/logs"
-        ports:
-        - containerPort: 9080
-        volumeMounts:
-        - name: tmp
-          mountPath: /tmp
-        - name: wlp-output
-          mountPath: /opt/ibm/wlp/output
-        securityContext:
-          allowPrivilegeEscalation: false
-          capabilities:
-            drop:
-              - all
-          runAsNonRoot: true
+        - name: reviews
+          image: registry.cn-hangzhou.aliyuncs.com/acejilam/examples-bookinfo-reviews-v3:1.20.2
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: LOG_DIR
+              value: "/tmp/logs"
+          ports:
+            - containerPort: 9080
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+            - name: wlp-output
+              mountPath: /opt/ibm/wlp/output
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - all
+            runAsNonRoot: true
       volumes:
-      - name: wlp-output
-        emptyDir: {}
-      - name: tmp
-        emptyDir: {}
+        - name: wlp-output
+          emptyDir: { }
+        - name: tmp
+          emptyDir: { }
 ---
 ##################################################################################################
 # Productpage services
@@ -306,8 +306,8 @@ metadata:
     service: productpage
 spec:
   ports:
-  - port: 9080
-    name: http
+    - port: 9080
+      name: http
   selector:
     app: productpage
 ---
@@ -343,21 +343,21 @@ spec:
     spec:
       serviceAccountName: bookinfo-productpage
       containers:
-      - name: productpage
-        image: docker.io/istio/examples-bookinfo-productpage-v1:1.20.2
-        imagePullPolicy: IfNotPresent
-        ports:
-        - containerPort: 9080
-        volumeMounts:
-        - name: tmp
-          mountPath: /tmp
-        securityContext:
-          allowPrivilegeEscalation: false
-          capabilities:
-            drop:
-              - all
-          runAsNonRoot: true
+        - name: productpage
+          image: registry.cn-hangzhou.aliyuncs.com/acejilam/examples-bookinfo-productpage-v1:1.20.2
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 9080
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - all
+            runAsNonRoot: true
       volumes:
-      - name: tmp
-        emptyDir: {}
+        - name: tmp
+          emptyDir: { }
 ---

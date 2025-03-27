@@ -28,6 +28,7 @@ import (
 
 func NewServer() *http.Server {
 	// Need to set this to allow timeout on the read header
+
 	h1 := &http.Transport{
 		ExpectContinueTimeout: 3 * time.Second,
 	}

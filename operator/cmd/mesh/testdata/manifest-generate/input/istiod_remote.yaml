@@ -1,6 +1,7 @@
 apiVersion: install.istio.io/v1alpha1
 kind: IstioOperator
 spec:
+  hub: registry.cn-hangzhou.aliyuncs.com/acejilam
   profile: empty
   components:
     base:
@@ -19,3 +20,4 @@ spec:
       injectionURL: https://xxx:15017/inject
     base:
       validationURL: https://xxx:15017/validate
+

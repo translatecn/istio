@@ -42,18 +42,6 @@ const (
 	// Required parameters: gateway index.
 	VSGateway = "{.spec.gateways[%d]}"
 
-	// Path for regex match of uri, scheme, method and authority.
-	// Required parameters: http index, match index, where to match.
-	URISchemeMethodAuthorityRegexMatch = "{.spec.http[%d].match[%d].%s.regex}"
-
-	// Path for regex match of headers and queryParams.
-	// Required parameters: http index, match index, where to match, match key.
-	HeaderAndQueryParamsRegexMatch = "{.spec.http[%d].match[%d].%s.%s.regex}"
-
-	// Path for regex match of allowOrigins.
-	// Required parameters: http index, allowOrigins index.
-	AllowOriginsRegexMatch = "{.spec.http[%d].corsPolicy.allowOrigins[%d].regex}"
-
 	// Path for workload selector.
 	// Required parameters: selector label.
 	WorkloadSelector = "{.spec.workloadSelector.labels.%s}"
@@ -65,14 +53,6 @@ const (
 	// Path for fromRegistry in the mesh networks.
 	// Required parameters: network name, endPoint index.
 	FromRegistry = "{.networks.%s.endpoints[%d]}"
-
-	// Path for the image in the container.
-	// Required parameters: container index.
-	ImageInContainer = "{.spec.containers[%d].image}"
-
-	// Path for namespace in metadata.
-	// Required parameters: none.
-	MetadataNamespace = "{.metadata.namespace}"
 
 	// Path for name in metadata.
 	// Required parameters: none.

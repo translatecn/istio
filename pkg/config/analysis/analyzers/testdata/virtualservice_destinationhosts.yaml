@@ -5,9 +5,9 @@ metadata:
   namespace: default
 spec:
   ports:
-  - port: 42
-    name: tcp-test
-    protocol: TCP
+    - port: 42
+      name: tcp-test
+      protocol: TCP
 ---
 apiVersion: v1
 kind: Service
@@ -16,12 +16,12 @@ metadata:
   namespace: default
 spec:
   ports:
-  - port: 80
-    name: http-test
-    protocol: HTTP
-  - port: 443
-    name: https-test
-    protocol: HTTPS
+    - port: 80
+      name: http-test
+      protocol: HTTP
+    - port: 443
+      name: https-test
+      protocol: HTTPS
 ---
 apiVersion: networking.istio.io/v1
 kind: ServiceEntry
@@ -30,7 +30,7 @@ metadata:
   namespace: default
 spec:
   hosts:
-  - external-reviews.org
+    - external-reviews.org
 ---
 apiVersion: networking.istio.io/v1
 kind: ServiceEntry
@@ -39,7 +39,7 @@ metadata:
   namespace: default
 spec:
   hosts:
-  - "*.eu.bookinfo.com"
+    - "*.eu.bookinfo.com"
 ---
 apiVersion: networking.istio.io/v1
 kind: ServiceEntry
@@ -50,7 +50,7 @@ spec:
   exportTo:
     - "."
   hosts:
-  - "*" # This ServiceEntry should not match any instance as it isn't exported to other namespaces
+    - "*" # This ServiceEntry should not match any instance as it isn't exported to other namespaces
 ---
 apiVersion: networking.istio.io/v1
 kind: ServiceEntry
@@ -61,7 +61,7 @@ spec:
   exportTo:
     - "."
   hosts:
-  - "other.bookinfo.com" # This ServiceEntry should not match any instance as it isn't exported to other namespaces
+    - "other.bookinfo.com" # This ServiceEntry should not match any instance as it isn't exported to other namespaces
 ---
 apiVersion: networking.istio.io/v1
 kind: ServiceEntry
@@ -72,7 +72,7 @@ spec:
   exportTo:
     - "default"
   hosts:
-  - "abc.bookinfo.com" # This ServiceEntry matches a destination host in a virtualService in another namespace
+    - "abc.bookinfo.com" # This ServiceEntry matches a destination host in a virtualService in another namespace
 ---
 apiVersion: networking.istio.io/v1
 kind: VirtualService
@@ -81,10 +81,10 @@ metadata:
   namespace: default
 spec:
   http:
-  - route:
-    - destination:  # This virtualservice has no validation errors (base case)
-        host: reviews
-        subset: v1
+    - route:
+        - destination: # This virtualservice has no validation errors (base case)
+            host: reviews
+            subset: v1
 ---
 apiVersion: networking.istio.io/v1
 kind: VirtualService
@@ -93,11 +93,11 @@ metadata:
   namespace: default
 spec:
   http:
-  - route:
-    - {} # test destination null
-    - destination:
-        host: reviews-bogus # This host does not exist, should result in a validation error
-        subset: v1
+    - route:
+        - { } # test destination null
+        - destination:
+            host: reviews-bogus # This host does not exist, should result in a validation error
+            subset: v1
 ---
 apiVersion: networking.istio.io/v1
 kind: VirtualService
@@ -106,10 +106,10 @@ metadata:
   namespace: default
 spec:
   http:
-  - route:
-    - destination:
-        host: reviews.default.svc.cluster.local # FQDN representation is valid and should not generate an error
-        subset: v1
+    - route:
+        - destination:
+            host: reviews.default.svc.cluster.local # FQDN representation is valid and should not generate an error
+            subset: v1
 ---
 apiVersion: networking.istio.io/v1
 kind: VirtualService
@@ -118,10 +118,10 @@ metadata:
   namespace: default
 spec:
   http:
-  - route:
-    - destination:
-        host: external-reviews.org  # Referring to a ServiceEntry host is valid and should not generate an error
-                                    # Since this is an "external" service, subset is omitted
+    - route:
+        - destination:
+            host: external-reviews.org  # Referring to a ServiceEntry host is valid and should not generate an error
+            # Since this is an "external" service, subset is omitted
 ---
 apiVersion: networking.istio.io/v1
 kind: VirtualService
@@ -130,9 +130,9 @@ metadata:
   namespace: default
 spec:
   http:
-  - route:
-    - destination:
-        host: reviews.eu.bookinfo.com # This should match the eu-wildcard service entry and not generate an error
+    - route:
+        - destination:
+            host: reviews.eu.bookinfo.com # This should match the eu-wildcard service entry and not generate an error
 ---
 apiVersion: networking.istio.io/v1
 kind: VirtualService
@@ -141,9 +141,9 @@ metadata:
   namespace: default
 spec:
   http:
-  - route:
-    - destination:
-        host: "*.eu.bookinfo.com" # Should match *.eu.bookinfo.com
+    - route:
+        - destination:
+            host: "*.eu.bookinfo.com" # Should match *.eu.bookinfo.com
 ---
 apiVersion: networking.istio.io/v1
 kind: VirtualService
@@ -152,9 +152,9 @@ metadata:
   namespace: default
 spec:
   http:
-  - route:
-    - destination:
-        host: other.bookinfo.com # Should generate validation error, the SE is in another namespace
+    - route:
+        - destination:
+            host: other.bookinfo.com # Should generate validation error, the SE is in another namespace
 ---
 apiVersion: networking.istio.io/v1
 kind: VirtualService
@@ -163,13 +163,13 @@ metadata:
   namespace: default
 spec:
   http:
-  - route:
-    - destination:
+    - route:
+        - destination:
+            host: reviews
+            subset: v1
+      mirror: # Includes mirroring, but should not generate any errors
         host: reviews
         subset: v1
-    mirror: # Includes mirroring, but should not generate any errors
-      host: reviews
-      subset: v1
 ---
 apiVersion: networking.istio.io/v1
 kind: VirtualService
@@ -178,13 +178,13 @@ metadata:
   namespace: default
 spec:
   http:
-  - route:
-    - destination:
-        host: reviews
+    - route:
+        - destination:
+            host: reviews
+            subset: v1
+      mirror:
+        host: reviews-bogus # This host does not exist, should result in a validation error
         subset: v1
-    mirror:
-      host: reviews-bogus # This host does not exist, should result in a validation error
-      subset: v1
 ---
 apiVersion: networking.istio.io/v1
 kind: VirtualService
@@ -193,12 +193,12 @@ metadata:
   namespace: default
 spec:
   http:
-  - route:
-    - destination:
-        host: reviews
-        subset: v1
-        port:
-          number: 999 # No match for this port number, should generate an error
+    - route:
+        - destination:
+            host: reviews
+            subset: v1
+            port:
+              number: 999 # No match for this port number, should generate an error
 ---
 apiVersion: networking.istio.io/v1
 kind: VirtualService
@@ -207,10 +207,10 @@ metadata:
   namespace: default
 spec:
   http:
-  - route:
-    - destination:  # Since reviews-2port exposes multiple ports, not including a port in the destination is an error
-        host: reviews-2port
-        subset: v1
+    - route:
+        - destination: # Since reviews-2port exposes multiple ports, not including a port in the destination is an error
+            host: reviews-2port
+            subset: v1
 ---
 apiVersion: networking.istio.io/v1
 kind: VirtualService
@@ -219,12 +219,12 @@ metadata:
   namespace: default
 spec:
   http:
-  - route:
-    - destination:
-        host: reviews-2port
-        subset: v1
-        port:
-          number: 80 # Should not generate an error since we specify a valid port, as required in this case
+    - route:
+        - destination:
+            host: reviews-2port
+            subset: v1
+            port:
+              number: 80 # Should not generate an error since we specify a valid port, as required in this case
 ---
 apiVersion: networking.istio.io/v1
 kind: VirtualService
@@ -233,7 +233,7 @@ metadata:
   name: cross-namespace
   namespace: istio-system
 spec:
-  hosts: [reviews]
+  hosts: [ reviews ]
   http:
     - route:
         - destination:
@@ -252,8 +252,8 @@ metadata:
     service: details
 spec:
   ports:
-  - port: 9080
-    name: http
+    - port: 9080
+      name: http
   selector:
     app: details
 ---
@@ -264,7 +264,7 @@ metadata:
   name: cross-namespace-details
   namespace: istio-system
 spec:
-  hosts: [details]
+  hosts: [ details ]
   http:
     - route:
         - destination:
@@ -278,7 +278,7 @@ metadata:
   name: banana-details
   namespace: banana
 spec:
-  hosts: [details]
+  hosts: [ details ]
   http:
     - route:
         - destination:
@@ -308,7 +308,7 @@ metadata:
   name: hello
   namespace: hello1
 spec:
-  hosts: [hello]
+  hosts: [ hello ]
   http:
     - route:
         - destination:
@@ -321,7 +321,7 @@ metadata:
   name: hello
   namespace: hello2
 spec:
-  hosts: [hello]
+  hosts: [ hello ]
   http:
     - route:
         - destination:
@@ -334,7 +334,7 @@ metadata:
   name: hello
   namespace: hello
 spec:
-  hosts: [hello]
+  hosts: [ hello ]
   http:
     - route:
         - destination:
@@ -346,7 +346,7 @@ metadata:
   name: hello-export-to-bogus
   namespace: hello
 spec:
-  hosts: [hello]
+  hosts: [ hello ]
   exportTo:
     - bogus # This should generate an error, because the exportTo
   http:
@@ -361,6 +361,6 @@ metadata:
   namespace: default
 spec:
   http:
-  - route:
-    - destination:  # This virtualservice has no validation errors
-        host: abc.bookinfo.com # Host defined in an SE in another namespace, but exported to this namespace
+    - route:
+        - destination: # This virtualservice has no validation errors
+            host: abc.bookinfo.com # Host defined in an SE in another namespace, but exported to this namespace

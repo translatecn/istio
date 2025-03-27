@@ -4,10 +4,10 @@ metadata:
   name: otel-tracing
 spec:
   tracing:
-  - providers:
-    - name: test-otel-res-detectors
-    randomSamplingPercentage: 100.0
-    customTags:
-      "provider":
-        literal:
-          value: "otel-grpc-with-res-detectors"
+    - providers:
+        - name: test-otel-res-detectors
+      randomSamplingPercentage: 100.0
+      customTags:
+        "provider":
+          literal:
+            value: "otel-grpc-with-res-detectors"

@@ -31,9 +31,9 @@ import (
 	"github.com/hashicorp/go-multierror"
 	"google.golang.org/protobuf/types/known/anypb"
 
-	extensions "istio.io/api/extensions/v1alpha1"
-	meshconfig "istio.io/api/mesh/v1alpha1"
-	networking "istio.io/api/networking/v1alpha3"
+	extensions "istio.io/istio/istio.io/api/extensions/v1alpha1"
+	meshconfig "istio.io/istio/istio.io/api/mesh/v1alpha1"
+	networking "istio.io/istio/istio.io/api/networking/v1alpha3"
 	"istio.io/istio/pilot/pkg/features"
 	"istio.io/istio/pilot/pkg/model"
 	istionetworking "istio.io/istio/pilot/pkg/networking"
@@ -244,6 +244,7 @@ func (configgen *ConfigGeneratorImpl) buildGatewayTCPBasedFilterChains(
 	tlsHostsByPort map[uint32]map[string]string,
 ) {
 	// Add network level WASM filters if any configured.
+
 	wasm := builder.push.WasmPluginsByListenerInfo(builder.node, model.WasmPluginListenerInfo{
 		Port:  opts.port,
 		Class: istionetworking.ListenerClassGateway,
@@ -555,6 +556,7 @@ func (configgen *ConfigGeneratorImpl) buildGatewayHTTPRouteConfig(node *model.Pr
 func hashRouteList(r []*route.Route) uint64 {
 	// nolint: gosec
 	// Not security sensitive code
+
 	h := hash.New()
 	for _, v := range r {
 		u := uintptr(unsafe.Pointer(v))
@@ -754,6 +756,7 @@ func buildGatewayListenerTLSContext(
 	mesh *meshconfig.MeshConfig, server *networking.Server, proxy *model.Proxy, transportProtocol istionetworking.TransportProtocol,
 ) *tls.DownstreamTlsContext {
 	// Server.TLS cannot be nil or passthrough. But as a safety guard, return nil
+
 	if server.Tls == nil || gateway.IsPassThroughServer(server) {
 		return nil // We don't need to setup TLS context for passthrough mode
 	}
@@ -934,6 +937,7 @@ func (lb *ListenerBuilder) buildGatewayNetworkFiltersFromTLSRoutes(server *netwo
 // To handle this, we generate a filter chain per upstream cluster
 func builtAutoPassthroughFilterChains(push *model.PushContext, proxy *model.Proxy, hosts []string) []*filterChainOpts {
 	// We do not want any authz here, so build a new LB without it set
+
 	lb := &ListenerBuilder{
 		node: proxy,
 		push: push,
@@ -1042,6 +1046,7 @@ func convertTLSMatchToL4Match(tlsMatch *networking.TLSMatchAttributes) *networki
 func l4MultiMatch(predicates []*networking.L4MatchAttributes, server *networking.Server, gateway string) bool {
 	// NB from proto definitions: each set of predicates is OR'd together; inside of a predicate all conditions are AND'd.
 	// This means we can return as soon as we get any match of an entire predicate.
+
 	for _, match := range predicates {
 		if l4SingleMatch(match, server, gateway) {
 			return true
@@ -1053,11 +1058,13 @@ func l4MultiMatch(predicates []*networking.L4MatchAttributes, server *networking
 
 func l4SingleMatch(match *networking.L4MatchAttributes, server *networking.Server, gateway string) bool {
 	// if there's no gateway predicate, gatewayMatch is true; otherwise we match against the gateways for this workload
+
 	return isPortMatch(match.Port, server) && isGatewayMatch(gateway, match.Gateways)
 }
 
 func isPortMatch(port uint32, server *networking.Server) bool {
 	// if there's no port predicate, portMatch is true; otherwise we evaluate the port predicate against the server's port
+
 	portMatch := port == 0
 	if port != 0 {
 		portMatch = server.Port.Number == port
@@ -1067,6 +1074,7 @@ func isPortMatch(port uint32, server *networking.Server) bool {
 
 func isGatewayMatch(gateway string, gatewayNames []string) bool {
 	// if there's no gateway predicate, gatewayMatch is true; otherwise we match against the gateways for this workload
+
 	if len(gatewayNames) == 0 {
 		return true
 	}

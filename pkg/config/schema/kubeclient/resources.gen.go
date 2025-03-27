@@ -29,12 +29,12 @@ import (
 	sigsk8siogatewayapiapisv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 	sigsk8siogatewayapiapisv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 
-	apiistioioapiextensionsv1alpha1 "istio.io/client-go/pkg/apis/extensions/v1alpha1"
-	apiistioioapinetworkingv1 "istio.io/client-go/pkg/apis/networking/v1"
-	apiistioioapinetworkingv1alpha3 "istio.io/client-go/pkg/apis/networking/v1alpha3"
-	apiistioioapinetworkingv1beta1 "istio.io/client-go/pkg/apis/networking/v1beta1"
-	apiistioioapisecurityv1 "istio.io/client-go/pkg/apis/security/v1"
-	apiistioioapitelemetryv1 "istio.io/client-go/pkg/apis/telemetry/v1"
+	apiistioioapiextensionsv1alpha1 "istio.io/istio/istio.io/client-go/pkg/apis/extensions/v1alpha1"
+	apiistioioapinetworkingv1 "istio.io/istio/istio.io/client-go/pkg/apis/networking/v1"
+	apiistioioapinetworkingv1alpha3 "istio.io/istio/istio.io/client-go/pkg/apis/networking/v1alpha3"
+	apiistioioapinetworkingv1beta1 "istio.io/istio/istio.io/client-go/pkg/apis/networking/v1beta1"
+	apiistioioapisecurityv1 "istio.io/istio/istio.io/client-go/pkg/apis/security/v1"
+	apiistioioapitelemetryv1 "istio.io/istio/istio.io/client-go/pkg/apis/telemetry/v1"
 )
 
 func GetWriteClient[T runtime.Object](c ClientGetter, namespace string) ktypes.WriteAPI[T] {

@@ -31,9 +31,8 @@ const (
 	OperatorContainerName  = "istio-operator"
 
 	// namespaceAll is the default argument of across all namespaces
-	NamespaceAll        = ""
-	StrNamespaceAll     = "allNamespaces"
-	KubeSystemNamespace = "kube-system"
+	NamespaceAll    = ""
+	StrNamespaceAll = "allNamespaces"
 )
 
 type kv struct {

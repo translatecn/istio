@@ -422,6 +422,7 @@ func (h *LocalDNSServer) queryUpstream(upstreamClient *dns.Client, req *dns.Msg,
 //     lookups for multiple DNS servers and returns the first successful response.
 func (h *LocalDNSServer) queryUpstreamParallel(upstreamClient *dns.Client, req *dns.Msg, scope *istiolog.Scope) *dns.Msg {
 	// Guarantee that the ctx we use below is done when this function returns.
+
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 

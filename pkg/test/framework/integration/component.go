@@ -38,12 +38,3 @@ func (c *component) Close() error {
 	}
 	return nil
 }
-
-func newComponent(ctx resource.Context, name string, handleClose func(*component)) *component {
-	c := &component{
-		name:        name,
-		handleClose: handleClose,
-	}
-	c.id = ctx.TrackResource(c)
-	return c
-}

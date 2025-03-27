@@ -256,6 +256,7 @@ func (c *httpCall) makeRequest(ctx context.Context, cfg *Config, requestID int) 
 
 func processHTTPResponse(requestID int, httpResp *http.Response, outBuffer *bytes.Buffer) error {
 	// Make sure we close the body before exiting.
+
 	defer func() {
 		if err := httpResp.Body.Close(); err != nil {
 			echo.WriteError(outBuffer, requestID, err)

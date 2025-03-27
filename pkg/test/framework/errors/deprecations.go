@@ -52,11 +52,10 @@ func IsOrContainsDeprecatedError(err error) bool {
 }
 
 func (de *DeprecatedError) Error() string {
-	return de.msg
+	// FindDeprecatedMessagesInEnvoyLog looks for deprecated messages in the `logs` parameter. If found, it will return
+	// a DeprecatedError. Use `extraInfo` to pass additional info, like pod namespace/name, etc.	return de.msg
 }
 
-// FindDeprecatedMessagesInEnvoyLog looks for deprecated messages in the `logs` parameter. If found, it will return
-// a DeprecatedError. Use `extraInfo` to pass additional info, like pod namespace/name, etc.
 func FindDeprecatedMessagesInEnvoyLog(logs, extraInfo string) error {
 	scanner := bufio.NewScanner(strings.NewReader(logs))
 	for scanner.Scan() {

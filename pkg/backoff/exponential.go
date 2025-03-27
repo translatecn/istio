@@ -59,17 +59,6 @@ func DefaultOption() Option {
 	}
 }
 
-// NewExponentialBackOff creates an istio wrapped ExponentialBackOff.
-// By default, it never stops.
-func NewExponentialBackOff(o Option) BackOff {
-	b := ExponentialBackOff{}
-	b.exponentialBackOff = backoff.NewExponentialBackOff()
-	b.exponentialBackOff.InitialInterval = o.InitialInterval
-	b.exponentialBackOff.MaxInterval = o.MaxInterval
-	b.Reset()
-	return b
-}
-
 func (b ExponentialBackOff) NextBackOff() time.Duration {
 	duration := b.exponentialBackOff.NextBackOff()
 	// always return maxInterval after it reaches MaxElapsedTime
@@ -102,4 +91,15 @@ func (b ExponentialBackOff) RetryWithContext(ctx context.Context, operation func
 		case <-time.After(next):
 		}
 	}
+}
+
+// NewExponentialBackOff creates an istio wrapped ExponentialBackOff.
+// By default, it never stops.
+func NewExponentialBackOff(o Option) BackOff {
+	b := ExponentialBackOff{}
+	b.exponentialBackOff = backoff.NewExponentialBackOff()
+	b.exponentialBackOff.InitialInterval = o.InitialInterval
+	b.exponentialBackOff.MaxInterval = o.MaxInterval
+	b.Reset()
+	return b
 }

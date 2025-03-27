@@ -4,23 +4,23 @@ metadata:
   name: external-svc-extsvc
   namespace: testns
 spec:
-   hosts:
-   - external.extsvc.com
-   ports:
-   - number: 1443
-     name: extsvc-http
-     protocol: HTTP # not HTTPS.
-   resolution: DNS
+  hosts:
+    - external.extsvc.com
+  ports:
+    - number: 1443
+      name: extsvc-http
+      protocol: HTTP # not HTTPS.
+  resolution: DNS
 
 ---
 
 apiVersion: networking.istio.io/v1
 kind: DestinationRule
 metadata:
- name: external-service-1
- namespace: testns
+  name: external-service-1
+  namespace: testns
 spec:
- host: external.extsvc.com
+  host: external.extsvc.com
 # BUG: crash envoy
 # trafficPolicy:
 #   tls:
@@ -34,18 +34,18 @@ metadata:
   name: external-svc-ports
   namespace: testns
 spec:
-   hosts:
-   - ports.extsvc.com
-   - ports1.extsvc.com
-#   - *.ports2.extsvc.com
-   ports:
-   - number: 443
-     name: extsvc-https
-     protocol: HTTPS # not HTTPS.
-   - number: 8443
-     name: https-ports2
-     protocol: HTTP
-   resolution: DNS
+  hosts:
+    - ports.extsvc.com
+    - ports1.extsvc.com
+  #   - *.ports2.extsvc.com
+  ports:
+    - number: 443
+      name: extsvc-https
+      protocol: HTTPS # not HTTPS.
+    - number: 8443
+      name: https-ports2
+      protocol: HTTP
+  resolution: DNS
 
 ---
 
@@ -55,14 +55,14 @@ metadata:
   name: external-svc-dst
   namespace: testns
 spec:
-   hosts:
-   - dst.extsvc.com
-#   - *.dst2.extsvc.com
-   ports:
-   - number: 8001
-     name: extsvc-http
-     protocol: HTTP
-   resolution: NONE
+  hosts:
+    - dst.extsvc.com
+  #   - *.dst2.extsvc.com
+  ports:
+    - number: 8001
+      name: extsvc-http
+      protocol: HTTP
+  resolution: NONE
 
 ---
 
@@ -73,14 +73,14 @@ metadata:
   name: external-svc-ep
   namespace: testns
 spec:
-   hosts:
-   - ep.extsvc.com
-   ports:
-   - number: 8002
-     name: extsvc-http
-     protocol: HTTP
-   resolution: STATIC
-   endpoints:
+  hosts:
+    - ep.extsvc.com
+  ports:
+    - number: 8002
+      name: extsvc-http
+      protocol: HTTP
+  resolution: STATIC
+  endpoints:
     - address: 127.0.0.2
       ports:
         extsvc-http: 8080

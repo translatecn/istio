@@ -15,8 +15,6 @@
 package opentelemetry
 
 import (
-	"testing"
-
 	"istio.io/istio/pkg/test/framework/components/cluster"
 	"istio.io/istio/pkg/test/framework/resource"
 )
@@ -42,11 +40,3 @@ func New(ctx resource.Context, c Config) (Instance, error) {
 }
 
 // NewOrFail returns a new otel instance or fails the test.
-func NewOrFail(t *testing.T, ctx resource.Context, c Config) Instance {
-	t.Helper()
-	i, err := New(ctx, c)
-	if err != nil {
-		t.Fatalf("opentelemetry.NewOrFail: %v", err)
-	}
-	return i
-}

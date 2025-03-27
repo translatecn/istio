@@ -17,13 +17,12 @@ package tokenreview
 import (
 	"context"
 	"fmt"
+	"istio.io/istio/pkg/security"
 	"strings"
 
 	k8sauth "k8s.io/api/authentication/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
-
-	"istio.io/istio/pkg/security"
 )
 
 // nolint: lll
@@ -36,6 +35,14 @@ const (
 	// the authenticating request.
 	PodUIDKey = "authentication.kubernetes.io/pod-uid"
 )
+
+func extractExtra(review *k8sauth.TokenReview, s string) string {
+	values, ok := review.Status.User.Extra[s]
+	if !ok || len(values) == 0 {
+		return ""
+	}
+	return values[0]
+}
 
 // ValidateK8sJwt validates a k8s JWT at API server.
 // Return {<namespace>, <serviceaccountname>} in the targetToken when the validation passes.
@@ -110,12 +117,4 @@ func getTokenReviewResult(tokenReview *k8sauth.TokenReview) (security.Kubernetes
 		PodUID:            extractExtra(tokenReview, PodUIDKey),
 		PodServiceAccount: subStrings[3],
 	}, nil
-}
-
-func extractExtra(review *k8sauth.TokenReview, s string) string {
-	values, ok := review.Status.User.Extra[s]
-	if !ok || len(values) == 0 {
-		return ""
-	}
-	return values[0]
 }

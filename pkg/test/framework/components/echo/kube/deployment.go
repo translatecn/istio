@@ -33,8 +33,8 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"
 
-	"istio.io/api/label"
-	meshconfig "istio.io/api/mesh/v1alpha1"
+	"istio.io/istio/istio.io/api/label"
+	meshconfig "istio.io/istio/istio.io/api/mesh/v1alpha1"
 	istioctlcmd "istio.io/istio/istioctl/pkg/workload"
 	"istio.io/istio/pkg/config/constants"
 	"istio.io/istio/pkg/config/protocol"
@@ -277,7 +277,7 @@ var VMImages = map[echo.VMDistro]string{
 }
 
 // ArmVMImages is the subset of images that work on arm64. These fail because Istio's arm64 build has a higher GLIBC requirement
-var ArmVMImages = map[echo.VMDistro]string{
+var _ = map[echo.VMDistro]string{
 	echo.UbuntuNoble: "app_sidecar_ubuntu_noble",
 	echo.Debian12:    "app_sidecar_debian_12",
 	echo.Rockylinux9: "app_sidecar_rockylinux_9",
@@ -746,6 +746,7 @@ func customizeVMEnvironment(ctx resource.Context, cfg echo.Config, clusterEnv st
 
 func canCreateIstioProxy(version resource.IstioVersion) bool {
 	// if no revision specified create the istio-proxy
+
 	if string(version) == "" {
 		return true
 	}

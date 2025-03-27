@@ -5,49 +5,49 @@ typedConfig:
     policies:
       ns[foo]-policy[httpbin]-rule[0]:
         permissions:
-        - andRules:
-            rules:
-            - any: true
+          - andRules:
+              rules:
+                - any: true
         principals:
-        - andIds:
-            ids:
-            - orIds:
-                ids:
-                - authenticated:
-                    principalName:
-                      exact: spiffe://td1/ns/rule[0]/sa/from[0]-principal[0]
-                - authenticated:
-                    principalName:
-                      exact: spiffe://cluster.local/ns/rule[0]/sa/from[0]-principal[0]
-                - authenticated:
-                    principalName:
-                      exact: spiffe://some-td/ns/rule[0]/sa/from[0]-principal[0]
-        - andIds:
-            ids:
-            - orIds:
-                ids:
-                - authenticated:
-                    principalName:
-                      exact: spiffe://td1/ns/rule[0]/sa/from[1]-principal[0]
-                - authenticated:
-                    principalName:
-                      exact: spiffe://cluster.local/ns/rule[0]/sa/from[1]-principal[0]
-                - authenticated:
-                    principalName:
-                      exact: spiffe://some-td/ns/rule[0]/sa/from[1]-principal[0]
-                - authenticated:
-                    principalName:
-                      exact: spiffe://td1/ns/rule[0]/sa/from[1]-principal[1]
-                - authenticated:
-                    principalName:
-                      exact: spiffe://cluster.local/ns/rule[0]/sa/from[1]-principal[1]
-                - authenticated:
-                    principalName:
-                      exact: spiffe://some-td/ns/rule[0]/sa/from[1]-principal[1]
-            - orIds:
-                ids:
-                - authenticated:
-                    principalName:
-                      safeRegex:
-                        regex: .*/ns/rule[0]-from[1]-ns[0]/.*
+          - andIds:
+              ids:
+                - orIds:
+                    ids:
+                      - authenticated:
+                          principalName:
+                            exact: spiffe://td1/ns/rule[0]/sa/from[0]-principal[0]
+                      - authenticated:
+                          principalName:
+                            exact: spiffe://cluster.local/ns/rule[0]/sa/from[0]-principal[0]
+                      - authenticated:
+                          principalName:
+                            exact: spiffe://some-td/ns/rule[0]/sa/from[0]-principal[0]
+          - andIds:
+              ids:
+                - orIds:
+                    ids:
+                      - authenticated:
+                          principalName:
+                            exact: spiffe://td1/ns/rule[0]/sa/from[1]-principal[0]
+                      - authenticated:
+                          principalName:
+                            exact: spiffe://cluster.local/ns/rule[0]/sa/from[1]-principal[0]
+                      - authenticated:
+                          principalName:
+                            exact: spiffe://some-td/ns/rule[0]/sa/from[1]-principal[0]
+                      - authenticated:
+                          principalName:
+                            exact: spiffe://td1/ns/rule[0]/sa/from[1]-principal[1]
+                      - authenticated:
+                          principalName:
+                            exact: spiffe://cluster.local/ns/rule[0]/sa/from[1]-principal[1]
+                      - authenticated:
+                          principalName:
+                            exact: spiffe://some-td/ns/rule[0]/sa/from[1]-principal[1]
+                - orIds:
+                    ids:
+                      - authenticated:
+                          principalName:
+                            safeRegex:
+                              regex: .*/ns/rule[0]-from[1]-ns[0]/.*
   shadowRulesStatPrefix: istio_dry_run_allow_

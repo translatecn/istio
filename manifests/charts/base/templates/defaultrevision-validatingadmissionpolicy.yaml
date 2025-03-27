@@ -13,14 +13,14 @@ spec:
   failurePolicy: Fail
   matchConstraints:
     resourceRules:
-    - apiGroups:
-        - security.istio.io
-        - networking.istio.io
-        - telemetry.istio.io
-        - extensions.istio.io
-      apiVersions: ["*"]
-      operations:  ["CREATE", "UPDATE"]
-      resources:   ["*"]
+      - apiGroups:
+          - security.istio.io
+          - networking.istio.io
+          - telemetry.istio.io
+          - extensions.istio.io
+        apiVersions: [ "*" ]
+        operations: [ "CREATE", "UPDATE" ]
+        resources: [ "*" ]
   variables:
     - name: isEnvoyFilter
       expression: "object.kind == 'EnvoyFilter'"
@@ -49,5 +49,5 @@ metadata:
   name: "stable-channel-default-policy-binding.istio.io"
 spec:
   policyName: "stable-channel-default-policy.istio.io"
-  validationActions: [Deny]
+  validationActions: [ Deny ]
 {{- end }}

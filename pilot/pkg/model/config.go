@@ -188,8 +188,6 @@ type EventHandler = func(config.Config, config.Config, Event)
 type ConfigStoreController interface {
 	ConfigStore
 
-	// RegisterEventHandler adds a handler to receive config update events for a
-	// configuration type
 	RegisterEventHandler(kind config.GroupVersionKind, handler EventHandler)
 
 	// Run until a signal is received.
@@ -244,10 +242,11 @@ func ResolveShortnameToFQDN(hostname string, meta config.Meta) host.Name {
 // resolveGatewayName uses metadata information to resolve a reference
 // to shortname of the gateway to FQDN
 func resolveGatewayName(gwname string, meta config.Meta) string {
-	out := gwname
-
 	// New way of binding to a gateway in remote namespace
 	// is ns/name. Old way is either FQDN or short name
+
+	out := gwname
+
 	if !strings.Contains(gwname, "/") {
 		if !strings.Contains(gwname, ".") {
 			// we have a short name. Resolve to a gateway in same namespace
@@ -271,6 +270,23 @@ func resolveGatewayName(gwname string, meta config.Meta) string {
 		}
 	}
 	return out
+}
+
+// sortConfigByCreationTime sorts the list of config objects in ascending order by their creation time (if available)
+func sortConfigByCreationTime(configs []config.Config) []config.Config {
+	sort.Slice(configs, func(i, j int) bool {
+		if r := configs[i].CreationTimestamp.Compare(configs[j].CreationTimestamp); r != 0 {
+			return r == -1 // -1 means i is less than j, so return true
+		}
+		// If creation time is the same, then behavior is nondeterministic. In this case, we can
+		// pick an arbitrary but consistent ordering based on name and namespace, which is unique.
+		// CreationTimestamp is stored in seconds, so this is not uncommon.
+		if r := cmp.Compare(configs[i].Name, configs[j].Name); r != 0 {
+			return r == -1
+		}
+		return cmp.Compare(configs[i].Namespace, configs[j].Namespace) == -1
+	})
+	return configs
 }
 
 // MostSpecificHostMatch compares the maps of specific and wildcard hosts to the needle, and returns the longest element
@@ -313,21 +329,4 @@ func mostSpecificHostWildcardMatch[V any](needle string, wildcard map[host.Name]
 	}
 
 	return matchHost, matchValue, found
-}
-
-// sortConfigByCreationTime sorts the list of config objects in ascending order by their creation time (if available)
-func sortConfigByCreationTime(configs []config.Config) []config.Config {
-	sort.Slice(configs, func(i, j int) bool {
-		if r := configs[i].CreationTimestamp.Compare(configs[j].CreationTimestamp); r != 0 {
-			return r == -1 // -1 means i is less than j, so return true
-		}
-		// If creation time is the same, then behavior is nondeterministic. In this case, we can
-		// pick an arbitrary but consistent ordering based on name and namespace, which is unique.
-		// CreationTimestamp is stored in seconds, so this is not uncommon.
-		if r := cmp.Compare(configs[i].Name, configs[j].Name); r != 0 {
-			return r == -1
-		}
-		return cmp.Compare(configs[i].Namespace, configs[j].Namespace) == -1
-	})
-	return configs
 }

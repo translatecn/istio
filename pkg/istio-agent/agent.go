@@ -29,7 +29,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 
-	mesh "istio.io/api/mesh/v1alpha1"
+	mesh "istio.io/istio/istio.io/api/mesh/v1alpha1"
 	"istio.io/istio/pilot/cmd/pilot-agent/config"
 	"istio.io/istio/pilot/cmd/pilot-agent/status/ready"
 	"istio.io/istio/pkg/backoff"
@@ -70,11 +70,6 @@ const (
 var _ ready.Prober = &Agent{}
 
 type LifecycleEvent string
-
-const (
-	DrainLifecycleEvent LifecycleEvent = "drain"
-	ExitLifecycleEvent  LifecycleEvent = "exit"
-)
 
 type SDSService interface {
 	OnSecretUpdate(resourceName string)
@@ -550,6 +545,7 @@ func (a *Agent) initLocalDNSServer() (err error) {
 
 func (a *Agent) generateGRPCBootstrap() error {
 	// generate metadata
+
 	node, err := a.generateNodeMetadata()
 	if err != nil {
 		return fmt.Errorf("failed generating node metadata: %v", err)
@@ -589,6 +585,7 @@ func (a *Agent) isDNSServerEnabled() bool {
 	// Enable DNS capture if the proxy is a sidecar and the feature is enabled.
 	// At Gateways, we generally do not need DNS capture. But in some cases, we may want to use DNS proxy
 	// if we want Envoy to resolve multi-cluster DNS queries.
+
 	return (a.cfg.DNSCapture && a.cfg.ProxyType == model.SidecarProxy) || a.cfg.DNSAtGateway
 }
 
@@ -803,6 +800,7 @@ func getKeyCertInner(certPath string) (string, string) {
 // newSecretManager creates the SecretManager for workload secrets
 func (a *Agent) newSecretManager() (*cache.SecretManagerClient, error) {
 	// If proxy is using file mounted certs, we do not have to connect to CA.
+
 	if a.secOpts.FileMountedCerts {
 		log.Info("Workload is using file mounted certificates. Skipping connecting to CA")
 		return cache.NewSecretManagerClient(nil, a.secOpts)

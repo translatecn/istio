@@ -31,7 +31,7 @@ import (
 	"istio.io/istio/pilot/pkg/leaderelection/k8sleaderelection/k8sresourcelock"
 	"istio.io/istio/pkg/kube"
 	"istio.io/istio/pkg/log"
-	"istio.io/istio/pkg/revisions"
+	"istio.io/istio/pkg/revisions_over"
 )
 
 // Various locks used throughout the code
@@ -45,9 +45,8 @@ const (
 	// this was formally "istio-gateway-leader"; because they are a different API group we need a different
 	// election to ensure we do not only handle one or the other.
 	GatewayStatusController = "istio-gateway-status-leader"
-	// StatusController controls writing Istio status to objects
-	StatusController  = "istio-status-leader"
-	AnalyzeController = "istio-analyze-leader"
+	StatusController        = "istio-status-leader"
+	AnalyzeController       = "istio-analyze-leader"
 	// GatewayDeploymentController controls translating Kubernetes Gateway objects into various derived
 	// resources (Service, Deployment, etc).
 	// Unlike other types which use ConfigMaps, we use a Lease here. This is because:
@@ -79,7 +78,7 @@ type LeaderElection struct {
 	revision       string
 	perRevision    bool
 	remote         bool
-	defaultWatcher revisions.DefaultWatcher
+	defaultWatcher revisions_over.DefaultWatcher
 
 	// If set, will use the more modern lease lock
 	useLeaseLock bool
@@ -213,27 +212,19 @@ func LocationPrioritizedComparison(currentLeaderRevision string, l *LeaderElecti
 	return l.revision == currentLeaderRevision && !l.remote && currentLeaderRemote
 }
 
-// AddRunFunction registers a function to run when we are the leader. These will be run asynchronously.
-// To avoid running when not a leader, functions should respect the stop channel.
 func (l *LeaderElection) AddRunFunction(f func(stop <-chan struct{})) *LeaderElection {
 	l.runFns = append(l.runFns, f)
 	return l
 }
 
-// NewLeaderElection creates a leader election instance with the provided ID. This follows standard Kubernetes
-// elections, with one difference: the "default" revision will steal the lock from other revisions.
 func NewLeaderElection(namespace, name, electionID, revision string, client kube.Client) *LeaderElection {
 	return newLeaderElection(namespace, name, electionID, revision, false, false, false, client)
 }
 
-// NewLeaseLeaderElection creates a leader election instance with the provided ID. This follows standard Kubernetes
-// elections, with one difference: the "default" revision will steal the lock from other revisions.
-// The Lease object is used for maintaining the locking
 func NewLeaseLeaderElection(namespace, name, electionID, revision string, client kube.Client) *LeaderElection {
 	return newLeaderElection(namespace, name, electionID, revision, false, false, true, client)
 }
 
-// NewPerRevisionLeaderElection creates a *per revision* leader election. This means there will be one leader for each revision.
 func NewPerRevisionLeaderElection(namespace, name, electionID, revision string, client kube.Client) *LeaderElection {
 	// PerRevision is new, so always use the more modern lease lock
 	return newLeaderElection(namespace, name, electionID, revision, true, false, true, client)
@@ -244,9 +235,9 @@ func NewLeaderElectionMulticluster(namespace, name, electionID, revision string,
 }
 
 func newLeaderElection(namespace, name, electionID, revision string, perRevision bool, remote bool, leaseLock bool, client kube.Client) *LeaderElection {
-	var watcher revisions.DefaultWatcher
+	var watcher revisions_over.DefaultWatcher
 	if features.EnableLeaderElection {
-		watcher = revisions.NewDefaultWatcher(client, revision)
+		watcher = revisions_over.NewDefaultWatcher(client, revision)
 	}
 	if name == "" {
 		hn, _ := os.Hostname()

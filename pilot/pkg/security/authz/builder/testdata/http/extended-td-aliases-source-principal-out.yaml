@@ -5,33 +5,33 @@ typedConfig:
     policies:
       ns[foo]-policy[httpbin]-rule[0]:
         permissions:
-        - andRules:
-            rules:
-            - any: true
+          - andRules:
+              rules:
+                - any: true
         principals:
-        - andIds:
-            ids:
-            - orIds:
-                ids:
-                - authenticated:
-                    principalName:
-                      safeRegex:
-                        regex: .*/ns/istio-system/.*
-            - orIds:
-                ids:
-                - authenticated:
-                    principalName:
-                      safeRegex:
-                        regex: .+
-                - authenticated:
-                    principalName:
-                      safeRegex:
-                        regex: spiffe://.*/ns/foo/sa/all-td
-                - authenticated:
-                    principalName:
-                      safeRegex:
-                        regex: spiffe://.*-td/ns/foo/sa/prefix-td
-                - authenticated:
-                    principalName:
-                      exact: spiffe://some-trustdomain/ns/foo/sa/prefix-td
+          - andIds:
+              ids:
+                - orIds:
+                    ids:
+                      - authenticated:
+                          principalName:
+                            safeRegex:
+                              regex: .*/ns/istio-system/.*
+                - orIds:
+                    ids:
+                      - authenticated:
+                          principalName:
+                            safeRegex:
+                              regex: .+
+                      - authenticated:
+                          principalName:
+                            safeRegex:
+                              regex: spiffe://.*/ns/foo/sa/all-td
+                      - authenticated:
+                          principalName:
+                            safeRegex:
+                              regex: spiffe://.*-td/ns/foo/sa/prefix-td
+                      - authenticated:
+                          principalName:
+                            exact: spiffe://some-trustdomain/ns/foo/sa/prefix-td
   shadowRulesStatPrefix: istio_dry_run_allow_

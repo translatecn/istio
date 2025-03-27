@@ -4,10 +4,10 @@ metadata:
   name: otel-tracing
 spec:
   tracing:
-  - providers:
-    - name: test-otel
-    randomSamplingPercentage: 100.0
-    customTags:
-      "provider":
-        literal:
-          value: "otel"
+    - providers:
+        - name: test-otel
+      randomSamplingPercentage: 100.0
+      customTags:
+        "provider":
+          literal:
+            value: "otel"

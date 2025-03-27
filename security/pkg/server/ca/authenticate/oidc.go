@@ -21,7 +21,7 @@ import (
 
 	oidc "github.com/coreos/go-oidc/v3/oidc"
 
-	"istio.io/api/security/v1beta1"
+	"istio.io/istio/istio.io/api/security/v1beta1"
 	"istio.io/istio/pkg/config/mesh"
 	"istio.io/istio/pkg/security"
 	"istio.io/istio/pkg/spiffe"
@@ -39,36 +39,6 @@ type JwtAuthenticator struct {
 }
 
 var _ security.Authenticator = &JwtAuthenticator{}
-
-// newJwtAuthenticator is used when running istiod outside of a cluster, to validate the tokens using OIDC
-// K8S is created with --service-account-issuer, service-account-signing-key-file and service-account-api-audiences
-// which enable OIDC.
-func NewJwtAuthenticator(jwtRule *v1beta1.JWTRule, meshWatcher mesh.Watcher) (*JwtAuthenticator, error) {
-	issuer := jwtRule.GetIssuer()
-	jwksURL := jwtRule.GetJwksUri()
-	// The key of a JWT issuer may change, so the key may need to be updated.
-	// Based on https://pkg.go.dev/github.com/coreos/go-oidc/v3/oidc#NewRemoteKeySet
-	// the oidc library handles caching and cache invalidation. Thus, the verifier
-	// is only created once in the constructor.
-	var verifier *oidc.IDTokenVerifier
-	if len(jwksURL) == 0 {
-		// OIDC discovery is used if jwksURL is not set.
-		provider, err := oidc.NewProvider(context.Background(), issuer)
-		// OIDC discovery may fail, e.g. http request for the OIDC server may fail.
-		if err != nil {
-			return nil, fmt.Errorf("failed at creating an OIDC provider for %v: %v", issuer, err)
-		}
-		verifier = provider.Verifier(&oidc.Config{SkipClientIDCheck: true})
-	} else {
-		keySet := oidc.NewRemoteKeySet(context.Background(), jwksURL)
-		verifier = oidc.NewVerifier(issuer, keySet, &oidc.Config{SkipClientIDCheck: true})
-	}
-	return &JwtAuthenticator{
-		meshHolder: meshWatcher,
-		verifier:   verifier,
-		audiences:  jwtRule.Audiences,
-	}, nil
-}
 
 // Authenticate - based on the old OIDC authenticator for mesh expansion.
 func (j *JwtAuthenticator) Authenticate(authRequest security.AuthContext) (*security.Caller, error) {
@@ -146,4 +116,35 @@ type JwtPayload struct {
 
 func (j JwtAuthenticator) AuthenticatorType() string {
 	return IDTokenAuthenticatorType
+}
+
+// newJwtAuthenticator is used when running istiod outside of a cluster, to validate the tokens using OIDC
+// K8S is created with --service-account-issuer, service-account-signing-key-file and service-account-api-audiences
+// which enable OIDC.
+func NewJwtAuthenticator(jwtRule *v1beta1.JWTRule, meshWatcher mesh.Watcher) (*JwtAuthenticator, error) {
+	issuer := jwtRule.GetIssuer()
+	jwksURL := jwtRule.GetJwksUri()
+	// The key of a JWT issuer may change, so the key may need to be updated.
+	// Based on https://pkg.go.dev/github.com/coreos/go-oidc/v3/oidc#NewRemoteKeySet
+	// the oidc library handles caching and cache invalidation. Thus, the verifier
+	// is only created once in the constructor.
+	var verifier *oidc.IDTokenVerifier
+	if len(jwksURL) == 0 {
+		// OIDC discovery is used if jwksURL is not set.
+		provider, err := oidc.NewProvider(context.Background(), issuer)
+		// OIDC discovery may fail, e.g. http request for the OIDC server may fail.
+		if err != nil {
+			return nil, fmt.Errorf("failed at creating an OIDC provider for %v: %v", issuer, err)
+		}
+		verifier = provider.Verifier(&oidc.Config{SkipClientIDCheck: true})
+	} else {
+		keySet := oidc.NewRemoteKeySet(context.Background(), jwksURL)
+		verifier = oidc.NewVerifier(issuer, keySet, &oidc.Config{SkipClientIDCheck: true})
+	}
+
+	return &JwtAuthenticator{
+		meshHolder: meshWatcher,
+		verifier:   verifier,
+		audiences:  jwtRule.Audiences,
+	}, nil
 }

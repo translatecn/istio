@@ -19,7 +19,7 @@ import (
 
 	"k8s.io/apimachinery/pkg/api/errors"
 
-	"istio.io/api/meta/v1alpha1"
+	"istio.io/istio/istio.io/api/meta/v1alpha1"
 	"istio.io/istio/pilot/pkg/model"
 	"istio.io/istio/pilot/pkg/model/status"
 	"istio.io/istio/pkg/config"
@@ -55,6 +55,7 @@ func NewStore(store model.ConfigStoreController, cb StoreCallbacks) *Store {
 // based on the corresponding health check performed by istio-agent.
 func (s *Store) UpdateHealth(proxyID, entryName, entryNs string, condition *v1alpha1.IstioCondition) error {
 	// get previous status
+
 	cfg := s.store.Get(gvk.WorkloadEntry, entryName, entryNs)
 	if cfg == nil {
 		return fmt.Errorf("failed to update health status for %v: WorkloadEntry %v not found", proxyID, entryNs)

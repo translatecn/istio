@@ -14,7 +14,7 @@ spec:
     privateKeySecretRef:
       name: letsencrypt-staging
     # Enable the HTTP-01 challenge provider
-    http01: {}
+    http01: { }
 ---
 apiVersion: certmanager.k8s.io/v1alpha1
 kind: Certificate
@@ -28,10 +28,10 @@ spec:
     kind: ClusterIssuer
   commonName: bookinfo.example.com
   dnsNames:
-  - bookinfo.example.com
+    - bookinfo.example.com
   acme:
     config:
-    - http01:
-        ingressClass: none
-      domains:
-      - bookinfo.example.com
+      - http01:
+          ingressClass: none
+        domains:
+          - bookinfo.example.com

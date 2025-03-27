@@ -15,14 +15,7 @@
 package csrctrl
 
 import (
-	"fmt"
-	"os"
-	"strings"
 	"time"
-
-	"istio.io/istio/pkg/kube"
-	// +kubebuilder:scaffold:imports
-	"istio.io/istio/pkg/test/csrctrl/signer"
 )
 
 const (
@@ -36,35 +29,4 @@ const (
 type SignerRootCert struct {
 	Signer   string
 	Rootcert string
-}
-
-func RunCSRController(signerNames string, stop <-chan struct{}, clients []kube.Client) ([]SignerRootCert, error) {
-	arrSigners := strings.Split(signerNames, ",")
-	signersMap := make(map[string]*signer.Signer, len(arrSigners))
-	var rootCertSignerArr []SignerRootCert
-	for _, signerName := range arrSigners {
-		signer, err := signer.NewSigner(signerRoot, signerName, certificateDuration)
-		if err != nil {
-			return nil, fmt.Errorf("unable to start signer for %q: %v", signerName, err)
-		}
-		signersMap[signerName] = signer
-		rootCert, rErr := os.ReadFile(signer.GetRootCerts())
-		if rErr != nil {
-			return nil, fmt.Errorf("unable to read root cert for signer %q: %v", signerName, err)
-		}
-		rootCertsForSigner := SignerRootCert{
-			Signer:   signerName,
-			Rootcert: string(rootCert),
-		}
-		rootCertSignerArr = append(rootCertSignerArr, rootCertsForSigner)
-	}
-
-	for _, cl := range clients {
-		signer := NewSigner(cl, signersMap)
-		go signer.Run(stop)
-		cl.RunAndWait(stop)
-		kube.WaitForCacheSync("csr", stop, signer.HasSynced)
-	}
-
-	return rootCertSignerArr, nil
 }

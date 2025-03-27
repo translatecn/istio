@@ -5,14 +5,14 @@ metadata:
   name: destall
   namespace: testns
 spec:
-   hosts:
-   - destall.default.svc.cluster.local
-   ports:
-   - number: 81
-     name: http
-     protocol: HTTP
-   resolution: STATIC
-   endpoints:
+  hosts:
+    - destall.default.svc.cluster.local
+  ports:
+    - number: 81
+      name: http
+      protocol: HTTP
+  resolution: STATIC
+  endpoints:
     - address: 127.0.0.2
       ports:
         http: 7072
@@ -39,9 +39,9 @@ spec:
         maxRetries: 4
         http1MaxPendingRequests: 14
     outlierDetection:
-        interval: 8ms
-        baseEjectionTime: 1m
-        maxEjectionPercent: 11
+      interval: 8ms
+      baseEjectionTime: 1m
+      maxEjectionPercent: 11
     tls:
       mode: DISABLE
   subsets:

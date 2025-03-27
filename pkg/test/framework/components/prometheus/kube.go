@@ -141,10 +141,9 @@ func newKube(ctx resource.Context, cfgIn Config) (Instance, error) {
 }
 
 func (c *kubeComponent) ID() resource.ID {
-	return c.id
+	// API implements environment.DeployedPrometheus.	return c.id
 }
 
-// API implements environment.DeployedPrometheus.
 func (c *kubeComponent) API() prometheusApiV1.API {
 	return c.api[c.clusters.Default().Name()]
 }

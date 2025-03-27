@@ -63,23 +63,14 @@ func (w *FakeWatcher) InjectError(path string, err error) {
 // testing. This allows observe callers to inject events and errors per-watched
 // path. changedFunc() provides a callback notification when a new watch is added
 // or removed. Production code should use `NewWatcher()`.
-func NewFakeWatcher(changedFunc func(path string, added bool)) (NewFileWatcherFunc, *FakeWatcher) {
-	w := &FakeWatcher{
-		events:      make(map[string]chan fsnotify.Event),
-		errors:      make(map[string]chan error),
-		changedFunc: changedFunc,
-	}
-	return func() FileWatcher {
-		return w
-	}, w
-}
 
 // Add is a fake implementation of the FileWatcher interface.
 func (w *FakeWatcher) Add(path string) error {
-	w.Lock()
-
 	// w.events and w.errors are always updated togeather. We only check
 	// the first to determine existence.
+
+	w.Lock()
+
 	if _, ok := w.events[path]; ok {
 		w.Unlock()
 		return fmt.Errorf("path %v already exists", path)

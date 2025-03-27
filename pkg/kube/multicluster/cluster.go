@@ -26,7 +26,7 @@ import (
 	"istio.io/istio/pkg/config/mesh"
 	"istio.io/istio/pkg/kube"
 	"istio.io/istio/pkg/kube/kclient"
-	filter "istio.io/istio/pkg/kube/namespace"
+	filter "istio.io/istio/pkg/kube/namespace_over"
 	"istio.io/istio/pkg/log"
 )
 
@@ -63,8 +63,40 @@ func (a ACTION) String() string {
 	return "Unknown"
 }
 
-// Run starts the cluster's informers and waits for caches to sync. Once caches are synced, we mark the cluster synced.
-// This should be called after each of the handlers have registered informers, and should be run in a goroutine.
+// Stop closes the stop channel, if is safe to be called multi times.
+func (c *Cluster) Stop() {
+	select {
+	case <-c.stop:
+		return
+	default:
+		close(c.stop)
+	}
+}
+
+func (c *Cluster) HasSynced() bool {
+	// It could happen when a wrong credential provide, this cluster has no chance to run.
+	// In this case, the `initialSyncTimeout` will never be set
+	// In order not block istiod start up, check close as well.
+
+	if c.Closed() {
+		return true
+	}
+	return c.initialSync.Load() || c.initialSyncTimeout.Load()
+}
+
+func (c *Cluster) Closed() bool {
+	select {
+	case <-c.stop:
+		return true
+	default:
+		return false
+	}
+}
+
+func (c *Cluster) SyncDidTimeout() bool {
+	return !c.initialSync.Load() && c.initialSyncTimeout.Load()
+}
+
 func (c *Cluster) Run(mesh mesh.Watcher, handlers []handler, action ACTION) {
 	if features.RemoteClusterTimeout > 0 {
 		time.AfterFunc(features.RemoteClusterTimeout, func() {
@@ -80,8 +112,8 @@ func (c *Cluster) Run(mesh mesh.Watcher, handlers []handler, action ACTION) {
 	// This must be done before we build components, so they can access the filter.
 	namespaces := kclient.New[*corev1.Namespace](c.Client)
 	// This will start a namespace informer and wait for it to be ready. So we must start it in a go routine to avoid blocking.
-	filter := filter.NewDiscoveryNamespacesFilter(namespaces, mesh, c.stop)
-	kube.SetObjectFilter(c.Client, filter)
+	f := filter.NewDiscoveryNamespacesFilter(namespaces, mesh, c.stop, 2)
+	kube.SetObjectFilter(c.Client, f)
 
 	syncers := make([]ComponentConstraint, 0, len(handlers))
 	for _, h := range handlers {
@@ -104,37 +136,4 @@ func (c *Cluster) Run(mesh mesh.Watcher, handlers []handler, action ACTION) {
 	}
 
 	c.initialSync.Store(true)
-}
-
-// Stop closes the stop channel, if is safe to be called multi times.
-func (c *Cluster) Stop() {
-	select {
-	case <-c.stop:
-		return
-	default:
-		close(c.stop)
-	}
-}
-
-func (c *Cluster) HasSynced() bool {
-	// It could happen when a wrong credential provide, this cluster has no chance to run.
-	// In this case, the `initialSyncTimeout` will never be set
-	// In order not block istiod start up, check close as well.
-	if c.Closed() {
-		return true
-	}
-	return c.initialSync.Load() || c.initialSyncTimeout.Load()
-}
-
-func (c *Cluster) Closed() bool {
-	select {
-	case <-c.stop:
-		return true
-	default:
-		return false
-	}
-}
-
-func (c *Cluster) SyncDidTimeout() bool {
-	return !c.initialSync.Load() && c.initialSyncTimeout.Load()
 }

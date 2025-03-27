@@ -19,7 +19,7 @@ import (
 	listener "github.com/envoyproxy/go-control-plane/envoy/config/listener/v3"
 	discovery "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
 
-	meshconfig "istio.io/api/mesh/v1alpha1"
+	meshconfig "istio.io/istio/istio.io/api/mesh/v1alpha1"
 	"istio.io/istio/pilot/pkg/model"
 	dnsProto "istio.io/istio/pkg/dns/proto"
 )
@@ -57,13 +57,13 @@ type ConfigGeneratorImpl struct {
 	Cache model.XdsCache
 }
 
+// MeshConfigChanged is called when mesh config is changed.
+func (configgen *ConfigGeneratorImpl) MeshConfigChanged(_ *meshconfig.MeshConfig) {
+	accessLogBuilder.reset()
+}
+
 func NewConfigGenerator(cache model.XdsCache) *ConfigGeneratorImpl {
 	return &ConfigGeneratorImpl{
 		Cache: cache,
 	}
-}
-
-// MeshConfigChanged is called when mesh config is changed.
-func (configgen *ConfigGeneratorImpl) MeshConfigChanged(_ *meshconfig.MeshConfig) {
-	accessLogBuilder.reset()
 }

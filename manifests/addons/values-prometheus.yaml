@@ -25,7 +25,7 @@ server:
 
   # use dockerhub
   image:
-    repository: prom/prometheus
+    repository: registry.cn-hangzhou.aliyuncs.com/acejilam/prometheus
 
   securityContext: null
 
@@ -33,4 +33,4 @@ configmapReload:
   prometheus:
     image:
       # Use ghcr
-      repository: ghcr.io/prometheus-operator/prometheus-config-reloader
+      repository: registry.cn-hangzhou.aliyuncs.com/acejilam/prometheus-config-reloader

@@ -21,7 +21,7 @@
 
 set -e
 
-cat > client.conf <<EOF
+cat >client.conf <<EOF
 [req]
 req_extensions = v3_req
 distinguished_name = req_distinguished_name
@@ -36,7 +36,7 @@ IP.1 = 127.0.0.1
 IP.2 = ::1
 EOF
 
-cat > server.conf <<EOF
+cat >server.conf <<EOF
 [req]
 req_extensions = v3_req
 distinguished_name = req_distinguished_name
@@ -67,7 +67,7 @@ openssl genrsa -out ClientKey.pem 2048
 openssl req -new -key ClientKey.pem -out client.csr -subj "/CN=${CN_BASE}_client" -config client.conf
 openssl x509 -req -in client.csr -CA CACert.pem -CAkey CAKey.pem -CAcreateserial -out ClientCert.pem -days 100000 -extensions v3_req -extfile client.conf
 
-cat > $outfile << EOF
+cat >$outfile <<EOF
 /*
 Copyright Istio Authors
 
@@ -91,7 +91,7 @@ EOF
 	echo "// and holds raw certificates for the webhook tests."
 	echo ""
 	echo "package testcerts"
-} >> $outfile
+} >>$outfile
 
 for file in CACert ServerKey ServerCert ClientKey ClientCert; do
 	data=$(cat ${file}.pem)
@@ -99,7 +99,7 @@ for file in CACert ServerKey ServerCert ClientKey ClientCert; do
 		echo ""
 		echo "// ${file} is a test cert for dynamic admission controller."
 		echo "var $file = []byte(\`$data\`)"
-	} >> $outfile
+	} >>$outfile
 done
 
 # Clean up after we're done.

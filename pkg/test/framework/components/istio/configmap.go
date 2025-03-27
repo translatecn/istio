@@ -29,7 +29,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/yaml"
 
-	meshconfig "istio.io/api/mesh/v1alpha1"
+	meshconfig "istio.io/istio/istio.io/api/mesh/v1alpha1"
 	"istio.io/istio/pkg/kube/inject"
 	"istio.io/istio/pkg/test"
 	"istio.io/istio/pkg/test/framework/components/cluster"
@@ -55,14 +55,6 @@ type injectConfig struct {
 	configMap
 	injectConfig *inject.Config
 	values       *inject.ValuesConfig
-}
-
-func newConfigMap(ctx resource.Context, namespace string, revisions resource.RevVerMap) *configMap {
-	return &configMap{
-		ctx:       ctx,
-		namespace: namespace,
-		revisions: revisions,
-	}
 }
 
 func (ic *injectConfig) InjectConfig() (*inject.Config, error) {
@@ -101,6 +93,7 @@ func (ic *injectConfig) InjectConfig() (*inject.Config, error) {
 
 func (ic *injectConfig) UpdateInjectionConfig(t resource.Context, update func(*inject.Config) error, cleanupStrategy cleanup.Strategy) error {
 	// Invalidate the member variable. The next time it's requested, it will get a fresh value.
+
 	ic.mu.Lock()
 	ic.injectConfig = nil
 	ic.mu.Unlock()
@@ -282,6 +275,7 @@ func (mc *meshConfig) MeshConfigOrFail(t test.Failer) *meshconfig.MeshConfig {
 
 func (mc *meshConfig) UpdateMeshConfig(t resource.Context, update func(*meshconfig.MeshConfig) error, cleanupStrategy cleanup.Strategy) error {
 	// Invalidate the member variable. The next time it's requested, it will get a fresh value.
+
 	mc.mu.Lock()
 	mc.meshConfig = nil
 	mc.mu.Unlock()
@@ -452,6 +446,7 @@ func (cm *configMap) updateConfigMap(c cluster.Cluster, cfgMap *corev1.ConfigMap
 func hash(s string) string {
 	// nolint: gosec
 	// Test only code
+
 	h := md5.New()
 	_, _ = io.WriteString(h, s)
 	return hex.EncodeToString(h.Sum(nil))
@@ -459,6 +454,7 @@ func hash(s string) string {
 
 func getMeshConfigData(c cluster.Cluster, cm *corev1.ConfigMap) (string, error) {
 	// Get the MeshConfig yaml from the config map.
+
 	mcYAML, ok := cm.Data["mesh"]
 	if !ok {
 		return "", fmt.Errorf("mesh config was missing in istio config map for %s", c.Name())
@@ -472,6 +468,7 @@ func setMeshConfigData(cm *corev1.ConfigMap, mcYAML string) {
 
 func yamlToMeshConfig(mcYAML string) (*meshconfig.MeshConfig, error) {
 	// Parse the YAML.
+
 	mc := &meshconfig.MeshConfig{}
 	if err := protomarshal.ApplyYAML(mcYAML, mc); err != nil {
 		return nil, err
@@ -502,6 +499,7 @@ func injectConfigToYaml(config *inject.Config) (string, error) {
 
 func yamlToInjectConfig(configYaml string) (*inject.Config, error) {
 	// Parse the YAML.
+
 	c, err := inject.UnmarshalConfig([]byte(configYaml))
 	if err != nil {
 		return nil, err

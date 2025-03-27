@@ -17,8 +17,8 @@
 set -eu
 
 if [ -z ${CI+x} ]; then
-  # When not in CI, do nothing
-  exit 0;
+	# When not in CI, do nothing
+	exit 0
 fi
 
 echo "Fetching docker container status"

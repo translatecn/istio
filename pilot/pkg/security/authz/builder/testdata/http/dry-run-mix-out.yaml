@@ -5,30 +5,30 @@ typedConfig:
     policies:
       ns[foo]-policy[httpbin-2]-rule[0]:
         permissions:
-        - andRules:
-            rules:
-            - orRules:
-                rules:
-                - urlPath:
-                    path:
-                      exact: /another
+          - andRules:
+              rules:
+                - orRules:
+                    rules:
+                      - urlPath:
+                          path:
+                            exact: /another
         principals:
-        - andIds:
-            ids:
-            - any: true
+          - andIds:
+              ids:
+                - any: true
   shadowRules:
     policies:
       ns[foo]-policy[httpbin-1]-rule[0]:
         permissions:
-        - andRules:
-            rules:
-            - orRules:
-                rules:
-                - urlPath:
-                    path:
-                      exact: /allow
+          - andRules:
+              rules:
+                - orRules:
+                    rules:
+                      - urlPath:
+                          path:
+                            exact: /allow
         principals:
-        - andIds:
-            ids:
-            - any: true
+          - andIds:
+              ids:
+                - any: true
   shadowRulesStatPrefix: istio_dry_run_allow_

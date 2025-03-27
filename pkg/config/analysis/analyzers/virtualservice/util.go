@@ -15,7 +15,7 @@
 package virtualservice
 
 import (
-	"istio.io/api/networking/v1alpha3"
+	"istio.io/istio/istio.io/api/networking/v1alpha3"
 )
 
 // AnnotatedDestination holds metadata about a Destination object that is used for analyzing

@@ -19,7 +19,7 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 
-	"istio.io/api/annotation"
+	"istio.io/istio/istio.io/api/annotation"
 	"istio.io/istio/pkg/config"
 	"istio.io/istio/pkg/config/analysis"
 	"istio.io/istio/pkg/config/analysis/analyzers/util"
@@ -137,6 +137,7 @@ func isCNIEnabled(pod *corev1.PodSpec) bool {
 // istioAnnotation is true if the annotation is in Istio's namespace
 func istioAnnotation(ann string) bool {
 	// We document this Kubernetes annotation, we should analyze it as well
+
 	if ann == "kubernetes.io/ingress.class" {
 		return true
 	}

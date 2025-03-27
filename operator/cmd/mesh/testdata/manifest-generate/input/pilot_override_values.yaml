@@ -2,7 +2,7 @@ apiVersion: install.istio.io/v1alpha1
 kind: IstioOperator
 spec:
   profile: empty
-  hub: docker.io/istio
+  hub: registry.cn-hangzhou.aliyuncs.com/acejilam
   tag: 1.1.4
   meshConfig:
     rootNamespace: istio-control
@@ -22,4 +22,4 @@ spec:
       nodeSelector:
         node-name: test
   unvalidatedValues:
-      myCustomKey: someValue
+    myCustomKey: someValue

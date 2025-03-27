@@ -1,6 +1,7 @@
 apiVersion: install.istio.io/v1alpha1
 kind: IstioOperator
 spec:
+  hub: registry.cn-hangzhou.aliyuncs.com/acejilam
   meshConfig:
     extensionProviders:
       - name: otel
@@ -13,3 +14,4 @@ spec:
               namespace: "%ENVIRONMENT(POD_NAMESPACE)%"
               cluster: "%ENVIRONMENT(ISTIO_META_CLUSTER_ID)%"
               mesh: "%ENVIRONMENT(ISTIO_META_MESH_ID)%"
+

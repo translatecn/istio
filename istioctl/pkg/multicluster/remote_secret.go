@@ -130,7 +130,9 @@ func NewCreateRemoteSecretCommand(ctx cli.Context) *cobra.Command {
 	return c
 }
 
-func createRemoteServiceAccountSecret(kubeconfig *api.Config, clusterName, secName string) (*v1.Secret, error) { // nolint:interfacer
+func createRemoteServiceAccountSecret(kubeconfig *api.Config, clusterName, secName string) (*v1.Secret, error) {
+	// nolint:interfacer
+
 	var data bytes.Buffer
 	if err := latest.Codec.Encode(kubeconfig, &data); err != nil {
 		return nil, err
@@ -269,6 +271,7 @@ func tokenDataFromSecret(tokenSecret *v1.Secret) (ca, token []byte, err error) {
 
 func getServiceAccountSecret(client kube.CLIClient, opt RemoteSecretOptions) (*v1.Secret, error) {
 	// Create the service account if it doesn't exist.
+
 	serviceAccount, err := getOrCreateServiceAccount(client, opt)
 	if err != nil {
 		return nil, err
@@ -515,7 +518,10 @@ type (
 var _ pflag.Value = (*RemoteSecretAuthType)(nil)
 
 func (at *RemoteSecretAuthType) String() string { return string(*at) }
-func (at *RemoteSecretAuthType) Type() string   { return "RemoteSecretAuthType" }
+func (at *RemoteSecretAuthType) Type() string {
+	return "RemoteSecretAuthType"
+}
+
 func (at *RemoteSecretAuthType) Set(in string) error {
 	*at = RemoteSecretAuthType(in)
 	return nil
@@ -631,6 +637,7 @@ type Warning error
 
 func createRemoteSecret(opt RemoteSecretOptions, client kube.CLIClient) (*v1.Secret, Warning, error) {
 	// generate the clusterName if not specified
+
 	if opt.ClusterName == "" {
 		uid, err := clusterUID(client.Kube())
 		if err != nil {

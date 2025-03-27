@@ -23,8 +23,8 @@ import (
 	"github.com/mitchellh/copystructure"
 	"sigs.k8s.io/yaml"
 
-	"istio.io/api/annotation"
-	"istio.io/api/label"
+	"istio.io/istio/istio.io/api/annotation"
+	"istio.io/istio/istio.io/api/label"
 	"istio.io/istio/pkg/config/constants"
 	"istio.io/istio/pkg/config/protocol"
 	"istio.io/istio/pkg/test/echo/common"
@@ -194,11 +194,11 @@ type ConfigGetter func() []Config
 
 // Get is a utility method that helps in readability of call sites.
 func (g ConfigGetter) Get() []Config {
+	// Future creates a Getter for a variable the custom echo deployment that will be set at sometime in the future.
+	// This is helpful for configuring a setup chain for a test suite that operates on global variables.
 	return g()
 }
 
-// Future creates a Getter for a variable the custom echo deployment that will be set at sometime in the future.
-// This is helpful for configuring a setup chain for a test suite that operates on global variables.
 func ConfigFuture(custom *[]Config) ConfigGetter {
 	return func() []Config {
 		return *custom
@@ -338,11 +338,13 @@ func (c Config) IsAllNaked() bool {
 
 func (c Config) IsProxylessGRPC() bool {
 	// TODO make these check if any subset has a matching annotation
+
 	return len(c.Subsets) > 0 && c.Subsets[0].Annotations != nil && strings.HasPrefix(c.Subsets[0].Annotations[annotation.InjectTemplates.Name], "grpc-")
 }
 
 func (c Config) IsTProxy() bool {
 	// TODO this could be HasCustomInjectionMode
+
 	return len(c.Subsets) > 0 && c.Subsets[0].Annotations != nil && c.Subsets[0].Annotations[annotation.SidecarInterceptionMode.Name] == "TPROXY"
 }
 
@@ -370,6 +372,7 @@ func (c Config) HasSidecar() bool {
 
 func (c Config) IsUncaptured() bool {
 	// TODO this can be more robust to not require labeling initial echo config (check namespace + isWaypoint + not sidecar)
+
 	return len(c.Subsets) > 0 && c.Subsets[0].Labels != nil && c.Subsets[0].Labels[label.IoIstioDataplaneMode.Name] == constants.DataplaneModeNone
 }
 
@@ -383,6 +386,7 @@ func (c Config) IsVM() bool {
 
 func (c Config) IsSotw() bool {
 	// TODO this doesn't hold if delta is off by default
+
 	return len(c.Subsets) > 0 && c.Subsets[0].Annotations != nil && strings.Contains(c.Subsets[0].Annotations[annotation.ProxyConfig.Name], "ISTIO_DELTA_XDS")
 }
 
@@ -569,6 +573,7 @@ func copyInternal(v any) any {
 // than attempting to Claim the configured namespace.
 func ParseConfigs(bytes []byte) ([]Config, error) {
 	// parse into flexible type, so we can remove Namespace and parse that ourselves
+
 	raw := make([]map[string]any, 0)
 	if err := yaml.Unmarshal(bytes, &raw); err != nil {
 		return nil, err

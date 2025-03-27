@@ -71,17 +71,6 @@ func (w *WrappedStatus) Unwrap() config.Status {
 	return w.Status
 }
 
-var EmptyCondition = metav1.Condition{}
-
-func GetCondition(conditions []metav1.Condition, condition string) metav1.Condition {
-	for _, cond := range conditions {
-		if cond.Type == condition {
-			return cond
-		}
-	}
-	return EmptyCondition
-}
-
 // UpdateConditionIfChanged updates a condition if it has been changed.
 func UpdateConditionIfChanged(conditions []metav1.Condition, condition metav1.Condition) []metav1.Condition {
 	ret := slices.Clone(conditions)

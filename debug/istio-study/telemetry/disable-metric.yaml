@@ -1,0 +1,14 @@
+apiVersion: telemetry.istio.io/v1alpha1
+kind: Telemetry
+metadata:
+  name: remove-request-count
+  namespace: istio-system
+spec:
+  metrics:
+    - providers:
+        - name: prometheus
+      overrides:
+        - disabled: true
+          match:
+            mode: CLIENT_AND_SERVER
+            metric: REQUEST_COUNT

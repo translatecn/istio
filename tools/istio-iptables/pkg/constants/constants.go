@@ -121,24 +121,11 @@ const (
 //
 // Use viper to resolve the value of the environment variable.
 var (
-	HostIPv4LoopbackCidr = env.Register("ISTIO_OUTBOUND_IPV4_LOOPBACK_CIDR", "127.0.0.1/32",
-		`IPv4 CIDR range used to identify outbound traffic on loopback interface intended for application container`)
-
-	OwnerGroupsInclude = env.Register("ISTIO_OUTBOUND_OWNER_GROUPS", "*",
-		`Comma separated list of groups whose outgoing traffic is to be redirected to Envoy.
-A group can be specified either by name or by a numeric GID.
-The wildcard character "*" can be used to configure redirection of traffic from all groups.`)
-
-	OwnerGroupsExclude = env.Register("ISTIO_OUTBOUND_OWNER_GROUPS_EXCLUDE", "",
-		`Comma separated list of groups whose outgoing traffic is to be excluded from redirection to Envoy.
-A group can be specified either by name or by a numeric GID.
-Only applies when traffic from all groups (i.e. "*") is being redirected to Envoy.`)
-
-	IstioInboundInterceptionMode = env.Register("INBOUND_INTERCEPTION_MODE", "",
-		`The mode used to redirect inbound connections to Envoy, either "REDIRECT" or "TPROXY"`)
-
-	IstioInboundTproxyMark = env.Register("INBOUND_TPROXY_MARK", "",
-		``)
+	HostIPv4LoopbackCidr         = env.Register("ISTIO_OUTBOUND_IPV4_LOOPBACK_CIDR", "127.0.0.1/32", `IPv4 CIDR范围，用于标识用于应用容器的 loopback 接口的出接口流量`)
+	OwnerGroupsInclude           = env.Register("ISTIO_OUTBOUND_OWNER_GROUPS", "*", `以逗号分隔的组列表，其出站流量将被重定向到Envoy。可以通过名称或数字GID指定组。可以使用通配符“*”配置所有组的流量重定向。`)
+	OwnerGroupsExclude           = env.Register("ISTIO_OUTBOUND_OWNER_GROUPS_EXCLUDE", "", `用逗号分隔的组列表，这些组的出站流量不被重定向到Envoy。可以通过名称或数字GID指定组。仅适用于所有组的流量(即“*”)被重定向到Envoy。`)
+	IstioInboundInterceptionMode = env.Register("INBOUND_INTERCEPTION_MODE", "", `用于将入站连接重定向到Envoy的模式，“redirect”或“TPROXY”。`)
+	IstioInboundTproxyMark       = env.Register("INBOUND_TPROXY_MARK", "", ``)
 )
 
 const (
@@ -163,8 +150,7 @@ const (
 )
 
 const (
-	ValidationContainerName = "istio-validation"
-	ValidationErrorCode     = 126
+	ValidationErrorCode = 126
 )
 
 // DNS ports

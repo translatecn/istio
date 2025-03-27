@@ -31,7 +31,7 @@ import (
 	"google.golang.org/protobuf/types/known/anypb"
 	"google.golang.org/protobuf/types/known/durationpb"
 
-	mesh "istio.io/api/mesh/v1alpha1"
+	mesh "istio.io/istio/istio.io/api/mesh/v1alpha1"
 	credscontroller "istio.io/istio/pilot/pkg/credentials"
 	"istio.io/istio/pilot/pkg/features"
 	"istio.io/istio/pilot/pkg/model"
@@ -171,6 +171,7 @@ func (s *SecretGen) Generate(proxy *model.Proxy, w *model.WatchedResource, req *
 
 func (s *SecretGen) generate(sr SecretResource, configClusterSecrets, proxyClusterSecrets credscontroller.Controller, proxy *model.Proxy) *discovery.Resource {
 	// Fetch the appropriate cluster's secret, based on the credential type
+
 	var secretController credscontroller.Controller
 	switch sr.ResourceType {
 	case credentials.KubernetesGatewaySecretType:
@@ -463,6 +464,7 @@ func NewSecretGen(sc credscontroller.MulticlusterController, cache model.XdsCach
 ) *SecretGen {
 	// TODO: Currently we only have a single credentials controller (Kubernetes). In the future, we will need a mapping
 	// of resource type to secret controller (ie kubernetes:// -> KubernetesController, vault:// -> VaultController)
+
 	return &SecretGen{
 		secrets:       sc,
 		cache:         cache,

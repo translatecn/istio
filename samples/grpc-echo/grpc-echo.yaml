@@ -10,15 +10,15 @@ spec:
     app: echo
   type: ClusterIP
   ports:
-  - name: http
-    port: 80
-    targetPort: 18080
-  - name: grpc
-    port: 7070
-    targetPort: 17070
-  - name: tcp
-    port: 9090
-    targetPort: 19090
+    - name: http
+      port: 80
+      targetPort: 18080
+    - name: grpc
+      port: 7070
+      targetPort: 17070
+    - name: tcp
+      port: 9090
+      targetPort: 19090
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -42,30 +42,30 @@ spec:
     spec:
       containers:
         - args:
-          - --metrics=15014
-          - --port
-          - "18080"
-          - --tcp
-          - "19090"
-          - --xds-grpc-server=17070
-          - --grpc
-          - "17070"
-          - --grpc
-          - "17171"
-          - --port
-          - "3333"
-          - --port
-          - "8080"
-          - --version
-          - v1
-          - --crt=/cert.crt
-          - --key=/cert.key
+            - --metrics=15014
+            - --port
+            - "18080"
+            - --tcp
+            - "19090"
+            - --xds-grpc-server=17070
+            - --grpc
+            - "17070"
+            - --grpc
+            - "17171"
+            - --port
+            - "3333"
+            - --port
+            - "8080"
+            - --version
+            - v1
+            - --crt=/cert.crt
+            - --key=/cert.key
           env:
-          - name: INSTANCE_IP
-            valueFrom:
-              fieldRef:
-                apiVersion: v1
-                fieldPath: status.podIP
+            - name: INSTANCE_IP
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: status.podIP
           image: gcr.io/istio-testing/app:latest
           imagePullPolicy: Always
           livenessProbe:
@@ -78,15 +78,15 @@ spec:
             timeoutSeconds: 1
           name: app
           ports:
-          - containerPort: 17070
-            protocol: TCP
-          - containerPort: 17171
-            protocol: TCP
-          - containerPort: 8080
-            protocol: TCP
-          - containerPort: 3333
-            name: tcp-health-port
-            protocol: TCP
+            - containerPort: 17070
+              protocol: TCP
+            - containerPort: 17171
+              protocol: TCP
+            - containerPort: 8080
+              protocol: TCP
+            - containerPort: 3333
+              name: tcp-health-port
+              protocol: TCP
           readinessProbe:
             failureThreshold: 10
             httpGet:
@@ -127,30 +127,30 @@ spec:
     spec:
       containers:
         - args:
-          - --metrics=15014
-          - --xds-grpc-server=17070
-          - --port
-          - "18080"
-          - --tcp
-          - "19090"
-          - --grpc
-          - "17070"
-          - --grpc
-          - "17171"
-          - --port
-          - "3333"
-          - --port
-          - "8080"
-          - --version
-          - v2
-          - --crt=/cert.crt
-          - --key=/cert.key
+            - --metrics=15014
+            - --xds-grpc-server=17070
+            - --port
+            - "18080"
+            - --tcp
+            - "19090"
+            - --grpc
+            - "17070"
+            - --grpc
+            - "17171"
+            - --port
+            - "3333"
+            - --port
+            - "8080"
+            - --version
+            - v2
+            - --crt=/cert.crt
+            - --key=/cert.key
           env:
-          - name: INSTANCE_IP
-            valueFrom:
-              fieldRef:
-                apiVersion: v1
-                fieldPath: status.podIP
+            - name: INSTANCE_IP
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: status.podIP
           image: gcr.io/istio-testing/app:latest
           imagePullPolicy: Always
           livenessProbe:
@@ -163,15 +163,15 @@ spec:
             timeoutSeconds: 1
           name: app
           ports:
-          - containerPort: 17070
-            protocol: TCP
-          - containerPort: 17171
-            protocol: TCP
-          - containerPort: 8080
-            protocol: TCP
-          - containerPort: 3333
-            name: tcp-health-port
-            protocol: TCP
+            - containerPort: 17070
+              protocol: TCP
+            - containerPort: 17171
+              protocol: TCP
+            - containerPort: 8080
+              protocol: TCP
+            - containerPort: 3333
+              name: tcp-health-port
+              protocol: TCP
           readinessProbe:
             failureThreshold: 10
             httpGet:

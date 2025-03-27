@@ -34,9 +34,6 @@ func Fatalf(format string, args ...any) {
 }
 
 // FatalEnabled returns whether output of messages using this scope is currently enabled for fatal-level output.
-func FatalEnabled() bool {
-	return defaultScope.FatalEnabled()
-}
 
 // Error outputs a message at error level.
 func Error(fields any) {
@@ -49,9 +46,6 @@ func Errorf(format string, args ...any) {
 }
 
 // ErrorEnabled returns whether output of messages using this scope is currently enabled for error-level output.
-func ErrorEnabled() bool {
-	return defaultScope.ErrorEnabled()
-}
 
 // Warn outputs a message at warn level.
 func Warn(fields any) {
@@ -64,9 +58,6 @@ func Warnf(format string, args ...any) {
 }
 
 // WarnEnabled returns whether output of messages using this scope is currently enabled for warn-level output.
-func WarnEnabled() bool {
-	return defaultScope.WarnEnabled()
-}
 
 // Info outputs a message at info level.
 func Info(fields any) {
@@ -79,9 +70,6 @@ func Infof(format string, args ...any) {
 }
 
 // InfoEnabled returns whether output of messages using this scope is currently enabled for info-level output.
-func InfoEnabled() bool {
-	return defaultScope.InfoEnabled()
-}
 
 // Debug outputs a message at debug level.
 func Debug(fields any) {

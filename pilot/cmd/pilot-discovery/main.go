@@ -21,6 +21,11 @@ import (
 	"istio.io/istio/pkg/log"
 )
 
+func init() {
+	// discovery.Args()
+
+}
+
 func main() {
 	log.EnableKlogWithCobra()
 	rootCmd := app.NewRootCommand()

@@ -38,6 +38,7 @@ var (
 
 func addFlags(cmd *cobra.Command, args *config2.BugReportConfig) {
 	// k8s client config
+
 	cmd.PersistentFlags().StringVarP(&args.KubeConfigPath, "kubeconfig", "c", "",
 		"Path to kube config.")
 	cmd.PersistentFlags().StringVar(&args.Context, "context", "",

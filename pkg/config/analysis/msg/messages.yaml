@@ -324,7 +324,7 @@ messages:
       - name: ports
         type: "[]int32"
 
-# https://github.com/envoyproxy/envoy/issues/6767
+  # https://github.com/envoyproxy/envoy/issues/6767
   - name: "GatewayDuplicateCertificate"
     code: IST0138
     level: Warning
@@ -489,10 +489,10 @@ messages:
     description: "The Gateway API CRD version is not supported"
     template: "The Gateway API CRD version %v is lower than the minimum version: %v"
     args:
-    - name: version
-      type: string
-    - name: minimumVersion
-      type: string
+      - name: version
+        type: string
+      - name: minimumVersion
+        type: string
 
   - name: "InvalidTelemetryProvider"
     code: IST0157
@@ -500,10 +500,10 @@ messages:
     description: "The Telemetry with empty providers will be ignored"
     template: "The Telemetry %v in namespace %q with empty providers will be ignored."
     args:
-    - name: name
-      type: string
-    - name: namespace
-      type: string
+      - name: name
+        type: string
+      - name: namespace
+        type: string
 
   - name: "PodsIstioProxyImageMismatchInNamespace"
     code: IST0158
@@ -649,11 +649,11 @@ messages:
     description: "The services live in different clusters under multi-cluster deployment model are inconsistent"
     template: "The service %v in namespace %q is inconsistent across clusters %q, which can lead to undefined behaviors. The inconsistent behaviors are: %v."
     args:
-    - name: serviceName
-      type: string
-    - name: namespace
-      type: string
-    - name: clusters
-      type: "[]string"
-    - name: error
-      type: string
+      - name: serviceName
+        type: string
+      - name: namespace
+        type: string
+      - name: clusters
+        type: "[]string"
+      - name: error
+        type: string

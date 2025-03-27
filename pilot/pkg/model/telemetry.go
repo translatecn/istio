@@ -29,9 +29,9 @@ import (
 	wrappers "google.golang.org/protobuf/types/known/wrapperspb"
 	"k8s.io/apimachinery/pkg/types"
 
-	"istio.io/api/envoy/extensions/stats"
-	meshconfig "istio.io/api/mesh/v1alpha1"
-	tpb "istio.io/api/telemetry/v1alpha1"
+	"istio.io/istio/istio.io/api/envoy/extensions/stats"
+	meshconfig "istio.io/istio/istio.io/api/mesh/v1alpha1"
+	tpb "istio.io/istio/istio.io/api/telemetry/v1alpha1"
 	"istio.io/istio/pilot/pkg/features"
 	"istio.io/istio/pilot/pkg/networking"
 	"istio.io/istio/pilot/pkg/util/protoconv"
@@ -114,7 +114,7 @@ func getTelemetries(env *Environment) *Telemetries {
 		computedLoggingConfig:  map[loggingKey][]LoggingConfig{},
 	}
 
-	fromEnv := env.List(gvk.Telemetry, NamespaceAll)
+	fromEnv := env.ConfigStore.List(gvk.Telemetry, NamespaceAll)
 	sortConfigByCreationTime(fromEnv)
 	for _, config := range fromEnv {
 		telemetry := Telemetry{
@@ -682,6 +682,7 @@ func (t *Telemetries) fetchProvider(m string) *meshconfig.MeshConfig_ExtensionPr
 
 func (t *Telemetries) Debug(proxy *Proxy) any {
 	// TODO we could use service targets + ambient index to include service-attached here
+
 	at := t.applicableTelemetries(proxy, nil)
 	return at
 }
@@ -910,11 +911,6 @@ func getMatches(match *tpb.MetricSelector) []string {
 		return allMetrics
 	}
 }
-
-// telemetryFilterHandled contains the number of providers we handle below.
-// This is to ensure this stays in sync as new handlers are added
-// STOP. DO NOT UPDATE THIS WITHOUT UPDATING buildHTTPTelemetryFilter and buildTCPTelemetryFilter.
-const telemetryFilterHandled = 14
 
 func buildHTTPTelemetryFilter(class networking.ListenerClass, metricsCfg []telemetryFilterConfig) []*hcm.HttpFilter {
 	res := make([]*hcm.HttpFilter, 0, len(metricsCfg))

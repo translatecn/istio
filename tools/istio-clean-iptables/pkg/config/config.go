@@ -84,6 +84,7 @@ var envoyUserVar = env.Register(constants.EnvoyUser, "istio-proxy", "Envoy proxy
 
 func (c *Config) FillConfigFromEnvironment() {
 	// Fill in env-var only options
+
 	c.OwnerGroupsInclude = constants.OwnerGroupsInclude.Get()
 	c.OwnerGroupsExclude = constants.OwnerGroupsExclude.Get()
 	c.InboundInterceptionMode = constants.IstioInboundInterceptionMode.Get()

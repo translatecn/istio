@@ -37,8 +37,8 @@ import (
 	"google.golang.org/protobuf/types/known/structpb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
 
-	meshconfig "istio.io/api/mesh/v1alpha1"
-	networking "istio.io/api/networking/v1alpha3"
+	meshconfig "istio.io/istio/istio.io/api/mesh/v1alpha1"
+	networking "istio.io/istio/istio.io/api/networking/v1alpha3"
 	"istio.io/istio/pilot/pkg/features"
 	"istio.io/istio/pilot/pkg/model"
 	istionetworking "istio.io/istio/pilot/pkg/networking"
@@ -51,7 +51,6 @@ import (
 	pm "istio.io/istio/pkg/model"
 	"istio.io/istio/pkg/proto/merge"
 	"istio.io/istio/pkg/util/strcase"
-	"istio.io/istio/pkg/wellknown"
 )
 
 const (
@@ -86,10 +85,6 @@ const (
 	// Envoy Stateful Session Filter
 	// TODO: Move to well known.
 	StatefulSessionFilter = "envoy.filters.http.stateful_session"
-
-	// AlpnOverrideMetadataKey is the key under which metadata is added
-	// to indicate whether Istio rewrite the ALPN headers
-	AlpnOverrideMetadataKey = "alpn_override"
 )
 
 // ALPNH2Only advertises that Proxy is going to use HTTP/2 when talking to the cluster.
@@ -274,12 +269,6 @@ func GetFailoverPriorityLabels(proxyLabels map[string]string, priorities []strin
 }
 
 // IsLocalityEmpty checks if a locality is empty (checking region is good enough, based on how its initialized)
-func IsLocalityEmpty(locality *core.Locality) bool {
-	if locality == nil || (len(locality.GetRegion()) == 0) {
-		return true
-	}
-	return false
-}
 
 func LocalityMatch(proxyLocality *core.Locality, ruleLocality string) bool {
 	ruleRegion, ruleZone, ruleSubzone := label.SplitLocalityLabel(ruleLocality)
@@ -417,19 +406,12 @@ func AddALPNOverrideToMetadata(metadata *core.Metadata, tlsMode networking.Clien
 }
 
 // IsHTTPFilterChain returns true if the filter chain contains a HTTP connection manager filter
-func IsHTTPFilterChain(filterChain *listener.FilterChain) bool {
-	for _, f := range filterChain.Filters {
-		if f.Name == wellknown.HTTPConnectionManager {
-			return true
-		}
-	}
-	return false
-}
 
 // MergeAnyWithAny merges a given any typed message into the given Any typed message by dynamically inferring the
 // type of Any
 func MergeAnyWithAny(dst *anypb.Any, src *anypb.Any) (*anypb.Any, error) {
 	// Assuming that Pilot is compiled with this type [which should always be the case]
+
 	var err error
 
 	// get an object of type used by this message
@@ -562,37 +544,6 @@ func ConvertToEnvoyMatch(in *networking.StringMatch) *matcher.StringMatcher {
 		}
 	}
 	return nil
-}
-
-func CidrRangeSliceEqual(a, b []*core.CidrRange) bool {
-	if len(a) != len(b) {
-		return false
-	}
-
-	for i := range a {
-		netA, err := toMaskedPrefix(a[i])
-		if err != nil {
-			return false
-		}
-		netB, err := toMaskedPrefix(b[i])
-		if err != nil {
-			return false
-		}
-		if netA.Addr().String() != netB.Addr().String() {
-			return false
-		}
-	}
-
-	return true
-}
-
-func toMaskedPrefix(c *core.CidrRange) (netip.Prefix, error) {
-	ipp, err := netip.ParsePrefix(c.AddressPrefix + "/" + strconv.Itoa(int(c.PrefixLen.GetValue())))
-	if err != nil {
-		log.Errorf("failed to parse CidrRange %v as IPNet: %v", c, err)
-	}
-
-	return ipp.Masked(), err
 }
 
 // meshconfig ForwardClientCertDetails and the Envoy config enum are off by 1
@@ -815,6 +766,7 @@ func GetPortLevelTrafficPolicy(policy *networking.TrafficPolicy, port *model.Por
 // MergeSubsetTrafficPolicy merges the destination and subset level traffic policy for the given port.
 func MergeSubsetTrafficPolicy(original, subsetPolicy *networking.TrafficPolicy, port *model.Port) *networking.TrafficPolicy {
 	// First get DR port level traffic policy
+
 	original, _ = GetPortLevelTrafficPolicy(original, port)
 	if subsetPolicy == nil {
 		return original

@@ -21,13 +21,10 @@ import (
 
 	"github.com/hashicorp/go-multierror"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 
 	istioKube "istio.io/istio/pkg/kube"
-	"istio.io/istio/pkg/slices"
-	"istio.io/istio/pkg/test"
 	"istio.io/istio/pkg/test/scopes"
 	"istio.io/istio/pkg/test/util/retry"
 )
@@ -75,18 +72,6 @@ func NewSinglePodFetch(a istioKube.CLIClient, namespace string, selectors ...str
 
 // NewPodMustFetch creates a new PodFetchFunction that fetches all pods matching the namespace and label selectors.
 // If no pods are found, an error is returned
-func NewPodMustFetch(a istioKube.CLIClient, namespace string, selectors ...string) PodFetchFunc {
-	return func() ([]corev1.Pod, error) {
-		pods, err := a.PodsForSelector(context.TODO(), namespace, selectors...)
-		if err != nil {
-			return nil, err
-		}
-		if len(pods.Items) == 0 {
-			return nil, fmt.Errorf("no pods found for %v", selectors)
-		}
-		return pods.Items, nil
-	}
-}
 
 // CheckPodsAreReady checks whether the pods that are selected by the given function is in ready state or not.
 func CheckPodsAreReady(fetchFunc PodFetchFunc) ([]corev1.Pod, error) {
@@ -233,32 +218,8 @@ func WaitForSecretToExist(a kubernetes.Interface, namespace, name string, waitTi
 }
 
 // WaitForSecretToExistOrFail calls WaitForSecretToExist and fails the given test.Failer if an error occurs.
-func WaitForSecretToExistOrFail(t test.Failer, a kubernetes.Interface, namespace, name string,
-	waitTime time.Duration,
-) *corev1.Secret {
-	t.Helper()
-	s, err := WaitForSecretToExist(a, namespace, name, waitTime)
-	if err != nil {
-		t.Fatal(err)
-	}
-	return s
-}
 
 // WaitForNamespaceDeletion waits until a namespace is deleted.
-func WaitForNamespaceDeletion(a kubernetes.Interface, ns string, opts ...retry.Option) error {
-	return retry.UntilSuccess(func() error {
-		_, err := a.CoreV1().Namespaces().Get(context.TODO(), ns, metav1.GetOptions{})
-		if err == nil {
-			return fmt.Errorf("namespace %v still exists", ns)
-		}
-
-		if errors.IsNotFound(err) {
-			return nil
-		}
-
-		return err
-	}, newRetryOptions(opts...)...)
-}
 
 // NamespaceExists returns true if the given namespace exists.
 func NamespaceExists(a kubernetes.Interface, ns string) bool {
@@ -282,45 +243,5 @@ func newRetryOptions(opts ...retry.Option) []retry.Option {
 }
 
 // MutatingWebhookConfigurationsExists returns true if all the given mutating webhook configs exist.
-func MutatingWebhookConfigurationsExists(a kubernetes.Interface, names []string) bool {
-	cfgs, err := a.AdmissionregistrationV1().MutatingWebhookConfigurations().List(context.TODO(), metav1.ListOptions{})
-	if err != nil {
-		return false
-	}
-
-	var existing []string
-	for _, cfg := range cfgs.Items {
-		existing = append(existing, cfg.Name)
-	}
-
-	return checkAllNamesExist(names, existing)
-}
 
 // ValidatingWebhookConfigurationsExists returns true if all the given validating webhook configs exist.
-func ValidatingWebhookConfigurationsExists(a kubernetes.Interface, names []string) bool {
-	cfgs, err := a.AdmissionregistrationV1().ValidatingWebhookConfigurations().List(context.TODO(), metav1.ListOptions{})
-	if err != nil {
-		return false
-	}
-
-	var existing []string
-	for _, cfg := range cfgs.Items {
-		existing = append(existing, cfg.Name)
-	}
-
-	return checkAllNamesExist(names, existing)
-}
-
-func checkAllNamesExist(names []string, haystack []string) bool {
-	if len(haystack) < len(names) {
-		return false
-	}
-
-	for _, name := range names {
-		if !slices.Contains(haystack, name) {
-			return false
-		}
-	}
-
-	return true
-}

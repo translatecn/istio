@@ -22,7 +22,7 @@ import (
 	core_v1 "k8s.io/api/core/v1"
 	klabels "k8s.io/apimachinery/pkg/labels"
 
-	"istio.io/api/label"
+	"istio.io/istio/istio.io/api/label"
 	"istio.io/istio/pkg/config"
 	"istio.io/istio/pkg/config/analysis"
 	"istio.io/istio/pkg/config/analysis/analyzers/util"
@@ -78,6 +78,7 @@ func isWaypointDeployment(r *resource.Instance) bool {
 // analyzeDeploymentPortProtocol analyzes the specific service mesh deployment
 func (s *ServiceAssociationAnalyzer) analyzeDeploymentPortProtocol(r *resource.Instance, c analysis.Context) {
 	// Find matching services with resulting pod from deployment
+
 	matchingSvcs := s.findMatchingServices(r, c)
 
 	// Generate a port map from the matching services.
@@ -111,6 +112,7 @@ func (s *ServiceAssociationAnalyzer) analyzeDeploymentPortProtocol(r *resource.I
 // analyzeDeploymentPortProtocol analyzes the targetPorts conflicting
 func (s *ServiceAssociationAnalyzer) analyzeDeploymentTargetPorts(r *resource.Instance, c analysis.Context) {
 	// Find matching services with resulting pod from deployment
+
 	matchingSvcs := s.findMatchingServices(r, c)
 
 	tpm := serviceTargetPortsMap(matchingSvcs)

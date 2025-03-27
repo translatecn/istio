@@ -46,7 +46,7 @@ kind: Config
 metadata:
   name: istiod
 requires:
-  - configs: [istio-base]
+  - configs: [ istio-base ]
 profiles:
   - name: dev
     activation:
@@ -73,7 +73,7 @@ kind: Config
 metadata:
   name: ingress
 requires:
-  - configs: [istiod]
+  - configs: [ istiod ]
 profiles:
   - name: dev
     activation:
@@ -101,17 +101,17 @@ kind: Config
 metadata:
   name: prometheus
 requires:
-  - configs: [istiod]
+  - configs: [ istiod ]
 deploy:
   kubectl:
-    manifests: ["../../../samples/addons/prometheus.yaml"]
+    manifests: [ "../../../samples/addons/prometheus.yaml" ]
 ---
 apiVersion: skaffold/v2beta22
 kind: Config
 metadata:
   name: kiali
 requires:
-  - configs: [prometheus]
+  - configs: [ prometheus ]
 deploy:
   helm:
     releases:
@@ -120,7 +120,7 @@ deploy:
         repo: https://kiali.org/helm-charts
         namespace: istio-system
         version: v1.44.0
-        valuesFiles: [../../../manifests/addons/values-kiali.yaml]
+        valuesFiles: [ ../../../manifests/addons/values-kiali.yaml ]
 ---
 # Config for https://istio.io/latest/docs/examples/bookinfo/
 apiVersion: skaffold/v2beta22
@@ -128,17 +128,17 @@ kind: Config
 metadata:
   name: bookinfo
 requires:
-  - configs: [ingress]
+  - configs: [ ingress ]
 deploy:
   kubectl:
     hooks:
       before:
         - host:
-            command: ["sh", "-c", "kubectl label namespace default istio-injection=enabled --overwrite"]
-            os: [darwin, linux]
+            command: [ "sh", "-c", "kubectl label namespace default istio-injection=enabled --overwrite" ]
+            os: [ darwin, linux ]
         - host:
-            command: ["cmd.exe", "/C", "kubectl label namespace default istio-injection=enabled --overwrite"]
-            os: [windows]
+            command: [ "cmd.exe", "/C", "kubectl label namespace default istio-injection=enabled --overwrite" ]
+            os: [ windows ]
     manifests:
       - "../../../samples/bookinfo/platform/kube/bookinfo.yaml"
       - "../../../samples/bookinfo/networking/bookinfo-gateway.yaml"

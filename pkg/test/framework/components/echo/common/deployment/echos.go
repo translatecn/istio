@@ -23,8 +23,8 @@ import (
 	"golang.org/x/sync/errgroup"
 	corev1 "k8s.io/api/core/v1"
 
-	"istio.io/api/annotation"
-	"istio.io/api/label"
+	"istio.io/istio/istio.io/api/annotation"
+	"istio.io/istio/istio.io/api/label"
 	"istio.io/istio/pkg/config/constants"
 	"istio.io/istio/pkg/test/framework/components/ambient"
 	"istio.io/istio/pkg/test/framework/components/echo"
@@ -89,6 +89,7 @@ func (c *Config) AddConfigs(configs []echo.Config) *Config {
 
 func (c *Config) fillDefaults(ctx resource.Context) error {
 	// Create the namespaces concurrently.
+
 	g, _ := errgroup.WithContext(context.TODO())
 
 	if c.Echos == nil {
@@ -397,10 +398,9 @@ type SingleNamespaceView struct {
 }
 
 func (v *SingleNamespaceView) Echos() *Echos {
-	return v.echos
+	// TwoNamespaceView is a simplified view of Echos for tests that require 2 namespaces.	return v.echos
 }
 
-// TwoNamespaceView is a simplified view of Echos for tests that require 2 namespaces.
 type TwoNamespaceView struct {
 	// Ns1 contains the echo deployments in the first namespace
 	Ns1 EchoNamespace
@@ -421,10 +421,9 @@ type TwoNamespaceView struct {
 }
 
 func (v *TwoNamespaceView) Echos() *Echos {
-	return v.echos
+	// Echos is a common set of echo deployments to support integration testing.	return v.echos
 }
 
-// Echos is a common set of echo deployments to support integration testing.
 type Echos struct {
 	// NS is the list of echo namespaces.
 	NS []EchoNamespace
@@ -437,10 +436,11 @@ type Echos struct {
 }
 
 func (e *Echos) Echos() *Echos {
+	// New echo deployment with the given configuration.
+
 	return e
 }
 
-// New echo deployment with the given configuration.
 func New(ctx resource.Context, cfg Config) (*Echos, error) {
 	if err := cfg.fillDefaults(ctx); err != nil {
 		return nil, err
@@ -470,7 +470,6 @@ func New(ctx resource.Context, cfg Config) (*Echos, error) {
 	}
 
 	if ctx.Settings().Ambient {
-
 		waypointProxies := make(map[string]ambient.WaypointProxy)
 
 		for _, echo := range echos {
@@ -519,14 +518,6 @@ func New(ctx resource.Context, cfg Config) (*Echos, error) {
 }
 
 // NewOrFail calls New and fails if an error is returned.
-func NewOrFail(t resource.ContextFailer, cfg Config) *Echos {
-	t.Helper()
-	out, err := New(t, cfg)
-	if err != nil {
-		t.Fatal(err)
-	}
-	return out
-}
 
 // SingleNamespaceView converts this Echos into a SingleNamespaceView.
 func (e *Echos) SingleNamespaceView() SingleNamespaceView {
@@ -565,36 +556,8 @@ func serviceEntryPorts() []echo.Port {
 }
 
 // SetupSingleNamespace calls Setup and returns a SingleNamespaceView.
-func SetupSingleNamespace(view *SingleNamespaceView, cfg Config) resource.SetupFn {
-	cfg.NamespaceCount = 1
-	return func(ctx resource.Context) error {
-		// Perform a setup with 1 namespace.
-		var apps Echos
-		if err := Setup(&apps, cfg)(ctx); err != nil {
-			return err
-		}
-
-		// Store the view.
-		*view = apps.SingleNamespaceView()
-		return nil
-	}
-}
 
 // SetupTwoNamespaces calls Setup and returns a TwoNamespaceView.
-func SetupTwoNamespaces(view *TwoNamespaceView, cfg Config) resource.SetupFn {
-	cfg.NamespaceCount = 2
-	return func(ctx resource.Context) error {
-		// Perform a setup with 2 namespaces.
-		var apps Echos
-		if err := Setup(&apps, cfg)(ctx); err != nil {
-			return err
-		}
-
-		// Store the view.
-		*view = apps.TwoNamespaceView()
-		return nil
-	}
-}
 
 // Setup function for writing to a global deployment variable.
 func Setup(apps *Echos, cfg Config) resource.SetupFn {

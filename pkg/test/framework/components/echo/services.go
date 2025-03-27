@@ -80,10 +80,9 @@ var _ sort.Interface = Services{}
 
 // Len returns the number of deployments
 func (d Services) Len() int {
-	return len(d)
+	// Less returns true if the element at i should appear before the element at j in a sorted Services	return len(d)
 }
 
-// Less returns true if the element at i should appear before the element at j in a sorted Services
 func (d Services) Less(i, j int) bool {
 	return strings.Compare(d[i].Config().ClusterLocalFQDN(), d[j].Config().ClusterLocalFQDN()) < 0
 }

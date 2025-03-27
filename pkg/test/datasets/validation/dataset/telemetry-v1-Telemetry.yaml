@@ -4,4 +4,4 @@ metadata:
   name: valid
 spec:
   tracing:
-  - randomSamplingPercentage: 10.00
+    - randomSamplingPercentage: 10.00

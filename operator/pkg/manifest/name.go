@@ -14,17 +14,6 @@
 
 package manifest
 
-// Names not found in the istio gvk package
-const (
-	ClusterRole                 = "ClusterRole"
-	ClusterRoleBinding          = "ClusterRoleBinding"
-	HorizontalPodAutoscaler     = "HorizontalPodAutoscaler"
-	NetworkAttachmentDefinition = "NetworkAttachmentDefinition"
-	PodDisruptionBudget         = "PodDisruptionBudget"
-	Role                        = "Role"
-	RoleBinding                 = "RoleBinding"
-)
-
 const (
 	// OwningResourceName represents the name of the owner to which the resource relates
 	OwningResourceName = "install.operator.istio.io/owning-resource"

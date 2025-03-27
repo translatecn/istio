@@ -23,7 +23,6 @@ import (
 
 // Dependencies is used as abstraction for the commands used from the operating system
 type Dependencies interface {
-	// Run runs a command
 	Run(cmd constants.IptablesCmd, iptVer *IptablesVersion, stdin io.ReadSeeker, args ...string) error
 
 	// Run runs a command and get the output

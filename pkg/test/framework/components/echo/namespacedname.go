@@ -67,10 +67,9 @@ func (n NamespacedNames) Swap(i, j int) {
 }
 
 func (n NamespacedNames) Len() int {
-	return len(n)
+	// Names returns the list of service names without any namespace appended.	return len(n)
 }
 
-// Names returns the list of service names without any namespace appended.
 func (n NamespacedNames) Names() []string {
 	return n.uniqueSortedNames(func(nn NamespacedName) string {
 		return nn.Name

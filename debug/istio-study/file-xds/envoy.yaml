@@ -1,0 +1,57 @@
+# envoy.yaml
+node:
+  id: envoy_eds_id
+  cluster: youdianzhishi_cluster
+
+admin:
+  access_log_path: /tmp/admin_access.log
+  address:
+    socket_address:
+      address: 0.0.0.0
+      port_value: 9901
+
+static_resources:
+  listeners:
+    - name: listener_0 # 监听器的名称
+      address:
+        socket_address:
+          address: 0.0.0.0 # 监听器的地址
+          port_value: 10000 # 监听器的端口
+
+      filter_chains:
+        - filters:
+            - name: envoy.filters.network.http_connection_manager
+              typed_config:
+                "@type": type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager
+                stat_prefix: ingress_http
+                access_log:
+                  - name: envoy.access_loggers.stdout
+                    typed_config:
+                      "@type": type.googleapis.com/envoy.extensions.access_loggers.stream.v3.StdoutAccessLog
+                http_filters: # 定义http过滤器链
+                  - name: envoy.filters.http.router # 调用7层的路由过滤器
+                    typed_config:
+                      "@type": type.googleapis.com/envoy.extensions.filters.http.router.v3.Router
+                route_config:
+                  name: local_route
+                  virtual_hosts:
+                    - name: backend
+                      domains: ["*"]
+                      routes:
+                        - match:
+                            prefix: "/"
+                          route:
+                            cluster: targetCluster
+
+  clusters:
+    - name: targetCluster
+      connect_timeout: 0.25s
+      lb_policy: ROUND_ROBIN
+      type: EDS
+      eds_cluster_config:
+        service_name: localservices # 可选，代替集群的名称，提供给 EDS 服务
+        eds_config: # 集群的 EDS 更新源配置
+          path_config_source: # 本地文件配置源
+            path: "/etc/envoy/eds.yaml"
+            watched_directory: # 可选，监视目录中的文件更改
+              path: "/etc/envoy"

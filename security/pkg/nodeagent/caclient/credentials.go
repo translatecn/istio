@@ -54,15 +54,16 @@ func (t *DefaultTokenProvider) GetRequestMetadata(ctx context.Context, uri ...st
 // Allow the token provider to be used regardless of transport security; callers can determine whether
 // this is safe themselves.
 func (t *DefaultTokenProvider) RequireTransportSecurity() bool {
+	// GetToken fetches a token to attach to a request. Returning "", nil will cause no header to be
+	// added; while a non-nil error will block the request If the token selected is not found, no error
+	// will be returned, causing no authorization header to be set. This ensures that even if the JWT
+	// token is missing (for example, on a VM that has rebooted, causing the token to be removed from
+	// volatile memory), we can still proceed and allow other authentication methods to potentially
+	// handle the request, such as mTLS.
+
 	return false
 }
 
-// GetToken fetches a token to attach to a request. Returning "", nil will cause no header to be
-// added; while a non-nil error will block the request If the token selected is not found, no error
-// will be returned, causing no authorization header to be set. This ensures that even if the JWT
-// token is missing (for example, on a VM that has rebooted, causing the token to be removed from
-// volatile memory), we can still proceed and allow other authentication methods to potentially
-// handle the request, such as mTLS.
 func (t *DefaultTokenProvider) GetToken() (string, error) {
 	if t.opts.CredFetcher == nil {
 		return "", nil

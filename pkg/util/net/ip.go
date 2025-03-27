@@ -49,25 +49,6 @@ func IsIPv4Address(ip string) bool {
 	return ipa.Is4()
 }
 
-// IPsSplitV4V6 returns two slice of ipv4 and ipv6 string slice.
-func IPsSplitV4V6(ips []string) (ipv4 []string, ipv6 []string) {
-	for _, i := range ips {
-		ip, err := netip.ParseAddr(i)
-		if err != nil {
-			log.Debugf("ignoring un-parsable IP address: %v", err)
-			continue
-		}
-		if ip.Is4() {
-			ipv4 = append(ipv4, ip.String())
-		} else if ip.Is6() {
-			ipv6 = append(ipv6, ip.String())
-		} else {
-			log.Debugf("ignoring un-parsable IP address: %v", ip)
-		}
-	}
-	return
-}
-
 // ParseIPsSplitToV4V6 returns two slice of ipv4 and ipv6 netip.Addr.
 func ParseIPsSplitToV4V6(ips []string) (ipv4 []netip.Addr, ipv6 []netip.Addr) {
 	for _, i := range ips {
@@ -96,4 +77,23 @@ func IsRequestFromLocalhost(r *http.Request) bool {
 
 	userIP := net.ParseIP(ip)
 	return userIP.IsLoopback()
+}
+
+// IPsSplitV4V6 returns two slice of ipv4 and ipv6 string slice.
+func IPsSplitV4V6(ips []string) (ipv4 []string, ipv6 []string) {
+	for _, i := range ips {
+		ip, err := netip.ParseAddr(i)
+		if err != nil {
+			log.Debugf("ignoring un-parsable IP address: %v", err)
+			continue
+		}
+		if ip.Is4() {
+			ipv4 = append(ipv4, ip.String())
+		} else if ip.Is6() {
+			ipv6 = append(ipv6, ip.String())
+		} else {
+			log.Debugf("ignoring un-parsable IP address: %v", ip)
+		}
+	}
+	return
 }

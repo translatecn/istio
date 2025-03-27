@@ -3,6 +3,7 @@ kind: IstioOperator
 metadata:
   namespace: istio-system
 spec:
+  hub: registry.cn-hangzhou.aliyuncs.com/acejilam
   profile: default
   meshConfig:
     trustDomain: example.org
@@ -50,7 +51,7 @@ spec:
                 - path: spec.template.spec.initContainers
                   value:
                     - name: wait-for-spire-socket
-                      image: busybox:1.28
+                      image: registry.cn-hangzhou.aliyuncs.com/acejilam/busybox:1.28
                       volumeMounts:
                         - name: workload-socket
                           mountPath: /run/secrets/workload-spiffe-uds
@@ -68,3 +69,4 @@ spec:
                             sleep 15
                           done
                           ls -l ${CHECK_FILE}
+

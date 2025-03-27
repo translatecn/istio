@@ -40,31 +40,6 @@ type Comparator struct {
 }
 
 // NewComparator is a comparator constructor
-func NewComparator(w io.Writer, istiodResponses map[string][]byte, envoyResponse []byte) (*Comparator, error) {
-	c := &Comparator{}
-	for _, resp := range istiodResponses {
-		istiodDump := &configdump.Wrapper{}
-		err := json.Unmarshal(resp, istiodDump)
-		if err != nil {
-			continue
-		}
-		c.istiod = istiodDump
-		break
-	}
-	if c.istiod == nil {
-		return nil, fmt.Errorf("unable to find config dump in Istiod responses")
-	}
-	envoyDump := &configdump.Wrapper{}
-	err := json.Unmarshal(envoyResponse, envoyDump)
-	if err != nil {
-		return nil, err
-	}
-	c.envoy = envoyDump
-	c.w = w
-	c.context = 7
-	c.location = "Local" // the time.Location for formatting time.Time instances
-	return c, nil
-}
 
 // NewXdsComparator is a comparator constructor
 func NewXdsComparator(w io.Writer, istiodResponses map[string]*discovery.DiscoveryResponse, envoyResponse []byte) (*Comparator, error) {
@@ -112,6 +87,7 @@ var envoyResolver nonstrictResolver
 
 func (m *nonstrictResolver) Resolve(typeURL string) (legacyproto.Message, error) {
 	// See https://github.com/golang/protobuf/issues/747#issuecomment-437463120
+
 	mname := typeURL
 	if slash := strings.LastIndex(typeURL, "/"); slash >= 0 {
 		mname = mname[slash+1:]

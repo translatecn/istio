@@ -52,16 +52,16 @@ webhooks:
     failurePolicy: Ignore
     {{- end }}
     sideEffects: None
-    admissionReviewVersions: ["v1"]
+    admissionReviewVersions: [ "v1" ]
     objectSelector:
       matchExpressions:
         - key: istio.io/rev
           operator: In
           values:
           {{- if (eq .Values.revision "") }}
-          - "default"
+            - "default"
           {{- else }}
-          - "{{ .Values.revision }}"
+            - "{{ .Values.revision }}"
           {{- end }}
 ---
 {{- end }}

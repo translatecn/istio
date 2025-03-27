@@ -50,7 +50,7 @@ import (
 	"istio.io/istio/istioctl/pkg/ztunnelconfig"
 	"istio.io/istio/operator/cmd/mesh"
 	"istio.io/istio/pkg/cmd"
-	"istio.io/istio/pkg/collateral"
+	"istio.io/istio/pkg/collateral_over"
 	"istio.io/istio/pkg/config/constants"
 	"istio.io/istio/pkg/log"
 	"istio.io/istio/tools/bug-report/pkg/bugreport"
@@ -234,7 +234,7 @@ debug and diagnose their Istio mesh.
 	rootCmd.AddCommand(multicluster.NewCreateRemoteSecretCommand(ctx))
 	rootCmd.AddCommand(proxyconfig.ClustersCommand(ctx))
 
-	rootCmd.AddCommand(collateral.CobraCommand(rootCmd, collateral.Metadata{
+	rootCmd.AddCommand(collateral_over.CobraCommand(rootCmd, collateral_over.Metadata{
 		Title:   "Istio Control",
 		Section: "istioctl CLI",
 		Manual:  "Istio Control",

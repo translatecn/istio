@@ -72,6 +72,7 @@ func (n Named) GetNamespace() string {
 // If there is none, this will return nil.
 func GetApplyConfigKey[O any](a O) *Key[O] {
 	// Reflection is expensive; short circuit here
+
 	if !strings.HasSuffix(ptr.TypeName[O](), "ApplyConfiguration") {
 		return nil
 	}

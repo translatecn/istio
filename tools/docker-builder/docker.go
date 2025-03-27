@@ -198,6 +198,7 @@ docker buildx use container-builder`).Run()
 // Most info can be found from the source at https://github.com/docker/buildx/blob/master/bake/bake.go.
 func ConstructBakeFile(a Args) (map[string]string, error) {
 	// Targets defines all images we are actually going to build
+
 	targets := map[string]Target{}
 	// Groups just bundles targets together to make them easier to work with
 	groups := map[string]Group{}

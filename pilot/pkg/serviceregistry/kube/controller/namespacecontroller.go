@@ -70,18 +70,21 @@ func NewNamespaceController(kubeClient kube.Client, caBundleWatcher *keycertbund
 		FieldSelector: "metadata.name=" + CACertNamespaceConfigMap,
 		ObjectFilter:  kube.FilterIfEnhancedFilteringEnabled(kubeClient),
 	})
-	c.namespaces = kclient.NewFiltered[*v1.Namespace](kubeClient, kclient.Filter{
-		ObjectFilter: kube.FilterIfEnhancedFilteringEnabled(kubeClient),
-	})
+	c.namespaces = kclient.NewFiltered[*v1.Namespace](kubeClient, kclient.Filter{ObjectFilter: kube.FilterIfEnhancedFilteringEnabled(kubeClient)})
+
 	// kube-system is not skipped to enable deploying ztunnel in that namespace
 	c.ignoredNamespaces = inject.IgnoredNamespaces.Copy().Delete(constants.KubeSystemNamespace)
 
-	c.configmaps.AddEventHandler(controllers.FilteredObjectSpecHandler(c.queue.AddObject, func(o controllers.Object) bool {
+	c.configmaps.AddEventHandler(controllers.FilteredObjectSpecHandler(func(o controllers.Object) {
+		c.queue.AddObject(o)
+	}, func(o controllers.Object) bool {
 		// skip special kubernetes system namespaces
 		return !c.ignoredNamespaces.Contains(o.GetNamespace())
 	}))
 
-	c.namespaces.AddEventHandler(controllers.FilteredObjectSpecHandler(c.queue.AddObject, func(o controllers.Object) bool {
+	c.namespaces.AddEventHandler(controllers.FilteredObjectSpecHandler(func(o controllers.Object) {
+		c.queue.AddObject(o)
+	}, func(o controllers.Object) bool {
 		if features.InformerWatchNamespace != "" && features.InformerWatchNamespace != o.GetName() {
 			// We are only watching one namespace, and its not this one
 			return false
@@ -122,24 +125,6 @@ func (nc *NamespaceController) startCaBundleWatcher(stop <-chan struct{}) {
 	}
 }
 
-// reconcileCACert will reconcile the ca root cert configmap for the specified namespace
-// If the configmap is not found, it will be created.
-// If the namespace is filtered out by discovery selector, the configmap will be deleted.
-func (nc *NamespaceController) reconcileCACert(o types.NamespacedName) error {
-	ns := o.Namespace
-	if ns == "" {
-		// For Namespace object, it will not have o.Namespace field set
-		ns = o.Name
-	}
-
-	meta := metav1.ObjectMeta{
-		Name:      CACertNamespaceConfigMap,
-		Namespace: ns,
-		Labels:    configMapLabel,
-	}
-	return k8s.InsertDataToConfigMap(nc.configmaps, meta, nc.caBundleWatcher.GetCABundle())
-}
-
 // On namespace change, update the config map.
 // If terminating, this will be skipped
 func (nc *NamespaceController) namespaceChange(ns *v1.Namespace) {
@@ -150,8 +135,26 @@ func (nc *NamespaceController) namespaceChange(ns *v1.Namespace) {
 
 func (nc *NamespaceController) syncNamespace(ns string) {
 	// skip special kubernetes system namespaces
+
 	if nc.ignoredNamespaces.Contains(ns) {
 		return
 	}
 	nc.queue.Add(types.NamespacedName{Name: ns})
+}
+
+// reconcileCACert will reconcile the ca root cert configmap for the specified namespace
+// If the configmap is not found, it will be created.
+// If the namespace is filtered out by discovery selector, the configmap will be deleted.
+func (nc *NamespaceController) reconcileCACert(o types.NamespacedName) error {
+	ns := o.Namespace
+	if ns == "" {
+		// For Namespace object, it will not have o.Namespace field set
+		ns = o.Name
+	}
+	meta := metav1.ObjectMeta{
+		Name:      CACertNamespaceConfigMap,
+		Namespace: ns,
+		Labels:    configMapLabel,
+	}
+	return k8s.InsertDataToConfigMap(nc.configmaps, meta, nc.caBundleWatcher.GetCABundle())
 }

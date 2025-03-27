@@ -75,6 +75,7 @@ var (
 // Scope names cannot include colons, commas, or periods.
 func RegisterScope(name string, description string) *Scope {
 	// We only allow internal callers to set callerSkip
+
 	return registerScope(name, description, 0)
 }
 
@@ -243,10 +244,11 @@ func (s *Scope) DebugEnabled() bool {
 
 // Name returns this scope's name.
 func (s *Scope) Name() string {
+	// Description returns this scope's description
+
 	return s.name
 }
 
-// Description returns this scope's description
 func (s *Scope) Description() string {
 	return s.description
 }

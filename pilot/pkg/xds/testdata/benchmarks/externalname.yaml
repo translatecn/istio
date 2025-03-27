@@ -16,7 +16,7 @@ spec:
     - address: 1.1.1.1
       labels:
         security.istio.io/tlsMode: istio
-{{- range $i := until .Services }}
+  { { - range $i := until .Services } }
 ---
 apiVersion: v1
 kind: Service
@@ -28,4 +28,4 @@ spec:
   ports:
     - port: 80
       name: http
-{{- end }}
+  { { - end } }

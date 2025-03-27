@@ -33,7 +33,7 @@ import (
 	gatewayapi "sigs.k8s.io/gateway-api/apis/v1"
 	gatewayapibeta "sigs.k8s.io/gateway-api/apis/v1beta1"
 
-	"istio.io/api/label"
+	"istio.io/istio/istio.io/api/label"
 	"istio.io/istio/pilot/pkg/config/kube/gateway"
 	kubelib "istio.io/istio/pkg/kube"
 )
@@ -95,6 +95,7 @@ func getClientForResource(resname, ns string, factory cmdutil.Factory) (*corev1c
 	// Pod is referred to using something like "deployment/httpbin".  Use the kubectl
 	// libraries to look up the resource name, find the pods it selects, and return
 	// one of those pods.
+
 	builder := factory.NewBuilder().
 		WithScheme(kubelib.IstioScheme, kubelib.IstioScheme.PrioritizedVersionsAllGroups()...).
 		NamespaceParam(ns).DefaultNamespace().

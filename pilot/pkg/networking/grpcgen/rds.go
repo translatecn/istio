@@ -41,6 +41,7 @@ func (g *GrpcConfigGenerator) BuildHTTPRoutes(node *model.Proxy, push *model.Pus
 
 func buildHTTPRoute(node *model.Proxy, push *model.PushContext, routeName string) *route.RouteConfiguration {
 	// TODO use route-style naming instead of cluster naming
+
 	_, _, hostname, port := model.ParseSubsetKey(routeName)
 	if hostname == "" || port == 0 {
 		log.Warnf("failed to parse %v", routeName)

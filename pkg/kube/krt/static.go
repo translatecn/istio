@@ -76,19 +76,21 @@ func (s *staticList[T]) name() string {
 
 // nolint: unused // (not true, its to implement an interface)
 func (s *staticList[T]) uid() collectionUID {
+	// nolint: unused // (not true, its to implement an interface)
+
 	return s.id
 }
 
-// nolint: unused // (not true, its to implement an interface)
 func (s *staticList[T]) dump() {
+	// nolint: unused // (not true, its to implement an interface)
 }
 
-// nolint: unused // (not true, its to implement an interface)
 func (s *staticList[T]) augment(a any) any {
+	// nolint: unused // (not true)
+
 	return a
 }
 
-// nolint: unused // (not true)
 type staticListIndex[T any] struct {
 	extract func(o T) []string
 	parent  *staticList[T]

@@ -4,14 +4,14 @@ metadata:
   name: cors
   namespace: testns
 spec:
-   hosts:
-   - cors.test.istio.io
-   ports:
-   - number: 80
-     name: http
-     protocol: HTTP
-   resolution: STATIC
-   endpoints:
+  hosts:
+    - cors.test.istio.io
+  ports:
+    - number: 80
+      name: http
+      protocol: HTTP
+  resolution: STATIC
+  endpoints:
     - address: 127.0.0.2
       ports:
         http: 7072
@@ -26,8 +26,8 @@ spec:
     - cors.test.istio.io
   http:
     - route:
-      - destination:
-          host: cors.test.istio.io
+        - destination:
+            host: cors.test.istio.io
       corsPolicy:
         allowOrigins:
           - exact: http://foo.example

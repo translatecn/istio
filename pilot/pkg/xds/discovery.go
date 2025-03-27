@@ -72,12 +72,6 @@ type DiscoveryServer struct {
 	// Normal istio clients use the default generator - will not be impacted by this.
 	Generators map[string]model.XdsResourceGenerator
 
-	// ProxyNeedsPush is a function that determines whether a push can be completely skipped. Individual generators
-	// may also choose to not send any updates.
-	ProxyNeedsPush func(proxy *model.Proxy, req *model.PushRequest) bool
-
-	// concurrentPushLimit is a semaphore that limits the amount of concurrent XDS pushes.
-	concurrentPushLimit chan struct{}
 	// RequestRateLimit limits the number of new XDS requests allowed. This helps prevent thundering hurd of incoming requests.
 	RequestRateLimit *rate.Limiter
 
@@ -90,18 +84,11 @@ type DiscoveryServer struct {
 	// the push context, which means that the next push to a proxy will receive this configuration.
 	CommittedUpdates *atomic.Int64
 
-	// pushChannel is the buffer used for debouncing.
-	// after debouncing the pushRequest will be sent to pushQueue
-	pushChannel chan *model.PushRequest
-
-	// pushQueue is the buffer that used after debounce and before the real xds push.
-	pushQueue *PushQueue
-
 	// debugHandlers is the list of all the supported debug handlers.
 	debugHandlers map[string]string
 
 	// adsClients reflect active gRPC channels, for both ADS and EDS.
-	adsClients      map[string]*Connection
+	adsClients      map[string]*ConnectionServer
 	adsClientsMutex sync.RWMutex
 
 	// Authenticators for XDS requests. Should be same/subset of the CA authenticators.
@@ -132,54 +119,12 @@ type DiscoveryServer struct {
 
 	// DiscoveryStartTime is the time since the binary started
 	DiscoveryStartTime time.Time
-}
 
-// NewDiscoveryServer creates DiscoveryServer that sources data from Pilot's internal mesh data structures
-func NewDiscoveryServer(env *model.Environment, clusterAliases map[string]string) *DiscoveryServer {
-	out := &DiscoveryServer{
-		Env:                 env,
-		Generators:          map[string]model.XdsResourceGenerator{},
-		ProxyNeedsPush:      DefaultProxyNeedsPush,
-		concurrentPushLimit: make(chan struct{}, features.PushThrottle),
-		RequestRateLimit:    rate.NewLimiter(rate.Limit(features.RequestLimit), 1),
-		InboundUpdates:      atomic.NewInt64(0),
-		CommittedUpdates:    atomic.NewInt64(0),
-		pushChannel:         make(chan *model.PushRequest, 10),
-		pushQueue:           NewPushQueue(),
-		debugHandlers:       map[string]string{},
-		adsClients:          map[string]*Connection{},
-		DebounceOptions: DebounceOptions{
-			DebounceAfter:     features.DebounceAfter,
-			debounceMax:       features.DebounceMax,
-			enableEDSDebounce: features.EnableEDSDebounce,
-		},
-		Cache:              env.Cache,
-		DiscoveryStartTime: processStartTime,
-	}
+	concurrentPushLimit chan struct{}
+	pushChannel         chan *model.PushRequest
+	pushQueue           *PushQueue // ✅
 
-	out.ClusterAliases = make(map[cluster.ID]cluster.ID)
-	for alias := range clusterAliases {
-		out.ClusterAliases[cluster.ID(alias)] = cluster.ID(clusterAliases[alias])
-	}
-
-	out.initJwksResolver()
-
-	return out
-}
-
-// initJwkResolver initializes the JWT key resolver to be used.
-func (s *DiscoveryServer) initJwksResolver() {
-	if s.JwtKeyResolver != nil {
-		s.closeJwksResolver()
-	}
-	s.JwtKeyResolver = model.NewJwksResolver(
-		model.JwtPubKeyEvictionDuration, model.JwtPubKeyRefreshInterval,
-		model.JwtPubKeyRefreshIntervalOnFailure, model.JwtPubKeyRetryInterval)
-
-	// Flush cached discovery responses when detecting jwt public key change.
-	s.JwtKeyResolver.PushFunc = func() {
-		s.ConfigUpdate(&model.PushRequest{Full: true, Reason: model.NewReasonStats(model.UnknownTrigger)})
-	}
+	ProxyNeedsPush func(proxy *model.Proxy, req *model.PushRequest) bool
 }
 
 // closeJwksResolver shuts down the JWT key resolver used.
@@ -189,29 +134,13 @@ func (s *DiscoveryServer) closeJwksResolver() {
 	}
 }
 
-// Register adds the ADS handler to the grpc server
-func (s *DiscoveryServer) Register(rpcs *grpc.Server) {
-	// Register v3 server
-	discovery.RegisterAggregatedDiscoveryServiceServer(rpcs, s)
-}
-
 var processStartTime = time.Now()
-
-// CachesSynced is called when caches have been synced so that server can accept connections.
-func (s *DiscoveryServer) CachesSynced() {
-	log.Infof("All caches have been synced up in %v, marking server ready", time.Since(s.DiscoveryStartTime))
-	s.serverReady.Store(true)
-}
-
-func (s *DiscoveryServer) IsServerReady() bool {
-	return s.serverReady.Load()
-}
 
 func (s *DiscoveryServer) Start(stopCh <-chan struct{}) {
 	go s.WorkloadEntryController.Run(stopCh)
-	go s.handleUpdates(stopCh)
+	go s.handleUpdates(stopCh) // ✅
 	go s.periodicRefreshMetrics(stopCh)
-	go s.sendPushes(stopCh)
+	go s.sendPushes(stopCh) // ✅
 	go s.Cache.Run(stopCh)
 }
 
@@ -242,6 +171,7 @@ func (s *DiscoveryServer) periodicRefreshMetrics(stopCh <-chan struct{}) {
 // dropCacheForRequest clears the cache in response to a push request
 func (s *DiscoveryServer) dropCacheForRequest(req *model.PushRequest) {
 	// If we don't know what updated, cannot safely cache. Clear the whole cache
+
 	if len(req.ConfigsUpdated) == 0 {
 		s.Cache.ClearAll()
 	} else {
@@ -250,78 +180,12 @@ func (s *DiscoveryServer) dropCacheForRequest(req *model.PushRequest) {
 	}
 }
 
-// Push is called to push changes on config updates using ADS.
-func (s *DiscoveryServer) Push(req *model.PushRequest) {
-	if !req.Full {
-		req.Push = s.globalPushContext()
-		s.dropCacheForRequest(req)
-		s.AdsPushAll(req)
-		return
-	}
-	// Reset the status during the push.
-	oldPushContext := s.globalPushContext()
-	if oldPushContext != nil {
-		oldPushContext.OnConfigChange()
-		// Push the previous push Envoy metrics.
-		envoyfilter.RecordMetrics()
-	}
-	// PushContext is reset after a config change. Previous status is
-	// saved.
-	t0 := time.Now()
-	versionLocal := s.NextVersion()
-	push, err := s.initPushContext(req, oldPushContext, versionLocal)
-	if err != nil {
-		return
-	}
-	initContextTime := time.Since(t0)
-	log.Debugf("InitContext %v for push took %s", versionLocal, initContextTime)
-	pushContextInitTime.Record(initContextTime.Seconds())
-
-	req.Push = push
-	s.AdsPushAll(req)
-}
-
 func nonce(noncePrefix string) string {
 	return noncePrefix + uuid.New().String()
 }
 
-// Returns the global push context. This should be used with caution; generally the proxy-specific
-// PushContext should be used to get the current state in the context of a single proxy. This should
-// only be used for "global" lookups, such as initiating a new push to all proxies.
-func (s *DiscoveryServer) globalPushContext() *model.PushContext {
-	return s.Env.PushContext()
-}
-
 var fullPushLog = istiolog.RegisterScope("fullpush", "logs details about why Istio is triggering a full push")
 
-// ConfigUpdate implements ConfigUpdater interface, used to request pushes.
-func (s *DiscoveryServer) ConfigUpdate(req *model.PushRequest) {
-	if features.EnableUnsafeAssertions {
-		if model.HasConfigsOfKind(req.ConfigsUpdated, kind.Service) {
-			panic("assertion failed kind.Service can not be set in ConfigKey")
-		}
-	}
-	if model.HasConfigsOfKind(req.ConfigsUpdated, kind.Address) {
-		// This is a bit like clearing EDS cache on EndpointShard update. Because Address
-		// types are fetched dynamically, they are not part of the same protections, so we need to clear
-		// the cache.
-		s.Cache.ClearAll()
-	}
-	inboundConfigUpdates.Increment()
-	s.InboundUpdates.Inc()
-	if req.Full && fullPushLog.DebugEnabled() {
-		configs := slices.Sort(slices.Map(req.ConfigsUpdated.UnsortedList(), model.ConfigKey.String))
-		reasons := maps.Keys(req.Reason)
-		fullPushLog.Debugf("full push triggered configs=%v reasons=%v", configs, reasons)
-	}
-	s.pushChannel <- req
-}
-
-// Debouncing and push request happens in a separate thread, it uses locks
-// and we want to avoid complications, ConfigUpdate may already hold other locks.
-// handleUpdates processes events from pushChannel
-// It ensures that at minimum minQuiet time has elapsed since the last event before processing it.
-// It also ensures that at most maxDelay is elapsed between receiving an event and processing it.
 func (s *DiscoveryServer) handleUpdates(stopCh <-chan struct{}) {
 	debounce(s.pushChannel, stopCh, s.DebounceOptions, s.Push, s.CommittedUpdates)
 }
@@ -453,6 +317,193 @@ func reasonsUpdated(req *model.PushRequest) string {
 	}
 }
 
+// Shutdown shuts down DiscoveryServer components.
+func (s *DiscoveryServer) Shutdown() {
+	s.closeJwksResolver()
+	s.pushQueue.ShutDown()
+}
+
+// Clients returns all currently connected clients. This method can be safely called concurrently,
+// but care should be taken with the underlying objects (ie model.Proxy) to ensure proper locking.
+// This method returns only fully initialized connections; for all connections, use AllClients
+func (s *DiscoveryServer) Clients() []*ConnectionServer {
+	s.adsClientsMutex.RLock()
+	defer s.adsClientsMutex.RUnlock()
+	clients := make([]*ConnectionServer, 0, len(s.adsClients))
+	for _, con := range s.adsClients {
+		select {
+		case <-con.InitializedCh():
+		default:
+			// Initialization not complete, skip
+			continue
+		}
+		clients = append(clients, con)
+	}
+	return clients
+}
+
+// SortedClients returns all currently connected clients in an ordered manner.
+// Sorting order priority is as follows: ClusterID, Namespace, ID.
+func (s *DiscoveryServer) SortedClients() []*ConnectionServer {
+	clients := s.Clients()
+	sort.Slice(clients, func(i, j int) bool {
+		if clients[i].proxy.GetClusterID().String() < clients[j].proxy.GetClusterID().String() {
+			return true
+		}
+		if clients[i].proxy.GetNamespace() < clients[j].proxy.GetNamespace() {
+			return true
+		}
+		return clients[i].proxy.GetID() < clients[j].proxy.GetID()
+	})
+	return clients
+}
+
+// AllClients returns all connected clients, per Clients, but additionally includes uninitialized connections
+// Warning: callers must take care not to rely on the con.proxy field being set
+func (s *DiscoveryServer) AllClients() []*ConnectionServer {
+	s.adsClientsMutex.RLock()
+	defer s.adsClientsMutex.RUnlock()
+	return maps.Values(s.adsClients)
+}
+
+func (s *DiscoveryServer) NextVersion() string {
+	return time.Now().Format(time.RFC3339) + "/" + strconv.FormatUint(s.pushVersion.Inc(), 10)
+}
+
+// NewDiscoveryServer creates DiscoveryServer that sources data from Pilot's internal mesh data structures
+func NewDiscoveryServer(env *model.Environment, clusterAliases map[string]string) *DiscoveryServer {
+	out := &DiscoveryServer{
+		Env:                 env,
+		Generators:          map[string]model.XdsResourceGenerator{},
+		ProxyNeedsPush:      DefaultProxyNeedsPush,
+		concurrentPushLimit: make(chan struct{}, features.PushThrottle),
+		RequestRateLimit:    rate.NewLimiter(rate.Limit(features.RequestLimit), 1),
+		InboundUpdates:      atomic.NewInt64(0),
+		CommittedUpdates:    atomic.NewInt64(0),
+		pushChannel:         make(chan *model.PushRequest, 10),
+		pushQueue:           NewPushQueue(),
+		debugHandlers:       map[string]string{},
+		adsClients:          map[string]*ConnectionServer{},
+		DebounceOptions: DebounceOptions{
+			DebounceAfter:     features.DebounceAfter,
+			debounceMax:       features.DebounceMax,
+			enableEDSDebounce: features.EnableEDSDebounce,
+		},
+		Cache:              env.Cache,
+		DiscoveryStartTime: processStartTime,
+	}
+
+	out.ClusterAliases = make(map[cluster.ID]cluster.ID)
+	for alias := range clusterAliases {
+		out.ClusterAliases[cluster.ID(alias)] = cluster.ID(clusterAliases[alias])
+	}
+
+	out.initJwksResolver()
+
+	return out
+}
+
+// initJwkResolver initializes the JWT key resolver to be used.
+func (s *DiscoveryServer) initJwksResolver() {
+	if s.JwtKeyResolver != nil {
+		s.closeJwksResolver()
+	}
+	s.JwtKeyResolver = model.NewJwksResolver(
+		model.JwtPubKeyEvictionDuration, model.JwtPubKeyRefreshInterval,
+		model.JwtPubKeyRefreshIntervalOnFailure, model.JwtPubKeyRetryInterval,
+	)
+
+	// 当检测到jwt公钥更改时，刷新缓存的discovery responses
+	s.JwtKeyResolver.PushFunc = func() {
+		s.ConfigUpdate(&model.PushRequest{Full: true, Reason: model.NewReasonStats(model.UnknownTrigger)}) // ✅
+	}
+}
+
+// Register adds the ADS handler to the grpc server
+func (s *DiscoveryServer) Register(rpcs *grpc.Server) {
+	// Register v3 server
+
+	discovery.RegisterAggregatedDiscoveryServiceServer(rpcs, s)
+}
+
+// initPushContext creates a global push context and stores it on the environment. Note: while this
+// method is technically thread safe (there are no data races), it should not be called in parallel;
+// if it is, then we may start two push context creations (say A, and B), but then write them in
+// reverse order, leaving us with a final version of A, which may be incomplete.
+func (s *DiscoveryServer) initPushContext(req *model.PushRequest, oldPushContext *model.PushContext, version string) (*model.PushContext, error) {
+	push := model.NewPushContext()
+	push.PushVersion = version
+	push.JwtKeyResolver = s.JwtKeyResolver
+	if err := push.InitContext(s.Env, oldPushContext, req); err != nil {
+		log.Errorf("XDS: failed to init push context: %v", err)
+		// We can't push if we can't read the data - stick with previous version.
+		pushContextErrors.Increment()
+		return nil, err
+	}
+
+	s.dropCacheForRequest(req)
+	s.Env.SetPushContext(push)
+
+	return push, nil
+}
+
+func (s *DiscoveryServer) ConfigUpdate(req *model.PushRequest) {
+	// pilotStableGatewayAPI 只有有变化，就会更新，刨除 ServiceEntry、WorkloadEntry、WorkloadGroup
+
+	if features.EnableUnsafeAssertions {
+		if model.HasConfigsOfKind(req.ConfigsUpdated, kind.Service) {
+			panic("assertion failed kind.Service can not be set in ConfigKey")
+		}
+	}
+	if model.HasConfigsOfKind(req.ConfigsUpdated, kind.Address) {
+		// This is a bit like clearing EDS cache on EndpointShard update. Because Address
+		// types are fetched dynamically, they are not part of the same protections, so we need to clear
+		// the cache.
+		s.Cache.ClearAll()
+	}
+	inboundConfigUpdates.Increment()
+	s.InboundUpdates.Inc()
+	if req.Full && fullPushLog.DebugEnabled() {
+		configs := slices.Sort(slices.Map(req.ConfigsUpdated.UnsortedList(), model.ConfigKey.String))
+		reasons := maps.Keys(req.Reason)
+		fullPushLog.Debugf("full push triggered configs=%v reasons=%v", configs, reasons)
+	}
+	s.pushChannel <- req
+}
+
+// CachesSynced is called when caches have been synced so that server can accept connections.
+func (s *DiscoveryServer) CachesSynced() {
+	log.Infof("All caches have been synced up in %v, marking server ready", time.Since(s.DiscoveryStartTime))
+	s.serverReady.Store(true)
+}
+
+func (s *DiscoveryServer) IsServerReady() bool {
+	return s.serverReady.Load()
+}
+
+func (s *DiscoveryServer) WaitForRequestLimit(ctx context.Context) error {
+	if s.RequestRateLimit.Limit() == 0 {
+		// Allow opt out when rate limiting is set to 0qps
+		return nil
+	}
+	// Give a bit of time for queue to clear out, but if not fail fast. Client will connect to another
+	// instance in best case, or retry with backoff.
+	wait, cancel := context.WithTimeout(ctx, time.Second)
+	defer cancel()
+	return s.RequestRateLimit.Wait(wait)
+}
+
+// Returns the global push context. This should be used with caution; generally the proxy-specific
+// PushContext should be used to get the current state in the context of a single proxy. This should
+// only be used for "global" lookups, such as initiating a new push to all proxies.
+func (s *DiscoveryServer) globalPushContext() *model.PushContext {
+	return s.Env.PushContext()
+}
+
+func (s *DiscoveryServer) sendPushes(stopCh <-chan struct{}) {
+	doSendPushes(stopCh, s.concurrentPushLimit, s.pushQueue)
+}
+
 func doSendPushes(stopCh <-chan struct{}, semaphore chan struct{}, queue *PushQueue) {
 	for {
 		select {
@@ -500,92 +551,33 @@ func doSendPushes(stopCh <-chan struct{}, semaphore chan struct{}, queue *PushQu
 	}
 }
 
-// initPushContext creates a global push context and stores it on the environment. Note: while this
-// method is technically thread safe (there are no data races), it should not be called in parallel;
-// if it is, then we may start two push context creations (say A, and B), but then write them in
-// reverse order, leaving us with a final version of A, which may be incomplete.
-func (s *DiscoveryServer) initPushContext(req *model.PushRequest, oldPushContext *model.PushContext, version string) (*model.PushContext, error) {
-	push := model.NewPushContext()
-	push.PushVersion = version
-	push.JwtKeyResolver = s.JwtKeyResolver
-	if err := push.InitContext(s.Env, oldPushContext, req); err != nil {
-		log.Errorf("XDS: failed to init push context: %v", err)
-		// We can't push if we can't read the data - stick with previous version.
-		pushContextErrors.Increment()
-		return nil, err
+// Push is called to push changes on config updates using ADS.
+func (s *DiscoveryServer) Push(req *model.PushRequest) {
+	if !req.Full {
+		req.Push = s.globalPushContext()
+		s.dropCacheForRequest(req)
+		s.AdsPushAll(req)
+		return
 	}
-
-	s.dropCacheForRequest(req)
-	s.Env.SetPushContext(push)
-
-	return push, nil
-}
-
-func (s *DiscoveryServer) sendPushes(stopCh <-chan struct{}) {
-	doSendPushes(stopCh, s.concurrentPushLimit, s.pushQueue)
-}
-
-// Shutdown shuts down DiscoveryServer components.
-func (s *DiscoveryServer) Shutdown() {
-	s.closeJwksResolver()
-	s.pushQueue.ShutDown()
-}
-
-// Clients returns all currently connected clients. This method can be safely called concurrently,
-// but care should be taken with the underlying objects (ie model.Proxy) to ensure proper locking.
-// This method returns only fully initialized connections; for all connections, use AllClients
-func (s *DiscoveryServer) Clients() []*Connection {
-	s.adsClientsMutex.RLock()
-	defer s.adsClientsMutex.RUnlock()
-	clients := make([]*Connection, 0, len(s.adsClients))
-	for _, con := range s.adsClients {
-		select {
-		case <-con.InitializedCh():
-		default:
-			// Initialization not complete, skip
-			continue
-		}
-		clients = append(clients, con)
+	// Reset the status during the push.
+	oldPushContext := s.globalPushContext()
+	if oldPushContext != nil {
+		oldPushContext.OnConfigChange()
+		// Push the previous push Envoy metrics.
+		envoyfilter.RecordMetrics()
 	}
-	return clients
-}
-
-// SortedClients returns all currently connected clients in an ordered manner.
-// Sorting order priority is as follows: ClusterID, Namespace, ID.
-func (s *DiscoveryServer) SortedClients() []*Connection {
-	clients := s.Clients()
-	sort.Slice(clients, func(i, j int) bool {
-		if clients[i].proxy.GetClusterID().String() < clients[j].proxy.GetClusterID().String() {
-			return true
-		}
-		if clients[i].proxy.GetNamespace() < clients[j].proxy.GetNamespace() {
-			return true
-		}
-		return clients[i].proxy.GetID() < clients[j].proxy.GetID()
-	})
-	return clients
-}
-
-// AllClients returns all connected clients, per Clients, but additionally includes uninitialized connections
-// Warning: callers must take care not to rely on the con.proxy field being set
-func (s *DiscoveryServer) AllClients() []*Connection {
-	s.adsClientsMutex.RLock()
-	defer s.adsClientsMutex.RUnlock()
-	return maps.Values(s.adsClients)
-}
-
-func (s *DiscoveryServer) WaitForRequestLimit(ctx context.Context) error {
-	if s.RequestRateLimit.Limit() == 0 {
-		// Allow opt out when rate limiting is set to 0qps
-		return nil
+	// PushContext is reset after a config change. Previous status is
+	// saved.
+	t0 := time.Now()
+	versionLocal := s.NextVersion()
+	push, err := s.initPushContext(req, oldPushContext, versionLocal)
+	if err != nil {
+		return
 	}
-	// Give a bit of time for queue to clear out, but if not fail fast. Client will connect to another
-	// instance in best case, or retry with backoff.
-	wait, cancel := context.WithTimeout(ctx, time.Second)
-	defer cancel()
-	return s.RequestRateLimit.Wait(wait)
-}
+	initContextTime := time.Since(t0)
+	log.Debugf("InitContext %v for push took %s", versionLocal, initContextTime)
+	pushContextInitTime.Record(initContextTime.Seconds())
 
-func (s *DiscoveryServer) NextVersion() string {
-	return time.Now().Format(time.RFC3339) + "/" + strconv.FormatUint(s.pushVersion.Inc(), 10)
+	req.Push = push
+	s.AdsPushAll(req)
 }

@@ -20,10 +20,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
-	goruntime "runtime"
-	"strings"
 	"sync"
-	"testing"
 	"time"
 
 	"github.com/hashicorp/go-multierror"
@@ -32,7 +29,6 @@ import (
 	"istio.io/istio/pkg/test/echo"
 	"istio.io/istio/pkg/test/framework/components/cluster"
 	"istio.io/istio/pkg/test/framework/components/environment/kube"
-	"istio.io/istio/pkg/test/framework/config"
 	ferrors "istio.io/istio/pkg/test/framework/errors"
 	"istio.io/istio/pkg/test/framework/label"
 	"istio.io/istio/pkg/test/framework/resource"
@@ -145,48 +141,8 @@ type suiteImpl struct {
 }
 
 // Given the filename of a test, derive its suite name
-func deriveSuiteName(caller string) string {
-	d := filepath.Dir(caller)
-	// We will trim out paths preceding some well known paths. This should handle anything in istio or docs repo,
-	// as well as special case tests/integration. The end result is a test under ./tests/integration/pilot/ingress
-	// will become pilot_ingress
-	// Note: if this fails to trim, we end up with "ugly" suite names but otherwise no real impact.
-	for _, wellKnownPath := range wellKnownPaths {
-		// Try removing this path from the directory name.
-		result := wellKnownPath.ReplaceAllString(d, "")
-		if len(result) < len(d) {
-			// Successfully found and removed this path from the directory.
-			d = result
-			break
-		}
-	}
-	return strings.ReplaceAll(d, "/", "_")
-}
 
 // NewSuite returns a new suite instance.
-func NewSuite(m *testing.M) Suite {
-	_, f, _, _ := goruntime.Caller(1)
-	suiteName := deriveSuiteName(f)
-
-	return newSuite(suiteName,
-		func(_ *suiteContext) int {
-			return m.Run()
-		},
-		os.Exit,
-		getSettings)
-}
-
-func newSuite(testID string, fn mRunFn, osExit func(int), getSettingsFn getSettingsFunc) *suiteImpl {
-	s := &suiteImpl{
-		testID:      testID,
-		mRun:        fn,
-		osExit:      osExit,
-		getSettings: getSettingsFn,
-		labels:      label.NewSet(),
-	}
-
-	return s
-}
 
 func (s *suiteImpl) EnvironmentFactory(fn resource.EnvironmentFactory) Suite {
 	if fn != nil && s.envFactory != nil {
@@ -251,6 +207,7 @@ func (s *suiteImpl) RequireMaxClusters(maxClusters int) Suite {
 
 func (s *suiteImpl) RequireSingleCluster() Suite {
 	// nolint: staticcheck
+
 	return s.RequireMinClusters(1).RequireMaxClusters(1)
 }
 
@@ -373,8 +330,9 @@ func (s *suiteImpl) SetupParallel(fns ...resource.SetupFn) Suite {
 }
 
 func (s *suiteImpl) runSetupFn(fn resource.SetupFn, ctx SuiteContext) (err error) {
+	// Dump if the setup function fails
+
 	defer func() {
-		// Dump if the setup function fails
 		if err != nil && ctx.Settings().CIMode {
 			rt.Dump(ctx)
 		}
@@ -592,15 +550,6 @@ func newEnvironment(ctx resource.Context) (resource.Environment, error) {
 		return nil, err
 	}
 	return kube.New(ctx, s)
-}
-
-func getSettings(testID string) (*resource.Settings, error) {
-	// Parse flags and init logging.
-	if !config.Parsed() {
-		config.Parse()
-	}
-
-	return resource.SettingsFromCommandLine(testID)
 }
 
 func mustCompileAll(patterns ...string) []*regexp.Regexp {

@@ -16,10 +16,10 @@ metadata:
   namespace: enabled-namespace
 spec:
   containers:
-  - image: docker.io/istio/examples-bookinfo-details-v1:1.15.0
-    name: details
-  - image: docker.io/istio/proxyv2:1.3.0
-    name: istio-proxy
+    - image: registry.cn-hangzhou.aliyuncs.com/acejilam/examples-bookinfo-details-v1:1.15.0
+      name: details
+    - image: registry.cn-hangzhou.aliyuncs.com/acejilam/proxyv2:1.3.0
+      name: istio-proxy
 ---
 # Namespace 'enabled-namespace' has istio injection enabled, so will be enforced.
 apiVersion: v1
@@ -39,11 +39,11 @@ metadata:
   namespace: enabled-namespace-native
 spec:
   containers:
-  - image: docker.io/istio/examples-bookinfo-details-v1:1.15.0
-    name: details
+    - image: registry.cn-hangzhou.aliyuncs.com/acejilam/examples-bookinfo-details-v1:1.15.0
+      name: details
   initContainers:
-  - image: docker.io/istio/proxyv2:1.3.0
-    name: istio-proxy
+    - image: registry.cn-hangzhou.aliyuncs.com/acejilam/proxyv2:1.3.0
+      name: istio-proxy
 ---
 # Details-v1-pod-new is up to date, and should be ignored.
 apiVersion: v1
@@ -55,10 +55,10 @@ metadata:
   namespace: enabled-namespace
 spec:
   containers:
-  - image: docker.io/istio/examples-bookinfo-details-v1:1.15.0
-    name: details
-  - image: docker.io/istio/proxyv2:1.3.1
-    name: istio-proxy
+    - image: registry.cn-hangzhou.aliyuncs.com/acejilam/examples-bookinfo-details-v1:1.15.0
+      name: details
+    - image: registry.cn-hangzhou.aliyuncs.com/acejilam/proxyv2:1.3.1
+      name: istio-proxy
 ---
 # Details-v1-pod-new-native is up to date, and should be ignored.
 apiVersion: v1
@@ -70,11 +70,11 @@ metadata:
   namespace: enabled-namespace
 spec:
   containers:
-  - image: docker.io/istio/examples-bookinfo-details-v1:1.15.0
-    name: details
+    - image: registry.cn-hangzhou.aliyuncs.com/acejilam/examples-bookinfo-details-v1:1.15.0
+      name: details
   initContainers:
-  - image: docker.io/istio/proxyv2:1.3.1
-    name: istio-proxy
+    - image: registry.cn-hangzhou.aliyuncs.com/acejilam/proxyv2:1.3.1
+      name: istio-proxy
 ---
 # should not match the injector version.
 apiVersion: v1
@@ -86,10 +86,10 @@ metadata:
   namespace: enabled-namespace
 spec:
   containers:
-  - image: docker.io/istio/examples-bookinfo-details-v1:1.15.0
-    name: details
-  - image: docker.io/istio/proxyv2:1.3.0-prerelease
-    name: istio-proxy
+    - image: registry.cn-hangzhou.aliyuncs.com/acejilam/examples-bookinfo-details-v1:1.15.0
+      name: details
+    - image: registry.cn-hangzhou.aliyuncs.com/acejilam/proxyv2:1.3.0-prerelease
+      name: istio-proxy
 ---
 # should not match the injector version.
 apiVersion: v1
@@ -101,10 +101,10 @@ metadata:
   namespace: enabled-namespace
 spec:
   containers:
-  - image: docker.io/istio/examples-bookinfo-details-v1:1.15.0
-    name: details
-  - image: docker.io/istio/proxyv2:1.3.0-prerelease
-    name: istio-proxy
+    - image: registry.cn-hangzhou.aliyuncs.com/acejilam/examples-bookinfo-details-v1:1.15.0
+      name: details
+    - image: registry.cn-hangzhou.aliyuncs.com/acejilam/proxyv2:1.3.0-prerelease
+      name: istio-proxy
 ---
 # should not match the injector version.
 apiVersion: v1
@@ -116,10 +116,10 @@ metadata:
   namespace: enabled-namespace
 spec:
   containers:
-  - image: docker.io/istio/examples-bookinfo-details-v1:1.15.0
-    name: details
-  - image: docker.io/istio/proxyv2:1.3.0-prerelease
-    name: istio-proxy
+    - image: registry.cn-hangzhou.aliyuncs.com/acejilam/examples-bookinfo-details-v1:1.15.0
+      name: details
+    - image: registry.cn-hangzhou.aliyuncs.com/acejilam/proxyv2:1.3.0-prerelease
+      name: istio-proxy
 ---
 # details-v1-pod-overwritten-sidecar has a custom sidecar version injected and
 # therefore should not match the injector version.
@@ -129,15 +129,15 @@ metadata:
   labels:
     app: details
   annotations:
-    sidecar.istio.io/proxyImage: docker.io/istio/proxyv2:1.3.0-prerelease
+    sidecar.istio.io/proxyImage: registry.cn-hangzhou.aliyuncs.com/acejilam/proxyv2:1.3.0-prerelease
   name: details-v1-pod-overwritten-sidecar
   namespace: enabled-namespace
 spec:
   containers:
-  - image: docker.io/istio/examples-bookinfo-details-v2:1.15.0
-    name: details
-  - image: docker.io/istio/proxyv2:1.3.0-prerelease
-    name: istio-proxy
+    - image: registry.cn-hangzhou.aliyuncs.com/acejilam/examples-bookinfo-details-v2:1.15.0
+      name: details
+    - image: registry.cn-hangzhou.aliyuncs.com/acejilam/proxyv2:1.3.0-prerelease
+      name: istio-proxy
 ---
 # Namespace 'default' does not have an explicit label, so no version checking should happen.
 apiVersion: v1
@@ -156,10 +156,10 @@ metadata:
   namespace: default
 spec:
   containers:
-  - image: docker.io/istio/examples-bookinfo-details-v2:1.15.0
-    name: details
-  - image: docker.io/istio/proxyv2:1.3.0
-    name: istio-proxy
+    - image: registry.cn-hangzhou.aliyuncs.com/acejilam/examples-bookinfo-details-v2:1.15.0
+      name: details
+    - image: registry.cn-hangzhou.aliyuncs.com/acejilam/proxyv2:1.3.0
+      name: istio-proxy
 ---
 # Namespace 'revision-namespace' has istio injection enabled and label istio.io/rev=canary, so will be enforced.
 apiVersion: v1
@@ -179,10 +179,10 @@ metadata:
   namespace: revision-namespace
 spec:
   containers:
-  - image: docker.io/istio/examples-bookinfo-details-v1:1.15.0
-    name: details
-  - image: docker.io/istio/proxyv2:1.3.0
-    name: istio-proxy
+    - image: registry.cn-hangzhou.aliyuncs.com/acejilam/examples-bookinfo-details-v1:1.15.0
+      name: details
+    - image: registry.cn-hangzhou.aliyuncs.com/acejilam/proxyv2:1.3.0
+      name: istio-proxy
 ---
 # Revision-details-v1-pod-new is up to date, and should be ignored.
 apiVersion: v1
@@ -194,10 +194,10 @@ metadata:
   namespace: revision-namespace
 spec:
   containers:
-  - image: docker.io/istio/examples-bookinfo-details-v1:1.15.0
-    name: details
-  - image: docker.io/istio/proxyv2:1.3.1
-    name: istio-proxy
+    - image: registry.cn-hangzhou.aliyuncs.com/acejilam/examples-bookinfo-details-v1:1.15.0
+      name: details
+    - image: registry.cn-hangzhou.aliyuncs.com/acejilam/proxyv2:1.3.1
+      name: istio-proxy
 ---
 # revision-details-v1-pod-overwritten-sidecar has a custom sidecar version injected and
 # therefore should not match the injector version.
@@ -207,13 +207,13 @@ metadata:
   labels:
     app: details
   annotations:
-    sidecar.istio.io/proxyImage: docker.io/istio/proxyv2:1.3.0-prerelease
+    sidecar.istio.io/proxyImage: registry.cn-hangzhou.aliyuncs.com/acejilam/proxyv2:1.3.0-prerelease
   name: revision-details-v1-pod-overwritten-sidecar
   namespace: revision-namespace
 spec:
   containers:
-  - image: docker.io/istio/examples-bookinfo-details-v2:1.15.0
-    name: details
-  - image: docker.io/istio/proxyv2:1.3.0-prerelease
-    name: istio-proxy
+    - image: registry.cn-hangzhou.aliyuncs.com/acejilam/examples-bookinfo-details-v2:1.15.0
+      name: details
+    - image: registry.cn-hangzhou.aliyuncs.com/acejilam/proxyv2:1.3.0-prerelease
+      name: istio-proxy
 ---

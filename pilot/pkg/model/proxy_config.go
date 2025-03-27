@@ -15,9 +15,9 @@
 package model
 
 import (
-	"istio.io/api/annotation"
-	meshconfig "istio.io/api/mesh/v1alpha1"
-	"istio.io/api/networking/v1beta1"
+	"istio.io/istio/istio.io/api/annotation"
+	meshconfig "istio.io/istio/istio.io/api/mesh/v1alpha1"
+	"istio.io/istio/istio.io/api/networking/v1beta1"
 	"istio.io/istio/pkg/config/labels"
 	"istio.io/istio/pkg/config/mesh"
 	"istio.io/istio/pkg/config/schema/gvk"
@@ -33,7 +33,6 @@ type ProxyConfigs struct {
 	rootNamespace string
 }
 
-// EffectiveProxyConfig generates the correct merged ProxyConfig for a given ProxyConfigTarget.
 func (p *ProxyConfigs) EffectiveProxyConfig(meta *NodeMetadata, mc *meshconfig.MeshConfig) *meshconfig.ProxyConfig {
 	if p == nil || meta == nil {
 		return nil

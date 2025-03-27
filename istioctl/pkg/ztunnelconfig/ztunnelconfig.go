@@ -524,6 +524,7 @@ func setupZtunnelLogs(kubeClient kube.CLIClient, param, podName, podNamespace st
 // getComponentPodName returns the pod name and namespace of the Istio component
 func getComponentPodName(ctx cli.Context, podflag string) (string, string, error) {
 	// If user passed --namespace, respect it. Else fallback to --istio-namespace (which is typically defaulted, to istio-system).
+
 	return getPodNameWithNamespace(ctx, podflag, model.GetOrDefault(ctx.Namespace(), ctx.IstioNamespace()))
 }
 

@@ -18,10 +18,7 @@ package monitoring
 // measured by a Metric (if applicable).
 type Unit string
 
-// Predefined units for use with the monitoring package.
 const (
-	None         Unit = "1"
-	Bytes        Unit = "By"
-	Seconds      Unit = "s"
-	Milliseconds Unit = "ms"
+	None  Unit = "1"
+	Bytes Unit = "By"
 )

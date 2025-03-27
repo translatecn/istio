@@ -1,0 +1,24 @@
+apiVersion: networking.istio.io/v1beta1
+kind: Sidecar
+metadata:
+  name: test-sc
+  namespace: istio-system # 默认全局
+spec:
+  egress:
+    - hosts:  # 只可以访问以下两个ns 内的服务
+        - "./*"
+---
+apiVersion: networking.istio.io/v1beta1
+kind: Sidecar
+metadata:
+  name: test-sc
+  namespace: default
+spec:
+  workloadSelector:
+    labels:
+      app: bar
+  egress:
+    - hosts:  # 只可以访问以下两个ns 内的服务
+        - "istio-system/*"
+        - "./*"
+#  istioctl proxy-config clusters sleep-9454cc476-42lhh  |grep other

@@ -29,7 +29,7 @@ import (
 	otlpcommon "go.opentelemetry.io/proto/otlp/common/v1"
 	"google.golang.org/protobuf/types/known/structpb"
 
-	meshconfig "istio.io/api/mesh/v1alpha1"
+	meshconfig "istio.io/istio/istio.io/api/mesh/v1alpha1"
 	"istio.io/istio/pilot/pkg/util/protoconv"
 	"istio.io/istio/pkg/config/host"
 	"istio.io/istio/pkg/maps"
@@ -134,11 +134,6 @@ var (
 		TypedConfig: protoconv.MessageToAny(&celformatter.Cel{}),
 	}
 )
-
-// configureFromProviderConfigHandled contains the number of providers we handle below.
-// This is to ensure this stays in sync as new handlers are added
-// STOP. DO NOT UPDATE THIS WITHOUT UPDATING telemetryAccessLog.
-const telemetryAccessLogHandled = 14
 
 func telemetryAccessLog(push *PushContext, proxy *Proxy, fp *meshconfig.MeshConfig_ExtensionProvider) *accesslog.AccessLog {
 	var al *accesslog.AccessLog
@@ -404,6 +399,7 @@ func fileAccessLogFormat(formatString string) string {
 
 func FileAccessLogFromMeshConfig(path string, mesh *meshconfig.MeshConfig) *accesslog.AccessLog {
 	// We need to build access log. This is needed either on first access or when mesh config changes.
+
 	fl := &fileaccesslog.FileAccessLog{
 		Path: path,
 	}

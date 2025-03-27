@@ -62,10 +62,11 @@ func (c Topology) MetadataValue(key string) string {
 
 // NetworkName the cluster is on
 func (c Topology) NetworkName() string {
+	// Name provides the ClusterName this cluster used by Istio.
+
 	return c.Network
 }
 
-// Name provides the ClusterName this cluster used by Istio.
 func (c Topology) Name() string {
 	return c.ClusterName
 }
@@ -90,9 +91,11 @@ var knownClusterNames = map[string]struct{}{
 // StableName provides a name used for testcase names. Deterministic, so testgrid
 // can be consistent when the underlying cluster names are dynamic.
 func (c Topology) StableName() string {
-	var prefix string
 	// If its a known cluster name, use that directly.
 	// This will not be dynamic, and allows 1:1 correlation of cluster name and test name for simplicity.
+
+	var prefix string
+
 	if _, f := knownClusterNames[c.Name()]; f {
 		return c.Name()
 	}
@@ -155,12 +158,14 @@ func (c Topology) ConfigName() string {
 
 func (c Topology) WithPrimary(primaryClusterName string) Topology {
 	// TODO remove this, should only be provided by external config
+
 	c.PrimaryClusterName = primaryClusterName
 	return c
 }
 
 func (c Topology) WithConfig(configClusterName string) Topology {
 	// TODO remove this, should only be provided by external config
+
 	c.ConfigClusterName = configClusterName
 	return c
 }

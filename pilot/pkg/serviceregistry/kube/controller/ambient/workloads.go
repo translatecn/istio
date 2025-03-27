@@ -24,11 +24,11 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 
-	"istio.io/api/annotation"
-	"istio.io/api/label"
-	networkingv1alpha3 "istio.io/api/networking/v1alpha3"
-	networkingclient "istio.io/client-go/pkg/apis/networking/v1"
-	securityclient "istio.io/client-go/pkg/apis/security/v1"
+	"istio.io/istio/istio.io/api/annotation"
+	"istio.io/istio/istio.io/api/label"
+	networkingv1alpha3 "istio.io/istio/istio.io/api/networking/v1alpha3"
+	networkingclient "istio.io/istio/istio.io/client-go/pkg/apis/networking/v1"
+	securityclient "istio.io/istio/istio.io/client-go/pkg/apis/security/v1"
 	"istio.io/istio/pilot/pkg/features"
 	"istio.io/istio/pilot/pkg/model"
 	"istio.io/istio/pilot/pkg/serviceregistry/kube"
@@ -368,6 +368,7 @@ func (a *index) buildWorkloadPolicies(
 	// We need to filter from the policies that are present, which apply to us.
 	// We only want label selector ones; global ones are not attached to the final WorkloadInfo
 	// In general we just take all of the policies
+
 	basePolicies := krt.Fetch(
 		ctx,
 		authorizationPolicies,
@@ -752,6 +753,7 @@ func constructServices(p *v1.Pod, services []model.ServiceInfo) map[string]*work
 func getPodLocality(ctx krt.HandlerContext, Nodes krt.Collection[*v1.Node], pod *v1.Pod) *workloadapi.Locality {
 	// NodeName is set by the scheduler after the pod is created
 	// https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#late-initialization
+
 	node := ptr.Flatten(krt.FetchOne(ctx, Nodes, krt.FilterKey(pod.Spec.NodeName)))
 	if node == nil {
 		if pod.Spec.NodeName != "" {

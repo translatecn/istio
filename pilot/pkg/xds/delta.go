@@ -39,234 +39,10 @@ import (
 
 var deltaLog = istiolog.RegisterScope("delta", "delta xds debugging")
 
-func (s *DiscoveryServer) StreamDeltas(stream DeltaDiscoveryStream) error {
-	if knativeEnv != "" && firstRequest.Load() {
-		// How scaling works in knative is the first request is the "loading" request. During
-		// loading request, concurrency=1. Once that request is done, concurrency is enabled.
-		// However, the XDS stream is long lived, so the first request would block all others. As a
-		// result, we should exit the first request immediately; clients will retry.
-		firstRequest.Store(false)
-		return status.Error(codes.Unavailable, "server warmup not complete; try again")
-	}
-	// Check if server is ready to accept clients and process new requests.
-	// Currently ready means caches have been synced and hence can build
-	// clusters correctly. Without this check, InitContext() call below would
-	// initialize with empty config, leading to reconnected Envoys loosing
-	// configuration. This is an additional safety check inaddition to adding
-	// cachesSynced logic to readiness probe to handle cases where kube-proxy
-	// ip tables update latencies.
-	// See https://github.com/istio/istio/issues/25495.
-	if !s.IsServerReady() {
-		return errors.New("server is not ready to serve discovery information")
-	}
-
-	ctx := stream.Context()
-	peerAddr := "0.0.0.0"
-	if peerInfo, ok := peer.FromContext(ctx); ok {
-		peerAddr = peerInfo.Addr.String()
-	}
-
-	if err := s.WaitForRequestLimit(stream.Context()); err != nil {
-		deltaLog.Warnf("ADS: %q exceeded rate limit: %v", peerAddr, err)
-		return status.Errorf(codes.ResourceExhausted, "request rate limit exceeded: %v", err)
-	}
-
-	ids, err := s.authenticate(ctx)
-	if err != nil {
-		return status.Error(codes.Unauthenticated, err.Error())
-	}
-	if ids != nil {
-		deltaLog.Debugf("Authenticated XDS: %v with identity %v", peerAddr, ids)
-	} else {
-		deltaLog.Debugf("Unauthenticated XDS: %v", peerAddr)
-	}
-
-	// InitContext returns immediately if the context was already initialized.
-	if err = s.globalPushContext().InitContext(s.Env, nil, nil); err != nil {
-		// Error accessing the data - log and close, maybe a different pilot replica
-		// has more luck
-		deltaLog.Warnf("Error reading config %v", err)
-		return status.Error(codes.Unavailable, "error reading config")
-	}
-	con := newDeltaConnection(peerAddr, stream)
-
-	// Do not call: defer close(con.pushChannel). The push channel will be garbage collected
-	// when the connection is no longer used. Closing the channel can cause subtle race conditions
-	// with push. According to the spec: "It's only necessary to close a channel when it is important
-	// to tell the receiving goroutines that all data have been sent."
-
-	// Block until either a request is received or a push is triggered.
-	// We need 2 go routines because 'read' blocks in Recv().
-	go s.receiveDelta(con, ids)
-
-	// Wait for the proxy to be fully initialized before we start serving traffic. Because
-	// initialization doesn't have dependencies that will block, there is no need to add any timeout
-	// here. Prior to this explicit wait, we were implicitly waiting by receive() not sending to
-	// reqChannel and the connection not being enqueued for pushes to pushChannel until the
-	// initialization is complete.
-	<-con.InitializedCh()
-
-	for {
-		// Go select{} statements are not ordered; the same channel can be chosen many times.
-		// For requests, these are higher priority (client may be blocked on startup until these are done)
-		// and often very cheap to handle (simple ACK), so we check it first.
-		select {
-		case req, ok := <-con.deltaReqChan:
-			if ok {
-				if err := s.processDeltaRequest(req, con); err != nil {
-					return err
-				}
-			} else {
-				// Remote side closed connection or error processing the request.
-				return <-con.ErrorCh()
-			}
-		case <-con.StopCh():
-			return nil
-		default:
-		}
-		// If there wasn't already a request, poll for requests and pushes. Note: if we have a huge
-		// amount of incoming requests, we may still send some pushes, as we do not `continue` above;
-		// however, requests will be handled ~2x as much as pushes. This ensures a wave of requests
-		// cannot completely starve pushes. However, this scenario is unlikely.
-		select {
-		case req, ok := <-con.deltaReqChan:
-			if ok {
-				if err := s.processDeltaRequest(req, con); err != nil {
-					return err
-				}
-			} else {
-				// Remote side closed connection or error processing the request.
-				return <-con.ErrorCh()
-			}
-		case ev := <-con.PushCh():
-			pushEv := ev.(*Event)
-			err := s.pushConnectionDelta(con, pushEv)
-			pushEv.done()
-			if err != nil {
-				return err
-			}
-		case <-con.StopCh():
-			return nil
-		}
-	}
-}
-
-// Compute and send the new configuration for a connection.
-func (s *DiscoveryServer) pushConnectionDelta(con *Connection, pushEv *Event) error {
-	pushRequest := pushEv.pushRequest
-
-	if pushRequest.Full {
-		// Update Proxy with current information.
-		s.computeProxyState(con.proxy, pushRequest)
-	}
-
-	if !s.ProxyNeedsPush(con.proxy, pushRequest) {
-		deltaLog.Debugf("Skipping push to %v, no updates required", con.ID())
-		return nil
-	}
-
-	// Send pushes to all generators
-	// Each Generator is responsible for determining if the push event requires a push
-	wrl := con.watchedResourcesByOrder()
-	for _, w := range wrl {
-		if err := s.pushDeltaXds(con, w, pushRequest); err != nil {
-			return err
-		}
-	}
-
-	proxiesConvergeDelay.Record(time.Since(pushRequest.Start).Seconds())
-	return nil
-}
-
-func (s *DiscoveryServer) receiveDelta(con *Connection, identities []string) {
-	defer func() {
-		close(con.deltaReqChan)
-		close(con.ErrorCh())
-		// Close the initialized channel, if its not already closed, to prevent blocking the stream
-		select {
-		case <-con.InitializedCh():
-		default:
-			close(con.InitializedCh())
-		}
-	}()
-	firstRequest := true
-	for {
-		req, err := con.deltaStream.Recv()
-		if err != nil {
-			if istiogrpc.GRPCErrorType(err) != istiogrpc.UnexpectedError {
-				deltaLog.Infof("ADS: %q %s terminated", con.Peer(), con.ID())
-				return
-			}
-			con.ErrorCh() <- err
-			deltaLog.Errorf("ADS: %q %s terminated with error: %v", con.Peer(), con.ID(), err)
-			xds.TotalXDSInternalErrors.Increment()
-			return
-		}
-		// This should be only set for the first request. The node id may not be set - for example malicious clients.
-		if firstRequest {
-			// probe happens before envoy sends first xDS request
-			if req.TypeUrl == v3.HealthInfoType {
-				log.Warnf("ADS: %q %s send health check probe before normal xDS request", con.Peer(), con.ID())
-				continue
-			}
-			firstRequest = false
-			if req.Node == nil || req.Node.Id == "" {
-				con.ErrorCh() <- status.New(codes.InvalidArgument, "missing node information").Err()
-				return
-			}
-			if err := s.initConnection(req.Node, con, identities); err != nil {
-				con.ErrorCh() <- err
-				return
-			}
-			defer s.closeConnection(con)
-			deltaLog.Infof("ADS: new delta connection for node:%s", con.ID())
-		}
-
-		select {
-		case con.deltaReqChan <- req:
-		case <-con.deltaStream.Context().Done():
-			deltaLog.Infof("ADS: %q %s terminated with stream closed", con.Peer(), con.ID())
-			return
-		}
-	}
-}
-
-func (conn *Connection) sendDelta(res *discovery.DeltaDiscoveryResponse, newResourceNames []string) error {
-	sendResonse := func() error {
-		start := time.Now()
-		defer func() { xds.RecordSendTime(time.Since(start)) }()
-		return conn.deltaStream.Send(res)
-	}
-	err := sendResonse()
-	if err == nil {
-		if !strings.HasPrefix(res.TypeUrl, v3.DebugType) {
-			conn.proxy.UpdateWatchedResource(res.TypeUrl, func(wr *model.WatchedResource) *model.WatchedResource {
-				if wr == nil {
-					wr = &model.WatchedResource{TypeUrl: res.TypeUrl}
-				}
-				// some resources dynamically update ResourceNames. Most don't though
-				if newResourceNames != nil {
-					wr.ResourceNames = newResourceNames
-				}
-				wr.NonceSent = res.Nonce
-				wr.LastSendTime = time.Now()
-				if features.EnableUnsafeDeltaTest {
-					wr.LastResources = applyDelta(wr.LastResources, res)
-				}
-				return wr
-			})
-		}
-	} else if status.Convert(err).Code() == codes.DeadlineExceeded {
-		deltaLog.Infof("Timeout writing %s: %v", conn.ID(), v3.GetShortType(res.TypeUrl))
-		xds.ResponseWriteTimeouts.Increment()
-	}
-	return err
-}
-
 // processDeltaRequest is handling one request. This is currently called from the 'main' thread, which also
 // handles 'push' requests and close - the code will eventually call the 'push' code, and it needs more mutex
 // protection. Original code avoided the mutexes by doing both 'push' and 'process requests' in same thread.
-func (s *DiscoveryServer) processDeltaRequest(req *discovery.DeltaDiscoveryRequest, con *Connection) error {
+func (s *DiscoveryServer) processDeltaRequest(req *discovery.DeltaDiscoveryRequest, con *ConnectionServer) error {
 	stype := v3.GetShortType(req.TypeUrl)
 	deltaLog.Debugf("ADS:%s: REQ %s resources sub:%d unsub:%d nonce:%s", stype,
 		con.ID(), len(req.ResourceNamesSubscribe), len(req.ResourceNamesUnsubscribe), req.ResponseNonce)
@@ -335,7 +111,7 @@ func (s *DiscoveryServer) processDeltaRequest(req *discovery.DeltaDiscoveryReque
 	return s.forceEDSPush(con)
 }
 
-func (s *DiscoveryServer) forceEDSPush(con *Connection) error {
+func (s *DiscoveryServer) forceEDSPush(con *ConnectionServer) error {
 	if dwr := con.proxy.GetWatchedResource(v3.EndpointType); dwr != nil {
 		request := &model.PushRequest{
 			Full:   true,
@@ -351,7 +127,7 @@ func (s *DiscoveryServer) forceEDSPush(con *Connection) error {
 
 // shouldRespondDelta determines whether this request needs to be responded back. It applies the ack/nack rules as per xds protocol
 // using WatchedResource for previous state and discovery request for the current state.
-func (s *DiscoveryServer) shouldRespondDelta(con *Connection, request *discovery.DeltaDiscoveryRequest) bool {
+func (s *DiscoveryServer) shouldRespondDelta(con *ConnectionServer, request *discovery.DeltaDiscoveryRequest) bool {
 	stype := v3.GetShortType(request.TypeUrl)
 
 	// If there is an error in request that means previous response is erroneous.
@@ -460,12 +236,269 @@ func (s *DiscoveryServer) shouldRespondDelta(con *Connection, request *discovery
 	return true
 }
 
-// Push a Delta XDS resource for the given connection.
-func (s *DiscoveryServer) pushDeltaXds(con *Connection, w *model.WatchedResource, req *model.PushRequest) error {
+// requiresResourceNamesModification checks if a generator needs mutable access to w.ResourceNames.
+// This is used when resources are spontaneously pushed during Delta XDS
+func requiresResourceNamesModification(url string) bool {
+	return url == v3.AddressType || url == v3.WorkloadType
+}
+
+// neverRemoveDelta checks if a type should never remove resources
+func neverRemoveDelta(url string) bool {
+	// https://github.com/envoyproxy/envoy/issues/32823
+	// We want to garbage collect extensions when they are no longer referenced, rather than delete immediately
+
+	return url == v3.ExtensionConfigurationType
+}
+
+// shouldSetWatchedResources indicates whether we should set the watched resources for a given type.
+// for some type like `Address` we customly handle it in the generator
+func shouldSetWatchedResources(w *model.WatchedResource) bool {
+	if requiresResourceNamesModification(w.TypeUrl) {
+		// These handle it directly in the generator
+		return false
+	}
+	// Else fallback based on type
+	return xds.IsWildcardTypeURL(w.TypeUrl)
+}
+
+// To satisfy methods that need DiscoveryRequest. Not suitable for real usage
+func deltaToSotwRequest(request *discovery.DeltaDiscoveryRequest) *discovery.DiscoveryRequest {
+	return &discovery.DiscoveryRequest{
+		Node:          request.Node,
+		ResourceNames: request.ResourceNamesSubscribe,
+		TypeUrl:       request.TypeUrl,
+		ResponseNonce: request.ResponseNonce,
+		ErrorDetail:   request.ErrorDetail,
+	}
+}
+
+// deltaWatchedResources returns current watched resources of delta xds
+func deltaWatchedResources(existing []string, request *discovery.DeltaDiscoveryRequest) ([]string, bool) {
+	res := sets.New(existing...)
+	res.InsertAll(request.ResourceNamesSubscribe...)
+	// This is set by Envoy on first request on reconnection so that we are aware of what Envoy knows
+	// and can continue the xDS session properly.
+	for k := range request.InitialResourceVersions {
+		res.Insert(k)
+	}
+	res.DeleteAll(request.ResourceNamesUnsubscribe...)
+	wildcard := false
+	// A request is wildcard if they explicitly subscribe to "*" or subscribe to nothing
+	if res.Contains("*") {
+		wildcard = true
+		res.Delete("*")
+	}
+	// "if the client sends a request but has never explicitly subscribed to any resource names, the
+	// server should treat that identically to how it would treat the client having explicitly
+	// subscribed to *"
+	// NOTE: this means you cannot subscribe to nothing, which is useful for on-demand loading; to workaround this
+	// Istio clients will send and initial request both subscribing+unsubscribing to `*`.
+	if len(request.ResourceNamesSubscribe) == 0 {
+		wildcard = true
+	}
+	return res.UnsortedList(), wildcard
+}
+
+func (s *DiscoveryServer) StreamDeltas(stream DeltaDiscoveryStream) error {
+	if knativeEnv != "" && firstRequest.Load() {
+		// How scaling works in knative is the first request is the "loading" request. During
+		// loading request, concurrency=1. Once that request is done, concurrency is enabled.
+		// However, the XDS stream is long lived, so the first request would block all others. As a
+		// result, we should exit the first request immediately; clients will retry.
+		firstRequest.Store(false)
+		return status.Error(codes.Unavailable, "server warmup not complete; try again")
+	}
+	// Check if server is ready to accept clients and process new requests.
+	// Currently ready means caches have been synced and hence can build
+	// clusters correctly. Without this check, InitContext() call below would
+	// initialize with empty config, leading to reconnected Envoys loosing
+	// configuration. This is an additional safety check inaddition to adding
+	// cachesSynced logic to readiness probe to handle cases where kube-proxy
+	// ip tables update latencies.
+	// See https://github.com/istio/istio/issues/25495.
+	if !s.IsServerReady() {
+		return errors.New("server is not ready to serve discovery information")
+	}
+
+	ctx := stream.Context()
+	peerAddr := "0.0.0.0"
+	if peerInfo, ok := peer.FromContext(ctx); ok {
+		// 获取客户端的 peer 信息
+		peerAddr = peerInfo.Addr.String()
+	}
+	deltaLog.Infof("Client IP: %s", peerAddr)
+
+	if err := s.WaitForRequestLimit(stream.Context()); err != nil {
+		deltaLog.Warnf("ADS: %q exceeded rate limit: %v", peerAddr, err)
+		return status.Errorf(codes.ResourceExhausted, "request rate limit exceeded: %v", err)
+	}
+
+	ids, err := s.authenticate(ctx)
+	if err != nil {
+		return status.Error(codes.Unauthenticated, err.Error())
+	}
+	if ids != nil {
+		deltaLog.Debugf("Authenticated XDS: %v with identity %v", peerAddr, ids)
+	} else {
+		deltaLog.Debugf("Unauthenticated XDS: %v", peerAddr)
+	}
+
+	// InitContext returns immediately if the context was already initialized.
+	s.globalPushContext().InitContext(s.Env, nil, nil)
+	con := newDeltaConnection(peerAddr, stream)
+
+	// Do not call: defer close(con.pushChannel). The push channel will be garbage collected
+	// when the connection is no longer used. Closing the channel can cause subtle race conditions
+	// with push. According to the spec: "It's only necessary to close a channel when it is important
+	// to tell the receiving goroutines that all data have been sent."
+
+	// Block until either a request is received or a push is triggered.
+	// We need 2 go routines because 'read' blocks in Recv().
+	go s.receiveDelta(con, ids)
+
+	// Wait for the proxy to be fully initialized before we start serving traffic. Because
+	// initialization doesn't have dependencies that will block, there is no need to add any timeout
+	// here. Prior to this explicit wait, we were implicitly waiting by receive() not sending to
+	// reqChannel and the connection not being enqueued for pushes to pushChannel until the
+	// initialization is complete.
+	<-con.InitializedCh()
+
+	for {
+		// Go select{} statements are not ordered; the same channel can be chosen many times.
+		// For requests, these are higher priority (client may be blocked on startup until these are done)
+		// and often very cheap to handle (simple ACK), so we check it first.
+		select {
+		case req, ok := <-con.deltaReqChan:
+			if ok {
+				if err := s.processDeltaRequest(req, con); err != nil {
+					return err
+				}
+			} else {
+				// Remote side closed connection or error processing the request.
+				return <-con.ErrorCh()
+			}
+		case <-con.StopCh():
+			return nil
+		default:
+		}
+		// If there wasn't already a request, poll for requests and pushes. Note: if we have a huge
+		// amount of incoming requests, we may still send some pushes, as we do not `continue` above;
+		// however, requests will be handled ~2x as much as pushes. This ensures a wave of requests
+		// cannot completely starve pushes. However, this scenario is unlikely.
+		select {
+		case req, ok := <-con.deltaReqChan:
+			if ok {
+				if err := s.processDeltaRequest(req, con); err != nil {
+					return err
+				}
+			} else {
+				// Remote side closed connection or error processing the request.
+				return <-con.ErrorCh()
+			}
+		case ev := <-con.PushCh(): // 要发送给 sidecar的事件
+			pushEv := ev.(*Event)
+			err := s.pushConnectionDelta(con, pushEv)
+			pushEv.done()
+			if err != nil {
+				return err
+			}
+		case <-con.StopCh():
+			return nil
+		}
+	}
+}
+
+func (s *DiscoveryServer) receiveDelta(con *ConnectionServer, identities []string) {
+	defer func() {
+		close(con.deltaReqChan)
+		close(con.ErrorCh())
+		// Close the initialized channel, if its not already closed, to prevent blocking the stream
+		select {
+		case <-con.InitializedCh():
+		default:
+			close(con.InitializedCh())
+		}
+	}()
+	firstRequest := true
+	for {
+		req, err := con.deltaStream.Recv()
+		if err != nil {
+			if istiogrpc.GRPCErrorType(err) != istiogrpc.UnexpectedError {
+				deltaLog.Infof("ADS: %q %s terminated", con.Peer(), con.ID())
+				return
+			}
+			con.ErrorCh() <- err
+			deltaLog.Errorf("ADS: %q %s terminated with error: %v", con.Peer(), con.ID(), err)
+			xds.TotalXDSInternalErrors.Increment()
+			return
+		}
+		// This should be only set for the first request. The node id may not be set - for example malicious clients.
+		if firstRequest {
+			// probe happens before envoy sends first xDS request
+			if req.TypeUrl == v3.HealthInfoType {
+				log.Warnf("ADS: %q %s send health check probe before normal xDS request", con.Peer(), con.ID())
+				continue
+			}
+			firstRequest = false
+			if req.Node == nil || req.Node.Id == "" {
+				con.ErrorCh() <- status.New(codes.InvalidArgument, "missing node information").Err()
+				return
+			}
+			if err := s.initConnection(req.Node, con, identities); err != nil {
+				con.ErrorCh() <- err
+				return
+			}
+			defer s.closeConnection(con)
+			deltaLog.Infof("ADS: new delta connection for node:%s", con.ID())
+		}
+
+		select {
+		case con.deltaReqChan <- req:
+		case <-con.deltaStream.Context().Done():
+			deltaLog.Infof("ADS: %q %s terminated with stream closed", con.Peer(), con.ID())
+			return
+		}
+	}
+}
+
+func newDeltaConnection(peerAddr string, stream DeltaDiscoveryStream) *ConnectionServer {
+	return &ConnectionServer{
+		Connection:   xds.NewConnection(peerAddr, nil),
+		deltaStream:  stream,
+		deltaReqChan: make(chan *discovery.DeltaDiscoveryRequest, 1),
+	}
+}
+
+// Compute and send the new configuration for a connection.
+func (s *DiscoveryServer) pushConnectionDelta(con *ConnectionServer, pushEv *Event) error {
+	pushRequest := pushEv.pushRequest
+
+	if pushRequest.Full {
+		s.computeProxyState(con.proxy, pushRequest) // ✅
+	}
+
+	if !s.ProxyNeedsPush(con.proxy, pushRequest) {
+		deltaLog.Debugf("Skipping push to %v, no updates required", con.ID())
+		return nil
+	}
+
+	// 向所有生成器发送推送，每个生成器负责确定推送事件是否需要推送
+	wrl := con.watchedResourcesByOrder() // ✅
+	for _, w := range wrl {
+		if err := s.pushDeltaXds(con, w, pushRequest); err != nil {
+			return err
+		}
+	}
+
+	proxiesConvergeDelay.Record(time.Since(pushRequest.Start).Seconds())
+	return nil
+}
+
+func (s *DiscoveryServer) pushDeltaXds(con *ConnectionServer, w *model.WatchedResource, req *model.PushRequest) error {
 	if w == nil {
 		return nil
 	}
-	gen := s.findGenerator(w.TypeUrl, con)
+	gen := s.findGenerator(w.TypeUrl, con) // ✅
 	if gen == nil {
 		return nil
 	}
@@ -502,10 +535,15 @@ func (s *DiscoveryServer) pushDeltaXds(con *Connection, w *model.WatchedResource
 	case model.XdsResourceGenerator:
 		res, logdata, err = g.Generate(con.proxy, w, req)
 	}
+
 	if err != nil || (res == nil && deletedRes == nil) {
 		return err
 	}
-	defer func() { recordPushTime(w.TypeUrl, time.Since(t0)) }()
+
+	defer func() {
+		recordPushTime(w.TypeUrl, time.Since(t0))
+	}()
+
 	resp := &discovery.DeltaDiscoveryResponse{
 		ControlPlane: ControlPlane(),
 		TypeUrl:      w.TypeUrl,
@@ -514,9 +552,11 @@ func (s *DiscoveryServer) pushDeltaXds(con *Connection, w *model.WatchedResource
 		Nonce:             nonce(req.Push.PushVersion),
 		Resources:         res,
 	}
+
 	currentResources := slices.Map(res, func(r *discovery.Resource) string {
 		return r.Name
 	})
+
 	if usedDelta {
 		resp.RemovedResources = deletedRes
 	} else if req.Full {
@@ -591,72 +631,36 @@ func (s *DiscoveryServer) pushDeltaXds(con *Connection, w *model.WatchedResource
 	return nil
 }
 
-// requiresResourceNamesModification checks if a generator needs mutable access to w.ResourceNames.
-// This is used when resources are spontaneously pushed during Delta XDS
-func requiresResourceNamesModification(url string) bool {
-	return url == v3.AddressType || url == v3.WorkloadType
-}
-
-// neverRemoveDelta checks if a type should never remove resources
-func neverRemoveDelta(url string) bool {
-	// https://github.com/envoyproxy/envoy/issues/32823
-	// We want to garbage collect extensions when they are no longer referenced, rather than delete immediately
-	return url == v3.ExtensionConfigurationType
-}
-
-// shouldSetWatchedResources indicates whether we should set the watched resources for a given type.
-// for some type like `Address` we customly handle it in the generator
-func shouldSetWatchedResources(w *model.WatchedResource) bool {
-	if requiresResourceNamesModification(w.TypeUrl) {
-		// These handle it directly in the generator
-		return false
+func (conn *ConnectionServer) sendDelta(res *discovery.DeltaDiscoveryResponse, newResourceNames []string) error {
+	sendResonse := func() error {
+		start := time.Now()
+		defer func() {
+			xds.RecordSendTime(time.Since(start))
+		}()
+		return conn.deltaStream.Send(res)
 	}
-	// Else fallback based on type
-	return xds.IsWildcardTypeURL(w.TypeUrl)
-}
-
-func newDeltaConnection(peerAddr string, stream DeltaDiscoveryStream) *Connection {
-	return &Connection{
-		Connection:   xds.NewConnection(peerAddr, nil),
-		deltaStream:  stream,
-		deltaReqChan: make(chan *discovery.DeltaDiscoveryRequest, 1),
+	err := sendResonse()
+	if err == nil {
+		if !strings.HasPrefix(res.TypeUrl, v3.DebugType) {
+			conn.proxy.UpdateWatchedResource(res.TypeUrl, func(wr *model.WatchedResource) *model.WatchedResource {
+				if wr == nil {
+					wr = &model.WatchedResource{TypeUrl: res.TypeUrl}
+				}
+				// some resources dynamically update ResourceNames. Most don't though
+				if newResourceNames != nil {
+					wr.ResourceNames = newResourceNames
+				}
+				wr.NonceSent = res.Nonce
+				wr.LastSendTime = time.Now()
+				if features.EnableUnsafeDeltaTest {
+					wr.LastResources = applyDelta(wr.LastResources, res)
+				}
+				return wr
+			})
+		}
+	} else if status.Convert(err).Code() == codes.DeadlineExceeded {
+		deltaLog.Infof("Timeout writing %s: %v", conn.ID(), v3.GetShortType(res.TypeUrl))
+		xds.ResponseWriteTimeouts.Increment()
 	}
-}
-
-// To satisfy methods that need DiscoveryRequest. Not suitable for real usage
-func deltaToSotwRequest(request *discovery.DeltaDiscoveryRequest) *discovery.DiscoveryRequest {
-	return &discovery.DiscoveryRequest{
-		Node:          request.Node,
-		ResourceNames: request.ResourceNamesSubscribe,
-		TypeUrl:       request.TypeUrl,
-		ResponseNonce: request.ResponseNonce,
-		ErrorDetail:   request.ErrorDetail,
-	}
-}
-
-// deltaWatchedResources returns current watched resources of delta xds
-func deltaWatchedResources(existing []string, request *discovery.DeltaDiscoveryRequest) ([]string, bool) {
-	res := sets.New(existing...)
-	res.InsertAll(request.ResourceNamesSubscribe...)
-	// This is set by Envoy on first request on reconnection so that we are aware of what Envoy knows
-	// and can continue the xDS session properly.
-	for k := range request.InitialResourceVersions {
-		res.Insert(k)
-	}
-	res.DeleteAll(request.ResourceNamesUnsubscribe...)
-	wildcard := false
-	// A request is wildcard if they explicitly subscribe to "*" or subscribe to nothing
-	if res.Contains("*") {
-		wildcard = true
-		res.Delete("*")
-	}
-	// "if the client sends a request but has never explicitly subscribed to any resource names, the
-	// server should treat that identically to how it would treat the client having explicitly
-	// subscribed to *"
-	// NOTE: this means you cannot subscribe to nothing, which is useful for on-demand loading; to workaround this
-	// Istio clients will send and initial request both subscribing+unsubscribing to `*`.
-	if len(request.ResourceNamesSubscribe) == 0 {
-		wildcard = true
-	}
-	return res.UnsortedList(), wildcard
+	return err
 }

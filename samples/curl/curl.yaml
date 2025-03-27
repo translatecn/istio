@@ -29,8 +29,8 @@ metadata:
     service: curl
 spec:
   ports:
-  - port: 80
-    name: http
+    - port: 80
+      name: http
   selector:
     app: curl
 ---
@@ -51,16 +51,16 @@ spec:
       terminationGracePeriodSeconds: 0
       serviceAccountName: curl
       containers:
-      - name: curl
-        image: curlimages/curl
-        command: ["/bin/sleep", "infinity"]
-        imagePullPolicy: IfNotPresent
-        volumeMounts:
-        - mountPath: /etc/curl/tls
-          name: secret-volume
+        - name: curl
+          image: registry.cn-hangzhou.aliyuncs.com/acejilam/curl
+          command: [ "/bin/sleep", "infinity" ]
+          imagePullPolicy: IfNotPresent
+          volumeMounts:
+            - mountPath: /etc/curl/tls
+              name: secret-volume
       volumes:
-      - name: secret-volume
-        secret:
-          secretName: curl-secret
-          optional: true
+        - name: secret-volume
+          secret:
+            secretName: curl-secret
+            optional: true
 ---

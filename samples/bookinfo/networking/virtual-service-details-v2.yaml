@@ -4,9 +4,9 @@ metadata:
   name: details
 spec:
   hosts:
-  - details
+    - details
   http:
-  - route:
-    - destination:
-        host: details
-        subset: v2
+    - route:
+        - destination:
+            host: details
+            subset: v2

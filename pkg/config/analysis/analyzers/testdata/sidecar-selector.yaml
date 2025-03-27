@@ -41,8 +41,8 @@ spec:
     labels:
       app: productpage # Maps to an existing workload without conflicts in the same ns, no error
   egress:
-  - hosts:
-    - "./*"
+    - hosts:
+        - "./*"
 ---
 apiVersion: networking.istio.io/v1
 kind: Sidecar
@@ -54,8 +54,8 @@ spec:
     labels:
       app: bogus # This doesn't exist, and should generate an error
   egress:
-  - hosts:
-    - "./*"
+    - hosts:
+        - "./*"
 ---
 apiVersion: networking.istio.io/v1
 kind: Sidecar
@@ -67,8 +67,8 @@ spec:
     labels:
       app: reviews # This doesn't exist in the current namespace, and should generate an error
   egress:
-  - hosts:
-    - "./*"
+    - hosts:
+        - "./*"
 ---
 apiVersion: networking.istio.io/v1
 kind: Sidecar
@@ -80,8 +80,8 @@ spec:
     labels:
       app: reviews # Multiple sidecars have the same selector, should generate errors for both
   egress:
-  - hosts:
-    - "./*"
+    - hosts:
+        - "./*"
 ---
 apiVersion: networking.istio.io/v1
 kind: Sidecar
@@ -93,8 +93,8 @@ spec:
     labels:
       app: reviews # Multiple sidecars have the same selector, should generate errors for both
   egress:
-  - hosts:
-    - "./*"
+    - hosts:
+        - "./*"
 ---
 apiVersion: networking.istio.io/v1
 kind: Sidecar
@@ -106,8 +106,8 @@ spec:
     labels:
       app: ratings-app # Multiple sidecars select overlapping workloads, should generate errors for both
   egress:
-  - hosts:
-    - "./*"
+    - hosts:
+        - "./*"
 ---
 apiVersion: networking.istio.io/v1
 kind: Sidecar
@@ -119,5 +119,5 @@ spec:
     labels:
       myapp: ratings-myapp # Multiple sidecars select overlapping workloads, should generate errors for both
   egress:
-  - hosts:
-    - "./*"
+    - hosts:
+        - "./*"

@@ -1,6 +1,7 @@
 apiVersion: install.istio.io/v1alpha1
 kind: IstioOperator
 spec:
+  hub: registry.cn-hangzhou.aliyuncs.com/acejilam
   components:
     pilot:
       enabled: true
@@ -13,3 +14,4 @@ spec:
         k8s:
           service:
             externalTrafficPolicy: Test
+

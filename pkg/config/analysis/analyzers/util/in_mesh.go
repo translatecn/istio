@@ -18,8 +18,8 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 
-	"istio.io/api/annotation"
-	"istio.io/api/label"
+	"istio.io/istio/istio.io/api/annotation"
+	"istio.io/istio/istio.io/api/label"
 	"istio.io/istio/pkg/config/analysis"
 	"istio.io/istio/pkg/config/constants"
 	"istio.io/istio/pkg/config/resource"
@@ -67,6 +67,7 @@ func NamespaceInAmbientMode(r *resource.Instance) bool {
 
 func inMesh(annos, labels map[string]string, namespace resource.Namespace, containers []v1.Container, c analysis.Context) bool {
 	// If pod has the sidecar container set, then, the pod is in the mesh
+
 	if hasIstioProxy(containers) {
 		return true
 	}

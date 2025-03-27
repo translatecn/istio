@@ -22,7 +22,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 
-	"istio.io/api/annotation"
+	"istio.io/istio/istio.io/api/annotation"
 	"istio.io/istio/pilot/pkg/config/kube/crdclient"
 	"istio.io/istio/pilot/pkg/features"
 	"istio.io/istio/pilot/pkg/keycertbundle"
@@ -54,7 +54,7 @@ type kubeController struct {
 
 func (k *kubeController) Close() {
 	close(k.stop)
-	clusterID := k.Controller.clusterID
+	clusterID := k.Controller.networkManager.clusterID
 	k.MeshServiceController.UnRegisterHandlersForCluster(clusterID)
 	k.MeshServiceController.DeleteRegistry(clusterID, provider.Kubernetes)
 	if k.workloadEntryController != nil {
@@ -95,7 +95,6 @@ type Multicluster struct {
 	component       *multicluster.Component[*kubeController]
 }
 
-// NewMulticluster initializes data structure to store multicluster information
 func NewMulticluster(
 	serverID string,
 	kc kubernetes.Interface,
@@ -108,7 +107,7 @@ func NewMulticluster(
 	startNsController bool,
 	clusterLocal model.ClusterLocalProvider,
 	s server.Instance,
-	controller *multicluster.Controller,
+	controller *multicluster.SecretController,
 ) *Multicluster {
 	mc := &Multicluster{
 		serverID:               serverID,
@@ -124,35 +123,34 @@ func NewMulticluster(
 		client:                 kc,
 		s:                      s,
 	}
-	mc.component = multicluster.BuildMultiClusterComponent(controller, func(cluster *multicluster.Cluster) *kubeController {
-		stop := make(chan struct{})
-		client := cluster.Client
-		configCluster := opts.ClusterID == cluster.ID
+	multicluster.BuildMultiClusterComponent(
+		controller,
+		func(cluster *multicluster.Cluster) *kubeController {
+			stop := make(chan struct{})
+			client := cluster.Client
+			configCluster := opts.ClusterID == cluster.ID
 
-		options := opts
-		options.ClusterID = cluster.ID
-		if !configCluster {
-			options.SyncTimeout = features.RemoteClusterTimeout
-		}
-		log.Infof("Initializing Kubernetes service registry %q", options.ClusterID)
-		options.ConfigCluster = configCluster
-		kubeRegistry := NewController(client, options)
-		kubeController := &kubeController{
-			MeshServiceController: opts.MeshServiceController,
-			Controller:            kubeRegistry,
-			stop:                  stop,
-		}
-		mc.initializeCluster(cluster, kubeController, kubeRegistry, options, configCluster, stop)
-		return kubeController
-	})
+			options := opts
+			options.ClusterID = cluster.ID
+			if !configCluster {
+				options.SyncTimeout = features.RemoteClusterTimeout
+			}
+			log.Infof("Initializing Kubernetes service registry %q", options.ClusterID)
+			options.ConfigCluster = configCluster
+			kubeRegistry := NewOtherClusterController(client, options)
+			kubeController := &kubeController{
+				MeshServiceController: opts.MeshServiceController,
+				Controller:            kubeRegistry,
+				stop:                  stop,
+			}
+			mc.initializeCluster(cluster, kubeController, kubeRegistry, options, configCluster, stop)
+			return kubeController
+		})
 
 	return mc
 }
 
-// initializeCluster initializes the cluster by setting various handlers.
-func (m *Multicluster) initializeCluster(cluster *multicluster.Cluster, kubeController *kubeController, kubeRegistry *Controller,
-	options Options, configCluster bool, clusterStopCh <-chan struct{},
-) {
+func (m *Multicluster) initializeCluster(cluster *multicluster.Cluster, kubeController *kubeController, kubeRegistry *Controller, options Options, configCluster bool, clusterStopCh <-chan struct{}) {
 	client := cluster.Client
 
 	if m.serviceEntryController != nil && features.EnableServiceEntrySelectPods {
@@ -176,7 +174,8 @@ func (m *Multicluster) initializeCluster(cluster *multicluster.Cluster, kubeCont
 				configStore, options.XDSUpdater,
 				m.opts.MeshWatcher,
 				serviceentry.WithClusterID(cluster.ID),
-				serviceentry.WithNetworkIDCb(kubeRegistry.Network))
+				serviceentry.WithNetworkIDCb(kubeRegistry.Network),
+			)
 			// Services can select WorkloadEntry from the same cluster. We only duplicate the Service to configure kube-dns.
 			kubeController.workloadEntryController.AppendWorkloadHandler(kubeRegistry.WorkloadInstanceHandler)
 			// ServiceEntry selects WorkloadEntry from remote cluster

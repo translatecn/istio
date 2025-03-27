@@ -247,11 +247,11 @@ func (s Set[T]) Equals(other Set[T]) bool {
 }
 
 // Len returns the number of elements in this Set.
-func (s Set[T]) Len() int {
+func (s Set[T]) Len() int { // IsEmpty indicates whether the set is the empty set.
+
 	return len(s)
 }
 
-// IsEmpty indicates whether the set is the empty set.
 func (s Set[T]) IsEmpty() bool {
 	return len(s) == 0
 }

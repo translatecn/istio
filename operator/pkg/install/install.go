@@ -26,7 +26,7 @@ import (
 	"k8s.io/apimachinery/pkg/selection"
 	"k8s.io/apimachinery/pkg/types"
 
-	"istio.io/api/label"
+	"istio.io/istio/istio.io/api/label"
 	"istio.io/istio/operator/pkg/component"
 	"istio.io/istio/operator/pkg/manifest"
 	"istio.io/istio/operator/pkg/uninstall"
@@ -41,7 +41,7 @@ import (
 	"istio.io/istio/pkg/slices"
 	"istio.io/istio/pkg/util/istiomultierror"
 	"istio.io/istio/pkg/util/sets"
-	"istio.io/istio/pkg/version"
+	"istio.io/istio/pkg/version_over"
 )
 
 type Installer struct {
@@ -59,6 +59,7 @@ type Installer struct {
 func (i Installer) InstallManifests(manifests []manifest.ManifestSet) error {
 	// The namespace is not a part of the manifest generation, but needed to actually deploy to the cluster.
 	// Install if needed.
+
 	err := i.installSystemNamespace()
 	if err != nil {
 		return err
@@ -319,7 +320,7 @@ func getOwnerLabels(iop values.Map, c string) map[string]string {
 	labels := make(map[string]string)
 
 	labels[manifest.OperatorManagedLabel] = "Reconcile"
-	labels[manifest.OperatorVersionLabel] = version.Info.Version
+	labels[manifest.OperatorVersionLabel] = version_over.Info.Version
 	if n := iop.GetPathString("metadata.name"); n != "" {
 		labels[manifest.OwningResourceName] = n
 	}

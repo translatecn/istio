@@ -51,6 +51,7 @@ func (c *Cluster) CanDeploy(config echo.Config) (echo.Config, bool) {
 
 func (c *Cluster) isVMSupported() bool {
 	// VMs can only be deployed on config clusters, since they assume the cluster ID of the control plane.
+
 	return c.IsConfig() && c.vmSupport
 }
 

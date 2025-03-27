@@ -76,6 +76,7 @@ type EndpointShards struct {
 func (es *EndpointShards) Keys() []ShardKey {
 	// len(shards) ~= number of remote clusters which isn't too large, doing this sort frequently
 	// shouldn't be too problematic. If it becomes an issue we can cache it in the EndpointShards struct.
+
 	keys := make([]ShardKey, 0, len(es.Shards))
 	for k := range es.Shards {
 		keys = append(keys, k)
@@ -152,15 +153,6 @@ func NewEndpointIndex(cache XdsCache) *EndpointIndex {
 	}
 }
 
-// must be called with lock
-func (e *EndpointIndex) clearCacheForService(svc, ns string) {
-	e.cache.Clear(sets.Set[ConfigKey]{{
-		Kind:      kind.ServiceEntry,
-		Name:      svc,
-		Namespace: ns,
-	}: {}})
-}
-
 // Shardz returns a full deep copy of the global map of shards. This should be used only for testing
 // and debugging, as the cloning is expensive.
 func (e *EndpointIndex) Shardz() map[string]map[string]*EndpointShards {
@@ -211,12 +203,6 @@ func (e *EndpointIndex) GetOrCreateEndpointShard(serviceName, namespace string) 
 	return ep, true
 }
 
-func (e *EndpointIndex) DeleteServiceShard(shard ShardKey, serviceName, namespace string, preserveKeys bool) {
-	e.mu.Lock()
-	defer e.mu.Unlock()
-	e.deleteServiceInner(shard, serviceName, namespace, preserveKeys)
-}
-
 func (e *EndpointIndex) DeleteShard(shardKey ShardKey) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
@@ -231,37 +217,12 @@ func (e *EndpointIndex) DeleteShard(shardKey ShardKey) {
 	e.cache.ClearAll()
 }
 
-// must be called with lock
-func (e *EndpointIndex) deleteServiceInner(shard ShardKey, serviceName, namespace string, preserveKeys bool) {
-	if e.shardsBySvc[serviceName] == nil ||
-		e.shardsBySvc[serviceName][namespace] == nil {
-		return
-	}
-	epShards := e.shardsBySvc[serviceName][namespace]
-	epShards.Lock()
-	delete(epShards.Shards, shard)
-	// Clear the cache here to avoid race in cache writes.
-	e.clearCacheForService(serviceName, namespace)
-	if !preserveKeys {
-		if len(epShards.Shards) == 0 {
-			delete(e.shardsBySvc[serviceName], namespace)
-		}
-		if len(e.shardsBySvc[serviceName]) == 0 {
-			delete(e.shardsBySvc, serviceName)
-		}
-	}
-	epShards.Unlock()
-}
-
-// PushType is an enumeration that decides what type push we should do when we get EDS update.
+// PushType 是一个枚举，它决定我们在获得EDS更新时应该执行哪种类型的推送。
 type PushType int
 
 const (
-	// NoPush does not push any thing.
 	NoPush PushType = iota
-	// IncrementalPush just pushes endpoints.
 	IncrementalPush
-	// FullPush triggers full push - typically used for new services.
 	FullPush
 )
 
@@ -404,45 +365,38 @@ func updateShardServiceAccount(shards *EndpointShards, serviceName string) bool 
 	return false
 }
 
-// EndpointIndexUpdater is an updater that will keep an EndpointIndex in sync. This is intended for tests only.
-type EndpointIndexUpdater struct {
-	Index *EndpointIndex
-	// Optional; if set, we will trigger ConfigUpdates in response to EDS updates as appropriate
-	ConfigUpdateFunc func(req *PushRequest)
+func (e *EndpointIndex) DeleteServiceShard(shard ShardKey, serviceName, namespace string, preserveKeys bool) {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	e.deleteServiceInner(shard, serviceName, namespace, preserveKeys)
 }
 
-var _ XDSUpdater = &EndpointIndexUpdater{}
-
-func NewEndpointIndexUpdater(ei *EndpointIndex) *EndpointIndexUpdater {
-	return &EndpointIndexUpdater{Index: ei}
+// must be called with lock
+func (e *EndpointIndex) clearCacheForService(svc, ns string) {
+	e.cache.Clear(sets.Set[ConfigKey]{{
+		Kind:      kind.ServiceEntry,
+		Name:      svc,
+		Namespace: ns,
+	}: {}})
 }
 
-func (f *EndpointIndexUpdater) ConfigUpdate(*PushRequest) {}
-
-func (f *EndpointIndexUpdater) EDSUpdate(shard ShardKey, serviceName string, namespace string, eps []*IstioEndpoint) {
-	pushType := f.Index.UpdateServiceEndpoints(shard, serviceName, namespace, eps)
-	if f.ConfigUpdateFunc != nil && (pushType == IncrementalPush || pushType == FullPush) {
-		// Trigger a push
-		f.ConfigUpdateFunc(&PushRequest{
-			Full:           pushType == FullPush,
-			ConfigsUpdated: sets.New(ConfigKey{Kind: kind.ServiceEntry, Name: serviceName, Namespace: namespace}),
-			Reason:         NewReasonStats(EndpointUpdate),
-		})
+// must be called with lock
+func (e *EndpointIndex) deleteServiceInner(shard ShardKey, serviceName, namespace string, preserveKeys bool) {
+	if e.shardsBySvc[serviceName] == nil || e.shardsBySvc[serviceName][namespace] == nil {
+		return
 	}
-}
-
-func (f *EndpointIndexUpdater) EDSCacheUpdate(shard ShardKey, serviceName string, namespace string, eps []*IstioEndpoint) {
-	f.Index.UpdateServiceEndpoints(shard, serviceName, namespace, eps)
-}
-
-func (f *EndpointIndexUpdater) SvcUpdate(shard ShardKey, hostname string, namespace string, event Event) {
-	if event == EventDelete {
-		f.Index.DeleteServiceShard(shard, hostname, namespace, false)
+	epShards := e.shardsBySvc[serviceName][namespace]
+	epShards.Lock()
+	delete(epShards.Shards, shard)
+	// Clear the cache here to avoid race in cache writes.
+	e.clearCacheForService(serviceName, namespace)
+	if !preserveKeys {
+		if len(epShards.Shards) == 0 {
+			delete(e.shardsBySvc[serviceName], namespace)
+		}
+		if len(e.shardsBySvc[serviceName]) == 0 {
+			delete(e.shardsBySvc, serviceName)
+		}
 	}
-}
-
-func (f *EndpointIndexUpdater) ProxyUpdate(_ cluster.ID, _ string) {}
-
-func (f *EndpointIndexUpdater) RemoveShard(shardKey ShardKey) {
-	f.Index.DeleteShard(shardKey)
+	epShards.Unlock()
 }

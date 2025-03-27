@@ -28,7 +28,7 @@ spec:
 {{- if .Values.service.ipFamilies }}
   ipFamilies:
 {{- range .Values.service.ipFamilies }}
-  - {{ . }}
+    - {{ . }}
 {{- end }}
 {{- end }}
 {{- with .Values.service.loadBalancerSourceRanges }}
@@ -41,18 +41,18 @@ spec:
   type: {{ .Values.service.type }}
   ports:
 {{- if .Values.networkGateway }}
-  - name: status-port
-    port: 15021
-    targetPort: 15021
-  - name: tls
-    port: 15443
-    targetPort: 15443
-  - name: tls-istiod
-    port: 15012
-    targetPort: 15012
-  - name: tls-webhook
-    port: 15017
-    targetPort: 15017
+    - name: status-port
+      port: 15021
+      targetPort: 15021
+    - name: tls
+      port: 15443
+      targetPort: 15443
+    - name: tls-istiod
+      port: 15012
+      targetPort: 15012
+    - name: tls-webhook
+      port: 15017
+      targetPort: 15017
 {{- else }}
 {{ .Values.service.ports | toYaml | indent 4 }}
 {{- end }}

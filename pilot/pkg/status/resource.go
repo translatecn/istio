@@ -23,8 +23,8 @@ import (
 
 	"k8s.io/apimachinery/pkg/runtime/schema"
 
-	"istio.io/api/meta/v1alpha1"
-	networking "istio.io/api/networking/v1alpha3"
+	"istio.io/istio/istio.io/api/meta/v1alpha1"
+	networking "istio.io/istio/istio.io/api/networking/v1alpha3"
 	"istio.io/istio/pkg/config"
 	"istio.io/istio/pkg/config/resource"
 	"istio.io/istio/pkg/config/schema/collections"
@@ -49,6 +49,7 @@ func (r Resource) String() string {
 
 func (r *Resource) ToModelKey() string {
 	// we have a resource here, but model keys use kind.  Use the schema to find the correct kind.
+
 	found, _ := collections.All.FindByGroupVersionResource(r.GroupVersionResource)
 	return config.Key(
 		found.Group(), found.Version(), found.Kind(),

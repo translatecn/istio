@@ -62,16 +62,6 @@ type errorWrapper struct {
 // calling functions that take a Failer and using them with functions that expect an error, or
 // allowing calling functions that would cause a test to immediately fail to instead return an error.
 // Wrap handles Cleanup() and short-circuiting of Fatal() just like the real testing.T.
-func Wrap(f func(t Failer)) error {
-	done := make(chan struct{})
-	w := &errorWrapper{}
-	go func() {
-		defer close(done)
-		f(w)
-	}()
-	<-done
-	return w.ToErrorCleanup()
-}
 
 // ToErrorCleanup returns any errors encountered and executes any cleanup actions
 func (e *errorWrapper) ToErrorCleanup() error {
@@ -104,8 +94,7 @@ func (e *errorWrapper) Fatalf(format string, args ...any) {
 	e.Fatal(fmt.Sprintf(format, args...))
 }
 
-func (e *errorWrapper) Helper() {
-}
+func (e *errorWrapper) Helper() {}
 
 func (e *errorWrapper) Skip(args ...any) {
 	e.Fatal(args...)

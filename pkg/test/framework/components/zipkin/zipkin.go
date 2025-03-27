@@ -15,8 +15,6 @@
 package zipkin
 
 import (
-	"testing"
-
 	"istio.io/istio/pkg/test/framework/components/cluster"
 	"istio.io/istio/pkg/test/framework/resource"
 )
@@ -59,12 +57,3 @@ func New(ctx resource.Context, c Config) (i Instance, err error) {
 }
 
 // NewOrFail returns a new zipkin instance or fails test.
-func NewOrFail(t *testing.T, ctx resource.Context, c Config) Instance {
-	t.Helper()
-	i, err := New(ctx, c)
-	if err != nil {
-		t.Fatalf("zipkin.NewOrFail: %v", err)
-	}
-
-	return i
-}

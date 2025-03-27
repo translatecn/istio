@@ -19,7 +19,6 @@ import (
 
 	"istio.io/istio/pkg/test"
 	"istio.io/istio/pkg/test/framework/components/echo"
-	"istio.io/istio/pkg/test/framework/components/echo/check"
 )
 
 const (
@@ -56,15 +55,6 @@ type Generator interface {
 }
 
 // NewGenerator returns a new Generator with the given configuration.
-func NewGenerator(t test.Failer, cfg Config) Generator {
-	fillInDefaults(&cfg)
-	return &generator{
-		Config:  cfg,
-		t:       t,
-		stop:    make(chan struct{}),
-		stopped: make(chan struct{}),
-	}
-}
 
 var _ Generator = &generator{}
 
@@ -96,6 +86,7 @@ func (g *generator) Start() Generator {
 
 func (g *generator) Stop() Result {
 	// Trigger the generator to stop.
+
 	close(g.stop)
 
 	// Wait for the generator to exit.
@@ -112,16 +103,4 @@ func (g *generator) Stop() Result {
 	}
 	// Can never happen, but the compiler doesn't know that Fatal terminates
 	return Result{}
-}
-
-func fillInDefaults(cfg *Config) {
-	if cfg.Interval == 0 {
-		cfg.Interval = defaultInterval
-	}
-	if cfg.StopTimeout == 0 {
-		cfg.StopTimeout = defaultTimeout
-	}
-	if cfg.Options.Check == nil {
-		cfg.Options.Check = check.OK()
-	}
 }

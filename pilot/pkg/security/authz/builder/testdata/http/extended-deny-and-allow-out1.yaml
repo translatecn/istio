@@ -6,15 +6,15 @@ typedConfig:
     policies:
       ns[foo]-policy[httpbin-deny]-rule[0]:
         permissions:
-        - andRules:
-            rules:
-            - any: true
+          - andRules:
+              rules:
+                - any: true
         principals:
-        - andIds:
-            ids:
-            - orIds:
-                ids:
-                - authenticated:
-                    principalName:
-                      exact: spiffe://deny
+          - andIds:
+              ids:
+                - orIds:
+                    ids:
+                      - authenticated:
+                          principalName:
+                            exact: spiffe://deny
   shadowRulesStatPrefix: istio_dry_run_allow_

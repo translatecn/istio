@@ -37,7 +37,6 @@ const (
 
 const (
 	ArchAMD64 = "amd64"
-	ArchARM64 = "arm64"
 )
 
 var (
@@ -96,6 +95,7 @@ func getKubeConfigsFromEnvironment() ([]string, error) {
 	// Normalize KUBECONFIG so that it is separated by the OS path list separator.
 	// The framework currently supports comma as a separator, but that violates the
 	// KUBECONFIG spec.
+
 	value := env.KUBECONFIG.Value()
 	if strings.Contains(value, ",") {
 		updatedValue := strings.ReplaceAll(value, ",", string(filepath.ListSeparator))

@@ -17,10 +17,8 @@ package option
 import (
 	"strings"
 
-	"google.golang.org/protobuf/types/known/durationpb"
-
-	meshAPI "istio.io/api/mesh/v1alpha1"
-	networkingAPI "istio.io/api/networking/v1alpha3"
+	meshAPI "istio.io/istio/istio.io/api/mesh/v1alpha1"
+	networkingAPI "istio.io/istio/istio.io/api/networking/v1alpha3"
 	"istio.io/istio/pkg/model"
 )
 
@@ -46,10 +44,6 @@ func ProxyConfig(value *model.NodeMetaProxyConfig) Instance {
 
 func PilotSubjectAltName(value []string) Instance {
 	return newOption("pilot_SAN", value).withConvert(sanConverter(value))
-}
-
-func ConnectTimeout(value *durationpb.Duration) Instance {
-	return newDurationOption("connect_timeout", value)
 }
 
 func Cluster(value string) Instance {
@@ -295,6 +289,7 @@ func BypassOverloadManagerForStaticListeners(bypass bool) Instance {
 
 func LoadStatsConfigJSONStr(node *model.Node) Instance {
 	// JSON string for configuring Load Reporting Service.
+
 	if json, ok := node.RawMetadata["LOAD_STATS_CONFIG_JSON"].(string); ok {
 		return newOption("load_stats_config_json_str", json)
 	}

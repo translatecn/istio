@@ -27,54 +27,8 @@ import (
 	"istio.io/istio/pkg/ptr"
 )
 
-func AddInpodMarkIPRule(cfg *Config) error {
-	err := forEachInpodMarkIPRule(cfg, netlink.RuleAdd)
-	if errors.Is(err, unix.EEXIST) {
-		log.Debugf("Ignoring exists error adding inpod mark ip rule: %v", err)
-		return nil
-	}
-	return err
-}
-
 func DelInpodMarkIPRule(cfg *Config) error {
 	return forEachInpodMarkIPRule(cfg, netlink.RuleDel)
-}
-
-func forEachInpodMarkIPRule(cfg *Config, f func(*netlink.Rule) error) error {
-	var rules []*netlink.Rule
-	families := []int{unix.AF_INET}
-	if cfg.EnableIPv6 {
-		families = append(families, unix.AF_INET6)
-	}
-	for _, family := range families {
-		// Equiv:
-		// ip rule add fwmark 0x111/0xfff pref 32764 lookup 100
-		//
-		// Adds in-pod rules for marking packets with the istio-specific TPROXY mark.
-		// A very similar mechanism is used for sidecar TPROXY.
-		//
-		// TODO largely identical/copied from tools/istio-iptables/pkg/capture/run_linux.go
-		inpodMarkRule := netlink.NewRule()
-		inpodMarkRule.Family = family
-		inpodMarkRule.Table = RouteTableInbound
-		inpodMarkRule.Mark = InpodTProxyMark
-		inpodMarkRule.Mask = ptr.Of(uint32(InpodTProxyMask))
-		inpodMarkRule.Priority = 32764
-		rules = append(rules, inpodMarkRule)
-	}
-
-	for _, rule := range rules {
-		log.Debugf("processing netlink rule: %+v", rule)
-		if err := f(rule); err != nil {
-			return fmt.Errorf("failed to configure netlink rule: %w", err)
-		}
-	}
-
-	return nil
-}
-
-func AddLoopbackRoutes(cfg *Config) error {
-	return forEachLoopbackRoute(cfg, "add", netlink.RouteReplace)
 }
 
 func DelLoopbackRoutes(cfg *Config) error {
@@ -139,4 +93,50 @@ func forEachLoopbackRoute(cfg *Config, operation string, f func(*netlink.Route) 
 		}
 	}
 	return nil
+}
+
+func AddLoopbackRoutes(cfg *Config) error {
+	return forEachLoopbackRoute(cfg, "add", netlink.RouteReplace)
+}
+
+func forEachInpodMarkIPRule(cfg *Config, f func(*netlink.Rule) error) error {
+	var rules []*netlink.Rule
+	families := []int{unix.AF_INET}
+	if cfg.EnableIPv6 {
+		families = append(families, unix.AF_INET6)
+	}
+	for _, family := range families {
+		// Equiv:
+		// ip rule add fwmark 0x111/0xfff pref 32764 lookup 100
+		//
+		// Adds in-pod rules for marking packets with the istio-specific TPROXY mark.
+		// A very similar mechanism is used for sidecar TPROXY.
+		//
+		// TODO largely identical/copied from tools/istio-iptables/pkg/capture/run_linux.go
+		inpodMarkRule := netlink.NewRule()
+		inpodMarkRule.Family = family
+		inpodMarkRule.Table = RouteTableInbound
+		inpodMarkRule.Mark = InpodTProxyMark
+		inpodMarkRule.Mask = ptr.Of(uint32(InpodTProxyMask))
+		inpodMarkRule.Priority = 32764
+		rules = append(rules, inpodMarkRule)
+	}
+
+	for _, rule := range rules {
+		log.Debugf("processing netlink rule: %+v", rule)
+		if err := f(rule); err != nil {
+			return fmt.Errorf("failed to configure netlink rule: %w", err)
+		}
+	}
+
+	return nil
+}
+
+func AddInpodMarkIPRule(cfg *Config) error {
+	err := forEachInpodMarkIPRule(cfg, netlink.RuleAdd) // ✅
+	if errors.Is(err, unix.EEXIST) {
+		log.Debugf("Ignoring exists error adding inpod mark ip rule: %v", err)
+		return nil
+	}
+	return err
 }

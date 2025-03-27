@@ -24,7 +24,7 @@ import (
 	"github.com/hashicorp/go-multierror"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"istio.io/api/annotation"
+	"istio.io/istio/istio.io/api/annotation"
 	"istio.io/istio/pkg/kube/inject"
 	"istio.io/istio/pkg/test"
 	"istio.io/istio/pkg/test/framework/components/cluster"
@@ -76,6 +76,7 @@ var _ Builder = &builder{}
 // New builder for echo deployments.
 func New(ctx resource.Context, clusters ...cluster.Cluster) Builder {
 	// use all workload clusters unless otherwise specified
+
 	if len(clusters) == 0 {
 		clusters = ctx.Clusters()
 	}
@@ -195,10 +196,11 @@ func (b *builder) WithClusters(clusters ...cluster.Cluster) Builder {
 }
 
 func (b *builder) Build() (out echo.Instances, err error) {
+	// injectionTemplates lists the set of templates for each Kube cluster
+
 	return build(b)
 }
 
-// injectionTemplates lists the set of templates for each Kube cluster
 func (b *builder) injectionTemplates() (map[string]sets.String, error) {
 	ns := "istio-system"
 	i, err := istio.Get(b.ctx)
@@ -327,6 +329,7 @@ func (b *builder) deployServices() (err error) {
 
 func (b *builder) deployInstances() (echo.Instances, error) {
 	// run the builder func for each kind of config in parallel
+
 	instances, err := kube.Build(b.ctx, b.configs)
 	if err != nil {
 		return nil, err

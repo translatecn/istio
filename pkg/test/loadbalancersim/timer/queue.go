@@ -64,6 +64,7 @@ func (q *Queue) Len() int {
 
 func (q *Queue) Schedule(handler func(), deadline time.Time) {
 	// Add the timer to the heap.
+
 	q.mutex.Lock()
 	heap.Push(&q.heap, &entry{
 		handler:  handler,
@@ -92,6 +93,7 @@ func (q *Queue) resetTimer() {
 	// Below is a separate function to limit the scope of the lock.
 	// We don't want to lock when we modify the timer in case it causes
 	// an immediate callback, which would reacquire the lock.
+
 	needReset, resetDuration := func() (bool, time.Duration) {
 		q.mutex.Lock()
 		defer q.mutex.Unlock()
@@ -119,6 +121,7 @@ func (q *Queue) resetTimer() {
 
 func (q *Queue) onTimerExpired() {
 	// Collect all expired timers.
+
 	q.mutex.Lock()
 	handlers := q.heap.advanceTo(time.Now())
 	q.mutex.Unlock()

@@ -21,7 +21,7 @@ import (
 
 	"istio.io/istio/pilot/pkg/xds"
 	"istio.io/istio/pkg/kube"
-	istioVersion "istio.io/istio/pkg/version"
+	istioVersion "istio.io/istio/pkg/version_over"
 )
 
 type sidecarSyncStatus struct {
@@ -33,6 +33,7 @@ type sidecarSyncStatus struct {
 // GetProxyInfo retrieves infos of proxies that connect to the Istio control plane of specific revision.
 func GetProxyInfo(kubeClient kube.CLIClient, istioNamespace string) (*[]istioVersion.ProxyInfo, error) {
 	// Ask Pilot for the Envoy sidecar sync status, which includes the sidecar version info
+
 	allSyncz, err := kubeClient.AllDiscoveryDo(context.TODO(), istioNamespace, "debug/syncz")
 	if err != nil {
 		return nil, err

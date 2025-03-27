@@ -108,8 +108,7 @@ type TLSOptions struct {
 var (
 	PodNamespace = env.Register("POD_NAMESPACE", constants.IstioSystemNamespace, "").Get()
 	PodName      = env.Register("POD_NAME", "", "").Get()
-	JwtRule      = env.Register("JWT_RULE", "",
-		"The JWT rule used by istiod authentication").Get()
+	JwtRule      = env.Register("JWT_RULE", "", "The JWT rule used by istiod authentication").Get()
 )
 
 // Revision is the value of the Istio control plane revision, e.g. "canary",
@@ -118,9 +117,10 @@ var Revision = env.Register("REVISION", "", "").Get()
 
 // NewPilotArgs constructs pilotArgs with default values.
 func NewPilotArgs(initFuncs ...func(*PilotArgs)) *PilotArgs {
+	// Apply Default Values.
+
 	p := &PilotArgs{}
 
-	// Apply Default Values.
 	p.applyDefaults()
 
 	// Apply custom initialization functions.

@@ -20,7 +20,6 @@ import (
 	"path/filepath"
 	"regexp"
 
-	"istio.io/istio/pkg/test"
 	"istio.io/istio/pkg/test/env"
 )
 
@@ -48,13 +47,6 @@ func FindBinary() (string, error) {
 }
 
 // FindBinaryOrFail calls FindBinary and fails the given test if an error occurs.
-func FindBinaryOrFail(t test.Failer) string {
-	p, err := FindBinary()
-	if err != nil {
-		t.Fatal(err)
-	}
-	return p
-}
 
 func findBinaries() ([]string, error) {
 	binPaths := make([]string, 0)

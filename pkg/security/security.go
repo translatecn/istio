@@ -110,9 +110,6 @@ const (
 	// GoogleCAProvider uses the Google CA for workload certificate signing
 	GoogleCAProvider = "GoogleCA"
 
-	// GoogleCASProvider uses the Google certificate Authority Service to sign workload certificates
-	GoogleCASProvider = "GoogleCAS"
-
 	// GkeWorkloadCertificateProvider uses the GKE workload certificates
 	GkeWorkloadCertificateProvider = "GkeWorkloadCertificate"
 
@@ -123,13 +120,10 @@ const (
 // TODO: For 1.8, make sure MeshConfig is updated with those settings,
 // they should be dynamic to allow migrations without restart.
 // Both are critical.
-var (
-	// TokenAudiences specifies a list of audiences for SDS trustworthy JWT. This is to make sure that the CSR requests
-	// contain the JWTs intended for Citadel.
-	TokenAudiences = strings.Split(env.Register("TOKEN_AUDIENCES", "istio-ca",
-		"A list of comma separated audiences to check in the JWT token before issuing a certificate. "+
-			"The token is accepted if it matches with one of the audiences").Get(), ",")
-)
+
+// TokenAudiences specifies a list of audiences for SDS trustworthy JWT. This is to make sure that the CSR requests
+// contain the JWTs intended for Citadel.
+var TokenAudiences = strings.Split(env.Register("TOKEN_AUDIENCES", "istio-ca", "A list of comma separated audiences to check in the JWT token before issuing a certificate. The token is accepted if it matches with one of the audiences").Get(), ",")
 
 const (
 	BearerTokenPrefix = "Bearer "
@@ -408,26 +402,6 @@ func (am *authenticationManager) FailedMessages() string {
 	return strings.Join(am.authFailMsgs, "; ")
 }
 
-func ExtractBearerToken(ctx context.Context) (string, error) {
-	md, ok := metadata.FromIncomingContext(ctx)
-	if !ok {
-		return "", fmt.Errorf("no metadata is attached")
-	}
-
-	authHeader, exists := md[authorizationMeta]
-	if !exists {
-		return "", fmt.Errorf("no HTTP authorization header exists")
-	}
-
-	for _, value := range authHeader {
-		if strings.HasPrefix(value, BearerTokenPrefix) {
-			return strings.TrimPrefix(value, BearerTokenPrefix), nil
-		}
-	}
-
-	return "", fmt.Errorf("no bearer token exists in HTTP authorization header")
-}
-
 func ExtractRequestToken(req *http.Request) (string, error) {
 	value := req.Header.Get(authorizationMeta)
 	if value == "" {
@@ -449,6 +423,7 @@ func ExtractRequestToken(req *http.Request) (string, error) {
 func GetOSRootFilePath() string {
 	// Get and store the OS CA certificate path for Linux systems
 	// Source of CA File Paths: https://golang.org/src/crypto/x509/root_linux.go
+
 	certFiles := []string{
 		"/etc/ssl/certs/ca-certificates.crt",                // Debian/Ubuntu/Gentoo etc.
 		"/etc/pki/tls/certs/ca-bundle.crt",                  // Fedora/RHEL 6
@@ -564,4 +539,24 @@ func SdsCertificateConfigFromResourceNameForOSCACert(resource string) (SdsCertif
 		return SdsCertificateConfig{}, false
 	}
 	return SdsCertificateConfig{"", "", resource}, true
+}
+
+func ExtractBearerToken(ctx context.Context) (string, error) {
+	md, ok := metadata.FromIncomingContext(ctx)
+	if !ok {
+		return "", fmt.Errorf("no metadata is attached")
+	}
+
+	authHeader, exists := md[authorizationMeta]
+	if !exists {
+		return "", fmt.Errorf("no HTTP authorization header exists")
+	}
+
+	for _, value := range authHeader {
+		if strings.HasPrefix(value, BearerTokenPrefix) {
+			return strings.TrimPrefix(value, BearerTokenPrefix), nil
+		}
+	}
+
+	return "", fmt.Errorf("no bearer token exists in HTTP authorization header")
 }

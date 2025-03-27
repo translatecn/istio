@@ -18,21 +18,21 @@ set -exo pipefail
 
 UPDATE_BRANCH=${UPDATE_BRANCH:-"release-1.24"}
 
-SCRIPTPATH="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+SCRIPTPATH="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOTDIR=$(dirname "${SCRIPTPATH}")
 cd "${ROOTDIR}"
 
 # Get the sha of top commit
 # $1 = repo
 function getSha() {
-  git ls-remote "https://github.com/istio/${1}.git" "refs/heads/${UPDATE_BRANCH}" | cut -f 1
+	git ls-remote "https://github.com/istio/${1}.git" "refs/heads/${UPDATE_BRANCH}" | cut -f 1
 }
 
 make update-common
 
 export GO111MODULE=on
 go get -u "istio.io/api@${UPDATE_BRANCH}"
-go get -u "istio.io/client-go@${UPDATE_BRANCH}"
+go get -u "istio.io/istio/istio.io/client-go@${UPDATE_BRANCH}"
 go mod tidy
 
 sed -i "s/^BUILDER_SHA=.*\$/BUILDER_SHA=$(getSha release-builder)/" prow/release-commit.sh

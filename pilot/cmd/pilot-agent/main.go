@@ -17,7 +17,7 @@ package main
 import (
 	"os"
 
-	meshconfig "istio.io/api/mesh/v1alpha1"
+	meshconfig "istio.io/istio/istio.io/api/mesh/v1alpha1"
 	"istio.io/istio/pilot/cmd/pilot-agent/app"
 	istioagent "istio.io/istio/pkg/istio-agent"
 	"istio.io/istio/pkg/log"
@@ -34,7 +34,8 @@ func main() {
 	rootCmd := app.NewRootCommand(
 		func(options *security.Options, workloadSecretCache security.SecretManager, pkpConf *meshconfig.PrivateKeyProvider) istioagent.SDSService {
 			return sds.NewServer(options, workloadSecretCache, pkpConf)
-		})
+		},
+	)
 	if err := rootCmd.Execute(); err != nil {
 		log.Error(err)
 		os.Exit(-1)

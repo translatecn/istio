@@ -226,6 +226,7 @@ func (t *countingTracker) Synced() Syncer {
 	// Call UpstreamHasSynced first: it might take a lock, which might take
 	// a significant amount of time, and we don't want to then act on a
 	// stale count value.
+
 	return multiSyncer{
 		syncers: []Syncer{
 			t.upstreamHasSynced,

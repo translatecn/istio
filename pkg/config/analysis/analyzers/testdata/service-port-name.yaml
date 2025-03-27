@@ -8,10 +8,10 @@ spec:
   selector:
     app: my-service
   ports:
-  - name: tcp-foo
-    protocol: TCP
-    port: 8080
-    targetPort: 8080
+    - name: tcp-foo
+      protocol: TCP
+      port: 8080
+      targetPort: 8080
 ---
 # internal waypoint, should not generate warning
 apiVersion: v1
@@ -23,16 +23,16 @@ metadata:
   namespace: ambient
 spec:
   ports:
-  - appProtocol: tcp
-    name: status-port
-    port: 15021
-    protocol: TCP
-    targetPort: 15021
-  - appProtocol: hbone
-    name: mesh
-    port: 15008
-    protocol: TCP
-    targetPort: 15008
+    - appProtocol: tcp
+      name: status-port
+      port: 15021
+      protocol: TCP
+      targetPort: 15021
+    - appProtocol: hbone
+      name: mesh
+      port: 15008
+      protocol: TCP
+      targetPort: 15008
   selector:
     gateway.networking.k8s.io/gateway-name: reviews
   sessionAffinity: None
@@ -50,18 +50,18 @@ metadata:
   namespace: istio-ingress
 spec:
   ports:
-  - appProtocol: tcp
-    name: status-port
-    nodePort: 32481
-    port: 15021
-    protocol: TCP
-    targetPort: 15021
-  - appProtocol: http
-    name: default
-    nodePort: 30686
-    port: 80
-    protocol: TCP
-    targetPort: 80
+    - appProtocol: tcp
+      name: status-port
+      nodePort: 32481
+      port: 15021
+      protocol: TCP
+      targetPort: 15021
+    - appProtocol: http
+      name: default
+      nodePort: 30686
+      port: 80
+      protocol: TCP
+      targetPort: 80
   selector:
     gateway.networking.k8s.io/gateway-name: gateway
   type: LoadBalancer

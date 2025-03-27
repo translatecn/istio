@@ -22,7 +22,7 @@ import (
 // EventType represents the type of object we are tracking, mapping to envoy TypeUrl.
 type EventType = string
 
-var AllTrackingEventTypes = sets.New[EventType](
+var _ = sets.New[EventType](
 	v3.ClusterType,
 	v3.ListenerType,
 	v3.RouteType,

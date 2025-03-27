@@ -21,12 +21,12 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 
-	meshconfig "istio.io/api/mesh/v1alpha1"
+	meshconfig "istio.io/istio/istio.io/api/mesh/v1alpha1"
 	"istio.io/istio/pilot/pkg/autoregistration"
 	configaggregate "istio.io/istio/pilot/pkg/config/aggregate"
 	"istio.io/istio/pilot/pkg/config/kube/crdclient"
 	"istio.io/istio/pilot/pkg/config/kube/gateway"
-	ingress "istio.io/istio/pilot/pkg/config/kube/ingress"
+	ingress "istio.io/istio/pilot/pkg/config/kube/ingress_over"
 	"istio.io/istio/pilot/pkg/config/memory"
 	configmonitor "istio.io/istio/pilot/pkg/config/monitor"
 	"istio.io/istio/pilot/pkg/features"
@@ -38,7 +38,7 @@ import (
 	"istio.io/istio/pkg/config/schema/collections"
 	"istio.io/istio/pkg/config/schema/gvr"
 	"istio.io/istio/pkg/log"
-	"istio.io/istio/pkg/revisions"
+	"istio.io/istio/pkg/revisions_over"
 	"istio.io/istio/pkg/util/sets"
 )
 
@@ -58,7 +58,6 @@ const (
 	Kubernetes ConfigSourceAddressScheme = "k8s"
 )
 
-// initConfigController creates the config controller in the pilotConfig.
 func (s *Server) initConfigController(args *PilotArgs) error {
 	meshConfig := s.environment.Mesh()
 	if len(meshConfig.ConfigSources) > 0 {
@@ -68,9 +67,7 @@ func (s *Server) initConfigController(args *PilotArgs) error {
 		}
 	} else if args.RegistryOptions.FileDir != "" {
 		// Local files - should be added even if other options are specified
-		store := memory.Make(collections.Pilot)
-		configController := memory.NewController(store)
-
+		configController := memory.NewController(memory.Make(collections.Pilot)) // 有 Gateway、VirtualService
 		err := s.makeFileMonitor(args.RegistryOptions.FileDir, args.RegistryOptions.KubeOptions.DomainSuffix, configController)
 		if err != nil {
 			return err
@@ -91,13 +88,12 @@ func (s *Server) initConfigController(args *PilotArgs) error {
 		// Since supporting both in a monolith controller is painful due to lack of usable conversion logic between
 		// the two versions.
 		// As a compromise, we instead just fork the controller. Once 1.18 support is no longer needed, we can drop the old controller
-		s.ConfigStores = append(s.ConfigStores,
-			ingress.NewController(s.kubeClient, s.environment.Watcher, args.RegistryOptions.KubeOptions))
+		s.ConfigStores = append(s.ConfigStores, ingress.NewController(s.kubeClient, s.environment.Watcher, args.RegistryOptions.KubeOptions))
 
-		s.addTerminatingStartFunc("ingress status", func(stop <-chan struct{}) error {
+		s.addStartFuncAndWait("ingress status", func(stop <-chan struct{}) error {
 			leaderelection.
 				NewLeaderElection(args.Namespace, args.PodName, leaderelection.IngressController, args.Revision, s.kubeClient).
-				AddRunFunction(func(leaderStop <-chan struct{}) {
+				AddRunFunction(func(leaderStop <-chan struct{}) { // ✅
 					ingressSyncer := ingress.NewStatusSyncer(s.environment.Watcher, s.kubeClient)
 					// Start informers again. This fixes the case where informers for namespace do not start,
 					// as we create them only after acquiring the leader lock
@@ -114,7 +110,7 @@ func (s *Server) initConfigController(args *PilotArgs) error {
 	}
 
 	// Wrap the config controller with a cache.
-	aggregateConfigController, err := configaggregate.MakeCache(s.ConfigStores)
+	aggregateConfigController, err := configaggregate.MakeWriteableCache(s.ConfigStores, nil)
 	if err != nil {
 		return err
 	}
@@ -138,26 +134,29 @@ func (s *Server) initK8SConfigStore(args *PilotArgs) error {
 	}
 	configController := s.makeKubeConfigController(args)
 	s.ConfigStores = append(s.ConfigStores, configController)
-	tw := revisions.NewTagWatcher(s.kubeClient, args.Revision)
-	s.addStartFunc("tag-watcher", func(stop <-chan struct{}) error {
-		go tw.Run(stop)
-		return nil
-	})
-	tw.AddHandler(func(sets.String) {
-		s.XDSServer.ConfigUpdate(&model.PushRequest{
-			Full:   true,
-			Reason: model.NewReasonStats(model.TagUpdate),
+	{
+		tw := revisions_over.NewTagWatcher(s.kubeClient, args.Revision)
+		s.addStartFunc("tag-watcher", func(stop <-chan struct{}) error {
+			go tw.Run(stop)
+			return nil
 		})
-	})
+		tw.AddHandler(func(sets.String) {
+			s.XDSServer.ConfigUpdate( // ✅
+				&model.PushRequest{
+					Full:   true,
+					Reason: model.NewReasonStats(model.TagUpdate),
+				},
+			)
+		})
+	}
 	if features.EnableGatewayAPI {
 		if s.statusManager == nil && features.EnableGatewayAPIStatus {
 			s.initStatusManager(args)
 		}
-		gwc := gateway.NewController(s.kubeClient, configController, s.kubeClient.CrdWatcher().WaitForCRD,
-			s.environment.CredentialsController, args.RegistryOptions.KubeOptions)
+		gwc := gateway.NewController(s.kubeClient, configController, s.kubeClient.CrdWatcher().WaitForCRD, s.environment.CredentialsController, args.RegistryOptions.KubeOptions)
 		s.environment.GatewayAPIController = gwc
 		s.ConfigStores = append(s.ConfigStores, s.environment.GatewayAPIController)
-		s.addTerminatingStartFunc("gateway status", func(stop <-chan struct{}) error {
+		s.addStartFuncAndWait("gateway status", func(stop <-chan struct{}) error {
 			leaderelection.
 				NewLeaderElection(args.Namespace, args.PodName, leaderelection.GatewayStatusController, args.Revision, s.kubeClient).
 				AddRunFunction(func(leaderStop <-chan struct{}) {
@@ -165,7 +164,7 @@ func (s *Server) initK8SConfigStore(args *PilotArgs) error {
 					gwc.SetStatusWrite(true, s.statusManager)
 
 					// Trigger a push so we can recompute status
-					s.XDSServer.ConfigUpdate(&model.PushRequest{
+					s.XDSServer.ConfigUpdate(&model.PushRequest{ // ✅
 						Full:   true,
 						Reason: model.NewReasonStats(model.GlobalUpdate),
 					})
@@ -177,13 +176,13 @@ func (s *Server) initK8SConfigStore(args *PilotArgs) error {
 			return nil
 		})
 		if features.EnableGatewayAPIDeploymentController {
-			s.addTerminatingStartFunc("gateway deployment controller", func(stop <-chan struct{}) error {
+			s.addStartFuncAndWait("gateway deployment controller", func(stop <-chan struct{}) error {
 				leaderelection.
 					NewPerRevisionLeaderElection(args.Namespace, args.PodName, leaderelection.GatewayDeploymentController, args.Revision, s.kubeClient).
 					AddRunFunction(func(leaderStop <-chan struct{}) {
 						// We can only run this if the Gateway CRD is created
 						if s.kubeClient.CrdWatcher().WaitForCRD(gvr.KubernetesGateway, leaderStop) {
-							tagWatcher := revisions.NewTagWatcher(s.kubeClient, args.Revision)
+							tagWatcher := revisions_over.NewTagWatcher(s.kubeClient, args.Revision)
 							controller := gateway.NewDeploymentController(s.kubeClient, s.clusterID, s.environment,
 								s.webhookInfo.getWebhookConfig, s.webhookInfo.addHandler, tagWatcher, args.Revision)
 							// Start informers again. This fixes the case where informers for namespace do not start,
@@ -204,7 +203,7 @@ func (s *Server) initK8SConfigStore(args *PilotArgs) error {
 	if features.EnableAmbientStatus {
 		statusWritingEnabled := activenotifier.New(false)
 		args.RegistryOptions.KubeOptions.StatusWritingEnabled = statusWritingEnabled
-		s.addTerminatingStartFunc("ambient status", func(stop <-chan struct{}) error {
+		s.addStartFuncAndWait("ambient status", func(stop <-chan struct{}) error {
 			leaderelection.
 				NewLeaseLeaderElection(args.Namespace, args.PodName, leaderelection.StatusController, args.Revision, s.kubeClient).
 				AddRunFunction(func(leaderStop <-chan struct{}) {
@@ -246,8 +245,8 @@ func (s *Server) initConfigSources(args *PilotArgs) (err error) {
 			if srcAddress.Path == "" {
 				return fmt.Errorf("invalid fs config URL %s, contains no file path", configSource.Address)
 			}
-			store := memory.Make(collections.Pilot)
-			configController := memory.NewController(store)
+
+			configController := memory.NewController(memory.Make(collections.Pilot)) // 有 Gateway、VirtualService
 
 			err := s.makeFileMonitor(srcAddress.Path, args.RegistryOptions.KubeOptions.DomainSuffix, configController)
 			if err != nil {
@@ -280,9 +279,8 @@ func (s *Server) initConfigSources(args *PilotArgs) (err error) {
 			if err != nil {
 				return fmt.Errorf("failed to dial XDS %s %v", configSource.Address, err)
 			}
-			store := memory.Make(collections.Pilot)
 			// TODO: enable namespace filter for memory controller
-			configController := memory.NewController(store)
+			configController := memory.NewController(memory.Make(collections.Pilot)) // 有 Gateway、VirtualService
 			configController.RegisterHasSyncedHandler(xdsMCP.HasSynced)
 			xdsMCP.Store = configController
 			err = xdsMCP.Run()
@@ -311,9 +309,6 @@ func (s *Server) initConfigSources(args *PilotArgs) (err error) {
 	return nil
 }
 
-// initInprocessAnalysisController spins up an instance of Galley which serves no purpose other than
-// running Analyzers for status updates.  The Status Updater will eventually need to allow input from istiod
-// to support config distribution status as well.
 func (s *Server) initInprocessAnalysisController(args *PilotArgs) error {
 	if s.statusManager == nil {
 		s.initStatusManager(args)
@@ -334,15 +329,6 @@ func (s *Server) initInprocessAnalysisController(args *PilotArgs) error {
 	return nil
 }
 
-func (s *Server) makeKubeConfigController(args *PilotArgs) *crdclient.Client {
-	opts := crdclient.Option{
-		Revision:     args.Revision,
-		DomainSuffix: args.RegistryOptions.KubeOptions.DomainSuffix,
-		Identifier:   "crd-controller",
-	}
-	return crdclient.New(s.kubeClient, opts)
-}
-
 func (s *Server) makeFileMonitor(fileDir string, domainSuffix string, configController model.ConfigStore) error {
 	fileSnapshot := configmonitor.NewFileSnapshot(fileDir, collections.Pilot, domainSuffix)
 	fileMonitor := configmonitor.NewMonitor("file-monitor", configController, fileSnapshot.ReadConfigFiles, fileDir)
@@ -354,4 +340,13 @@ func (s *Server) makeFileMonitor(fileDir string, domainSuffix string, configCont
 	})
 
 	return nil
+}
+
+func (s *Server) makeKubeConfigController(args *PilotArgs) *crdclient.Client {
+	opts := crdclient.Option{
+		Revision:     args.Revision,                                 // default
+		DomainSuffix: args.RegistryOptions.KubeOptions.DomainSuffix, // cluster.local
+		Identifier:   "crd-controller",
+	}
+	return crdclient.New(s.kubeClient, opts)
 }

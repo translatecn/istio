@@ -43,5 +43,5 @@ var (
 	}.MustBuild()
 
 	// Mocks is a Schemas containing the Mock Schema.
-	Mocks = collection.NewSchemasBuilder().MustAdd(Mock).Build()
+	_ = collection.NewSchemasBuilder().MustAdd(Mock).Build()
 )

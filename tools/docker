@@ -32,4 +32,5 @@ if [[ -f ${LOCAL_OUT}/docker-builder ]]; then
 else
   GOOS=${LOCAL_GO_OS} GOARCH=${LOCAL_GO_ARCH} ./common/scripts/gobuild.sh ${LOCAL_OUT}/docker-builder ./tools/docker-builder
 fi
+set -ex
 ${LOCAL_OUT}/docker-builder "$@"

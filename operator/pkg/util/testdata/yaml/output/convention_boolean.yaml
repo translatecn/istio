@@ -3,6 +3,7 @@ kind: IstioOperator
 metadata:
   name: istio
 spec:
+  hub: registry.cn-hangzhou.aliyuncs.com/acejilam
   profile: default
   meshConfig:
     defaultConfig:
@@ -13,3 +14,4 @@ spec:
     pilot:
       env:
         ISTIO_DUAL_STACK: false
+

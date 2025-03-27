@@ -55,6 +55,7 @@ type workloadManager struct {
 
 func newWorkloadManager(ctx resource.Context, cfg echo.Config, handler workloadHandler) (*workloadManager, error) {
 	// Get the gRPC port and TLS settings.
+
 	var grpcInstancePort int
 	var tls *echoCommon.TLSSettings
 	if cfg.IsProxylessGRPC() {
@@ -135,6 +136,7 @@ func (m *workloadManager) ReadyWorkloads() (echo.Workloads, error) {
 
 func (m *workloadManager) Start() error {
 	// Run the pod controller.
+
 	go m.podController.Run(m.stopCh)
 
 	// Wait for the cache to sync.
@@ -151,9 +153,8 @@ func (m *workloadManager) Start() error {
 }
 
 func (m *workloadManager) onPodAddOrUpdate(pod *corev1.Pod) error {
-	m.mutex.Lock()
+	// After the method returns, notify the handler the ready state of the workload changed.	m.mutex.Lock()
 
-	// After the method returns, notify the handler the ready state of the workload changed.
 	var workloadReady *workload
 	var workloadNotReady *workload
 	defer func() {
@@ -207,9 +208,8 @@ func (m *workloadManager) onPodAddOrUpdate(pod *corev1.Pod) error {
 }
 
 func (m *workloadManager) onPodDeleted(pod *corev1.Pod) (err error) {
-	m.mutex.Lock()
+	// After the method returns, notify the handler the ready state of the workload changed.	m.mutex.Lock()
 
-	// After the method returns, notify the handler the ready state of the workload changed.
 	var workloadNotReady *workload
 	defer func() {
 		m.mutex.Unlock()
@@ -239,9 +239,8 @@ func (m *workloadManager) onPodDeleted(pod *corev1.Pod) (err error) {
 }
 
 func (m *workloadManager) Close() (err error) {
-	m.mutex.Lock()
+	// Indicate we're closing.	m.mutex.Lock()
 
-	// Indicate we're closing.
 	m.closing = true
 
 	// Stop the controller and queue.

@@ -23,12 +23,11 @@ import (
 
 	auth "github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3"
 	"github.com/envoyproxy/go-control-plane/pkg/conversion"
-	"google.golang.org/protobuf/types/known/durationpb"
 	pstruct "google.golang.org/protobuf/types/known/structpb"
 	wrappers "google.golang.org/protobuf/types/known/wrapperspb"
 
-	meshAPI "istio.io/api/mesh/v1alpha1"
-	networkingAPI "istio.io/api/networking/v1alpha3"
+	meshAPI "istio.io/istio/istio.io/api/mesh/v1alpha1"
+	networkingAPI "istio.io/istio/istio.io/api/networking/v1alpha3"
 	"istio.io/istio/pilot/pkg/util/protoconv"
 	"istio.io/istio/pkg/log"
 	"istio.io/istio/pkg/model"
@@ -204,12 +203,6 @@ func jsonConverter(d any) convertFunc {
 	return func(o *instance) (any, error) {
 		b, err := json.Marshal(d)
 		return string(b), err
-	}
-}
-
-func durationConverter(value *durationpb.Duration) convertFunc {
-	return func(*instance) (any, error) {
-		return value.AsDuration().String(), nil
 	}
 }
 

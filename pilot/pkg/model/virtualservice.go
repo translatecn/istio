@@ -19,7 +19,7 @@ import (
 
 	"k8s.io/apimachinery/pkg/types"
 
-	networking "istio.io/api/networking/v1alpha3"
+	networking "istio.io/istio/istio.io/api/networking/v1alpha3"
 	"istio.io/istio/pilot/pkg/features"
 	"istio.io/istio/pkg/config"
 	"istio.io/istio/pkg/config/constants"
@@ -115,6 +115,7 @@ func SelectVirtualServices(vsidx virtualServiceIndex, configNamespace string, ho
 
 func resolveVirtualServiceShortnames(rule *networking.VirtualService, meta config.Meta) {
 	// Kubernetes Gateway API semantics support shortnames
+
 	if UseGatewaySemantics(config.Config{Meta: meta}) {
 		return
 	}
@@ -309,6 +310,7 @@ func mergeHTTPRoutes(root *networking.HTTPRoute, delegate []*networking.HTTPRout
 func mergeHTTPRoute(root *networking.HTTPRoute, delegate *networking.HTTPRoute) *networking.HTTPRoute {
 	// suppose there are N1 match conditions in root, N2 match conditions in delegate
 	// if match condition of N2 is a subset of anyone in N1, this is a valid matching conditions
+
 	merged, conflict := mergeHTTPMatchRequests(root.Match, delegate.Match)
 	if conflict {
 		log.Warnf("HTTPMatchRequests conflict: root route %s, delegate route %s", root.Name, delegate.Name)
@@ -393,6 +395,7 @@ func mergeHTTPMatchRequests(root, delegate []*networking.HTTPMatchRequest) (out 
 
 func mergeHTTPMatchRequest(root, delegate *networking.HTTPMatchRequest) *networking.HTTPMatchRequest {
 	// nolint: govet
+
 	out := *delegate
 	if out.Name == "" {
 		out.Name = root.Name
@@ -507,6 +510,7 @@ func hasConflict(root, leaf *networking.HTTPMatchRequest) bool {
 
 func stringMatchConflict(root, leaf *networking.StringMatch) bool {
 	// no conflict when root or leaf is not specified
+
 	if root == nil || leaf == nil {
 		return false
 	}

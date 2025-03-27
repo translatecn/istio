@@ -5,45 +5,45 @@ typedConfig:
     policies:
       ns[foo]-policy[httpbin-1]-rule[0]:
         permissions:
-        - andRules:
-            rules:
-            - orRules:
-                rules:
-                - header:
-                    name: :authority
-                    safeRegexMatch:
-                      regex: (?i)example\.com
-                - header:
-                    name: :authority
-                    safeRegexMatch:
-                      regex: (?i)prefix\.example\..*
-                - header:
-                    name: :authority
-                    safeRegexMatch:
-                      regex: (?i).*\.example\.com
-                - header:
-                    name: :authority
-                    presentMatch: true
-            - notRule:
-                orRules:
-                  rules:
-                  - header:
-                      name: :authority
-                      safeRegexMatch:
-                        regex: (?i)not-example\.com
-                  - header:
-                      name: :authority
-                      safeRegexMatch:
-                        regex: (?i)prefix\.not-example\..*
-                  - header:
-                      name: :authority
-                      safeRegexMatch:
-                        regex: (?i).*\.not-example\.com
-                  - header:
-                      name: :authority
-                      presentMatch: true
+          - andRules:
+              rules:
+                - orRules:
+                    rules:
+                      - header:
+                          name: :authority
+                          safeRegexMatch:
+                            regex: (?i)example\.com
+                      - header:
+                          name: :authority
+                          safeRegexMatch:
+                            regex: (?i)prefix\.example\..*
+                      - header:
+                          name: :authority
+                          safeRegexMatch:
+                            regex: (?i).*\.example\.com
+                      - header:
+                          name: :authority
+                          presentMatch: true
+                - notRule:
+                    orRules:
+                      rules:
+                        - header:
+                            name: :authority
+                            safeRegexMatch:
+                              regex: (?i)not-example\.com
+                        - header:
+                            name: :authority
+                            safeRegexMatch:
+                              regex: (?i)prefix\.not-example\..*
+                        - header:
+                            name: :authority
+                            safeRegexMatch:
+                              regex: (?i).*\.not-example\.com
+                        - header:
+                            name: :authority
+                            presentMatch: true
         principals:
-        - andIds:
-            ids:
-            - any: true
+          - andIds:
+              ids:
+                - any: true
   shadowRulesStatPrefix: istio_dry_run_allow_

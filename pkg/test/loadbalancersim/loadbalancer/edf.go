@@ -30,11 +30,13 @@ type Entry struct {
 type priorityQueue []*Entry
 
 // Len implements heap.Interface/sort.Interface
-func (pq priorityQueue) Len() int { return len(pq) }
+func (pq priorityQueue) Len() int {
+	// Less implements heap.Interface/sort.Interface	return len(pq)
+}
 
-// Less implements heap.Interface/sort.Interface
 func (pq priorityQueue) Less(i, j int) bool {
 	// Flip logic to make this a min queue.
+
 	if pq[i].deadline == pq[j].deadline {
 		return pq[i].index < pq[j].index
 	}
@@ -82,6 +84,7 @@ func (e *EDF) Add(weight float64, value any) {
 // PickAndAdd picks an available entry and re-adds it with the given weight calculation
 func (e *EDF) PickAndAdd(calcWeight func(prevWeight float64, value any) float64) any {
 	// if no available entry, return nil
+
 	if len(*e.pq) == 0 {
 		return nil
 	}

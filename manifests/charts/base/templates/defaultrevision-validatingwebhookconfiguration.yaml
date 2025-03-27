@@ -52,5 +52,5 @@ webhooks:
     failurePolicy: Ignore
     {{- end }}
     sideEffects: None
-    admissionReviewVersions: ["v1"]
+    admissionReviewVersions: [ "v1" ]
 {{- end }}

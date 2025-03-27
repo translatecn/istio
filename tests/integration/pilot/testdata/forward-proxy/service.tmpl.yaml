@@ -6,9 +6,9 @@ spec:
   selector:
     app: external-forward-proxy
   ports:
-{{- range $idx, $port := .ports }}
+  { { - range $idx, $port := .ports } }
   - name: {{$port.Name}}
     port: {{$port.Port}}
     targetPort: {{$port.TargetPort}}
     protocol: TCP
-{{- end }}
+    { { - end } }

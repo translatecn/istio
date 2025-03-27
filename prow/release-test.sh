@@ -15,12 +15,15 @@
 #   limitations under the License.
 
 WD=$(dirname "$0")
-WD=$(cd "$WD"; pwd)
+WD=$(
+	cd "$WD"
+	pwd
+)
 ROOT=$(dirname "$WD")
 
 set -eux
 
 DRY_RUN=true "${ROOT}"/prow/release-commit.sh || {
-  tools/dump-docker-logs.sh
-  exit 1
+	tools/dump-docker-logs.sh
+	exit 1
 }

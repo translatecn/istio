@@ -31,11 +31,11 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"sigs.k8s.io/yaml"
 
-	"istio.io/api/annotation"
-	"istio.io/api/label"
-	meshconfig "istio.io/api/mesh/v1alpha1"
-	networkingv1alpha3 "istio.io/api/networking/v1alpha3"
-	clientnetworking "istio.io/client-go/pkg/apis/networking/v1"
+	"istio.io/istio/istio.io/api/annotation"
+	"istio.io/istio/istio.io/api/label"
+	meshconfig "istio.io/istio/istio.io/api/mesh/v1alpha1"
+	networkingv1alpha3 "istio.io/istio/istio.io/api/networking/v1alpha3"
+	clientnetworking "istio.io/istio/istio.io/client-go/pkg/apis/networking/v1"
 	"istio.io/istio/istioctl/pkg/cli"
 	"istio.io/istio/istioctl/pkg/clioptions"
 	"istio.io/istio/istioctl/pkg/completion"
@@ -417,16 +417,17 @@ func createCertsTokens(kubeClient kube.CLIClient, wg *clientnetworking.WorkloadG
 	if err := os.WriteFile(tokenPath, []byte(tokenReq.Status.Token), filePerms); err != nil {
 		return err
 	}
-	fmt.Fprintf(out, "Warning: a security token for namespace %q and service account %q has been generated and "+
-		"stored at %q\n", wg.Namespace, serviceAccount, tokenPath)
+	fmt.Fprintf(out, "Warning: a security token for namespace %q and service account %q has been generated and stored at %q\n", wg.Namespace, serviceAccount, tokenPath)
 	return nil
 }
 
 func createMeshConfig(kubeClient kube.CLIClient, wg *clientnetworking.WorkloadGroup, istioNamespace, clusterID, dir,
 	revision string,
 ) (*meshconfig.ProxyConfig, error) {
-	istioCM := "istio"
 	// Case with multiple control planes
+
+	istioCM := "istio"
+
 	if isRevisioned(revision) {
 		istioCM = fmt.Sprintf("%s-%s", istioCM, revision)
 	}
@@ -545,6 +546,7 @@ func marshalWorkloadEntryPodPorts(p map[string]uint32) string {
 // Retrieves the external IP of the ingress-gateway for the hosts file additions
 func createHosts(kubeClient kube.CLIClient, istioNamespace, ingressIP, dir string, revision string) error {
 	// try to infer the ingress IP if the provided one is invalid
+
 	if agent.ValidateIPAddress(ingressIP) != nil {
 		p := strings.Split(ingressSvc, ".")
 		ingressNs := istioNamespace
@@ -587,6 +589,7 @@ func IstiodHost(ns string, revision string) string {
 
 func IstiodAddr(ns, revision string) string {
 	// TODO make port configurable
+
 	return fmt.Sprintf("%s:%d", IstiodHost(ns, revision), 15012)
 }
 

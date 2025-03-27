@@ -14,17 +14,20 @@
 
 package env
 
-import "os"
+import (
+	"os"
+)
 
 // Variable is a wrapper for an environment variable.
 type Variable string
 
 // Name of the environment variable.
 func (e Variable) Name() string {
+	// Value of the environment variable.
+
 	return string(e)
 }
 
-// Value of the environment variable.
 func (e Variable) Value() string {
 	return os.Getenv(e.Name())
 }

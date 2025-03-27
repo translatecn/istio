@@ -4,8 +4,8 @@ metadata:
   name: address-missing-uppercase
 spec:
   hosts:
-  - dummy.testing.io # not used
+    - dummy.testing.io # not used
   ports:
-  - name: tcp
-    number: 22
-    protocol: TCP
+    - name: tcp
+      number: 22
+      protocol: TCP

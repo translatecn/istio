@@ -29,11 +29,6 @@ type Helm struct {
 }
 
 // New returns a new instance of a helm object.
-func New(kubeConfig string) *Helm {
-	return &Helm{
-		kubeConfig: kubeConfig,
-	}
-}
 
 // InstallChartWithValues installs the specified chart with its given name to the given namespace
 func (h *Helm) InstallChartWithValues(name, chartPath, namespace string, values []string, timeout time.Duration) error {

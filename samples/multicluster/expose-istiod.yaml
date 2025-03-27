@@ -11,7 +11,7 @@ spec:
         number: 15012
         protocol: tls
       tls:
-        mode: PASSTHROUGH        
+        mode: PASSTHROUGH
       hosts:
         - "*"
     - port:
@@ -19,7 +19,7 @@ spec:
         number: 15017
         protocol: tls
       tls:
-        mode: PASSTHROUGH          
+        mode: PASSTHROUGH
       hosts:
         - "*"
 ---
@@ -29,26 +29,26 @@ metadata:
   name: istiod-vs
 spec:
   hosts:
-  - "*"
+    - "*"
   gateways:
-  - istiod-gateway
+    - istiod-gateway
   tls:
-  - match:
-    - port: 15012
-      sniHosts:
-      - "*"
-    route:
-    - destination:
-        host: istiod.istio-system.svc.cluster.local
-        port:
-          number: 15012
-  - match:
-    - port: 15017
-      sniHosts:
-      - "*"
-    route:
-    - destination:
-        host: istiod.istio-system.svc.cluster.local
-        port:
-          number: 443
+    - match:
+        - port: 15012
+          sniHosts:
+            - "*"
+      route:
+        - destination:
+            host: istiod.istio-system.svc.cluster.local
+            port:
+              number: 15012
+    - match:
+        - port: 15017
+          sniHosts:
+            - "*"
+      route:
+        - destination:
+            host: istiod.istio-system.svc.cluster.local
+            port:
+              number: 443
 

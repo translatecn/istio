@@ -29,7 +29,7 @@ spec:
         - name: tomcat
           image: gcr.io/istio-testing/fuzz_tomcat:0.1
           ports:
-          - containerPort: 8080
+            - containerPort: 8080
 ---
 apiVersion: v1
 kind: Service
@@ -40,8 +40,8 @@ metadata:
     service: tomcat
 spec:
   ports:
-  - name: http
-    port: 8080
-    targetPort: 8080
+    - name: http
+      port: 8080
+      targetPort: 8080
   selector:
     app: tomcat

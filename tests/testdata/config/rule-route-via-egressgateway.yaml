@@ -7,22 +7,22 @@ spec:
   hosts:
     - egressgateway.bookinfo.com
   gateways:
-  # Pinned to both the sidecars (mesh) and egress gateway
-  - istio-egressgateway
-  - mesh
+    # Pinned to both the sidecars (mesh) and egress gateway
+    - istio-egressgateway
+    - mesh
   http:
     - match:
-      - gateways:
-        - mesh # from sidecars, route to egress gateway service
+        - gateways:
+            - mesh # from sidecars, route to egress gateway service
       route:
-      - destination:
-          host: istio-egressgateway
-        weight: 100
+        - destination:
+            host: istio-egressgateway
+          weight: 100
     - match:
-      - gateways: # from egress gateway, route to actual external service
-                  # for testing purposes, we route to service t
-        - istio-egressgateway
+        - gateways: # from egress gateway, route to actual external service
+            # for testing purposes, we route to service t
+            - istio-egressgateway
       route:
-      - destination:
-          host: eu.bookinfo.com
-        weight: 100
+        - destination:
+            host: eu.bookinfo.com
+          weight: 100

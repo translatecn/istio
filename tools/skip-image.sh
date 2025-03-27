@@ -23,8 +23,8 @@ set -eu
 # $2 = variant
 # We will filter out test image distroless variant; they do not need to support distroless
 if [[ $2 == "distroless" ]]; then
-  if [[ $1 =~ docker.app ]]; then
-    exit 0
-  fi
+	if [[ $1 =~ docker.app ]]; then
+		exit 0
+	fi
 fi
 exit 1

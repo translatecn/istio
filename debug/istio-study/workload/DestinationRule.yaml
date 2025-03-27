@@ -1,0 +1,21 @@
+apiVersion: networking.istio.io/v1alpha3
+kind: DestinationRule
+metadata:
+  name: test-dr
+spec:
+  host: whoami.internal.com
+  trafficPolicy:
+    loadBalancer:
+      consistentHash:
+        useSourceIp: true
+      localityLbSetting:
+        enabled: true
+        failover:
+          - from: az1
+            to: az2
+          - from: az2
+            to: az1
+    outlierDetection:
+      consecutive5xxErrors: 1
+      interval: 1s
+      baseEjectionTime: 1m

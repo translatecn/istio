@@ -4,8 +4,8 @@ metadata:
   name: reviews-v1
 spec:
   ports:
-  - port: 9080
-    name: http
+    - port: 9080
+      name: http
   selector:
     app: reviews
     version: v1
@@ -16,8 +16,8 @@ metadata:
   name: reviews-v2
 spec:
   ports:
-  - port: 9080
-    name: http
+    - port: 9080
+      name: http
   selector:
     app: reviews
     version: v2
@@ -28,8 +28,8 @@ metadata:
   name: reviews-v3
 spec:
   ports:
-  - port: 9080
-    name: http
+    - port: 9080
+      name: http
   selector:
     app: reviews
     version: v3
@@ -40,8 +40,8 @@ metadata:
   name: productpage-v1
 spec:
   ports:
-  - port: 9080
-    name: http
+    - port: 9080
+      name: http
   selector:
     app: productpage
     version: v1
@@ -52,8 +52,8 @@ metadata:
   name: ratings-v1
 spec:
   ports:
-  - port: 9080
-    name: http
+    - port: 9080
+      name: http
   selector:
     app: ratings
     version: v1
@@ -64,8 +64,8 @@ metadata:
   name: details-v1
 spec:
   ports:
-  - port: 9080
-    name: http
+    - port: 9080
+      name: http
   selector:
     app: details
     version: v1

@@ -26,8 +26,8 @@ import (
 	"google.golang.org/protobuf/types/known/structpb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
 
-	"istio.io/api/label"
-	"istio.io/api/networking/v1alpha3"
+	"istio.io/istio/istio.io/api/label"
+	"istio.io/istio/istio.io/api/networking/v1alpha3"
 	"istio.io/istio/pilot/pkg/features"
 	"istio.io/istio/pilot/pkg/model"
 	"istio.io/istio/pilot/pkg/networking/core/loadbalancer"
@@ -195,6 +195,7 @@ func (b *EndpointBuilder) IsDNSCluster() bool {
 func (b *EndpointBuilder) Key() any {
 	// nolint: gosec
 	// Not security sensitive code
+
 	h := hash.New()
 	b.WriteHash(h)
 	return h.Sum64()
@@ -260,6 +261,7 @@ func (b *EndpointBuilder) Cacheable() bool {
 	// If service is not defined, we cannot do any caching as we will not have a way to
 	// invalidate the results.
 	// Service being nil means the EDS will be empty anyways, so not much lost here.
+
 	return b.service != nil
 }
 
@@ -394,6 +396,7 @@ func (b *EndpointBuilder) BuildClusterLoadAssignment(endpointIndex *model.Endpoi
 // generate endpoints with applies weights, multi-network mapping and other filtering
 func (b *EndpointBuilder) generate(eps []*model.IstioEndpoint, toServiceWaypoint bool) []*LocalityEndpoints {
 	// shouldn't happen here
+
 	if !b.ServiceFound() {
 		return nil
 	}
@@ -476,6 +479,7 @@ func addUint32(left, right uint32) (uint32, bool) {
 
 func (b *EndpointBuilder) filterIstioEndpoint(ep *model.IstioEndpoint) bool {
 	// for ServiceInternalTrafficPolicy
+
 	if b.service.Attributes.NodeLocal && ep.NodeName != b.proxy.GetNodeName() {
 		return false
 	}
@@ -809,6 +813,7 @@ func getSubsetTrafficPolicy(destinationRule *v1alpha3.DestinationRule, port *mod
 // getSubSetLabels returns the labels associated with a subset of a given service.
 func getSubSetLabels(dr *v1alpha3.DestinationRule, subsetName string) labels.Instance {
 	// empty subset
+
 	if subsetName == "" {
 		return nil
 	}

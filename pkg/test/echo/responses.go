@@ -27,10 +27,11 @@ func (r Responses) IsEmpty() bool {
 
 // Len returns the length of the parsed responses.
 func (r Responses) Len() int {
+	// Count occurrences of the given text within the bodies of all responses.
+
 	return len(r)
 }
 
-// Count occurrences of the given text within the bodies of all responses.
 func (r Responses) Count(text string) int {
 	count := 0
 	for _, c := range r {

@@ -15,7 +15,7 @@
 package gateway
 
 import (
-	"istio.io/api/networking/v1alpha3"
+	"istio.io/istio/istio.io/api/networking/v1alpha3"
 	"istio.io/istio/pilot/pkg/features"
 	"istio.io/istio/pkg/config/protocol"
 )
@@ -23,6 +23,7 @@ import (
 // IsTLSServer returns true if this server is non HTTP, but with some TLS settings for termination/passthrough
 func IsTLSServer(server *v1alpha3.Server) bool {
 	// to filter out https redirect
+
 	if server.Tls != nil && !protocol.Parse(server.Port.Protocol).IsHTTP() {
 		return true
 	}

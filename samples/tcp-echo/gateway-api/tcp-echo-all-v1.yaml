@@ -5,12 +5,12 @@ metadata:
 spec:
   gatewayClassName: istio
   listeners:
-  - name: tcp-31400
-    protocol: TCP
-    port: 31400
-    allowedRoutes:
-      kinds:
-      - kind: TCPRoute
+    - name: tcp-31400
+      protocol: TCP
+      port: 31400
+      allowedRoutes:
+        kinds:
+          - kind: TCPRoute
 ---
 apiVersion: v1
 kind: Service
@@ -18,8 +18,8 @@ metadata:
   name: tcp-echo-v1
 spec:
   ports:
-  - port: 9000
-    name: tcp
+    - port: 9000
+      name: tcp
   selector:
     app: tcp-echo
     version: v1
@@ -30,8 +30,8 @@ metadata:
   name: tcp-echo-v2
 spec:
   ports:
-  - port: 9000
-    name: tcp
+    - port: 9000
+      name: tcp
   selector:
     app: tcp-echo
     version: v2
@@ -42,9 +42,9 @@ metadata:
   name: tcp-echo
 spec:
   parentRefs:
-  - name: tcp-echo-gateway
-    sectionName: tcp-31400
+    - name: tcp-echo-gateway
+      sectionName: tcp-31400
   rules:
-  - backendRefs:
-    - name: tcp-echo-v1
-      port: 9000
+    - backendRefs:
+        - name: tcp-echo-v1
+          port: 9000

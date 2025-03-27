@@ -434,5 +434,6 @@ func (c *closer) Close() error {
 
 func (c *testContext) RecordTraceEvent(string, any) {
 	// Currently, only supported at suite level.
+
 	panic("TODO: implement tracing in test context")
 }

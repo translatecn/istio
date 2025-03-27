@@ -100,6 +100,7 @@ func listenUDPAddress(ip string, port int) (net.PacketConn, int, error) {
 // forceClose the given socket.
 func forceClose(conn net.Conn) error {
 	// Close may be called more than once.
+
 	defer func() { _ = conn.Close() }()
 
 	// Force the connection closed (should result in sending RST)

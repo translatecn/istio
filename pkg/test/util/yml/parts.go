@@ -88,6 +88,7 @@ func SplitString(yamlText string) []string {
 func JoinString(parts ...string) string {
 	// Assume that each part is already a multi-document. Split and trim each part,
 	// if necessary.
+
 	toJoin := make([]string, 0, len(parts))
 	for _, part := range parts {
 		toJoin = append(toJoin, SplitString(part)...)

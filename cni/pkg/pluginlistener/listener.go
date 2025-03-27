@@ -25,6 +25,7 @@ import (
 
 func NewListener(path string) (net.Listener, error) {
 	// Remove unix socket before use.
+
 	if err := os.Remove(path); err != nil && !os.IsNotExist(err) {
 		// Anything other than "file not found" is an error.
 		return nil, fmt.Errorf("failed to remove unix://%s: %v", path, err)

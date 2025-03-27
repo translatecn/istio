@@ -65,6 +65,7 @@ func (m Map) Slice(key string) []Map {
 
 func toMap(orig any) (Map, bool) {
 	// keys are strings, easily cast
+
 	if cfgMeta, ok := orig.(Map); ok {
 		return cfgMeta, true
 	}

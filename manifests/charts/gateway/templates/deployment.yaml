@@ -53,8 +53,8 @@ spec:
       {{- else }}
         # Safe since 1.22: https://github.com/kubernetes/kubernetes/pull/103326
         sysctls:
-        - name: net.ipv4.ip_unprivileged_port_start
-          value: "0"
+          - name: net.ipv4.ip_unprivileged_port_start
+            value: "0"
       {{- end }}
       {{- with .Values.volumes }}
       volumes:
@@ -73,7 +73,7 @@ spec:
           {{- else }}
             capabilities:
               drop:
-              - ALL
+                - ALL
             allowPrivilegeEscalation: false
             privileged: false
             readOnlyRootFilesystem: true
@@ -85,17 +85,17 @@ spec:
           {{- end }}
           env:
           {{- with .Values.networkGateway }}
-          - name: ISTIO_META_REQUESTED_NETWORK_VIEW
-            value: "{{.}}"
+            - name: ISTIO_META_REQUESTED_NETWORK_VIEW
+              value: "{{.}}"
           {{- end }}
           {{- range $key, $val := .Values.env }}
-          - name: {{ $key }}
-            value: {{ $val | quote }}
+            - name: {{ $key }}
+              value: {{ $val | quote }}
           {{- end }}
           ports:
-          - containerPort: 15090
-            protocol: TCP
-            name: http-envoy-prom
+            - containerPort: 15090
+              protocol: TCP
+              name: http-envoy-prom
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
           {{- with .Values.volumeMounts }}

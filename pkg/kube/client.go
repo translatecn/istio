@@ -31,56 +31,17 @@ import (
 	"go.uber.org/atomic"
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc/credentials"
-	v1 "k8s.io/api/core/v1"
-	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
-	kubeExtClient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
-	extfake "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/fake"
-	kerrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/api/meta"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/apimachinery/pkg/runtime/serializer"
-	"k8s.io/apimachinery/pkg/runtime/serializer/yaml"
-	"k8s.io/apimachinery/pkg/types"
-	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
-	"k8s.io/apimachinery/pkg/util/wait"
-	kubeVersion "k8s.io/apimachinery/pkg/version"
-	"k8s.io/apimachinery/pkg/watch"
-	"k8s.io/apiserver/pkg/storage/names"
-	"k8s.io/client-go/discovery"
-	fakediscovery "k8s.io/client-go/discovery/fake"
-	"k8s.io/client-go/dynamic"
-	dynamicfake "k8s.io/client-go/dynamic/fake"
-	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/kubernetes/fake"
-	kubescheme "k8s.io/client-go/kubernetes/scheme"
-	"k8s.io/client-go/metadata"
-	metadatafake "k8s.io/client-go/metadata/fake"
-	"k8s.io/client-go/rest"
-	clienttesting "k8s.io/client-go/testing"
-	"k8s.io/client-go/tools/cache"
-	"k8s.io/client-go/tools/clientcmd"
-	"k8s.io/client-go/tools/remotecommand"
-	gatewayapiv1 "sigs.k8s.io/gateway-api/apis/v1"
-	gatewayapi "sigs.k8s.io/gateway-api/apis/v1alpha2"
-	gatewayapibeta "sigs.k8s.io/gateway-api/apis/v1beta1"
-	gatewayapiclient "sigs.k8s.io/gateway-api/pkg/client/clientset/versioned"
-	gatewayapifake "sigs.k8s.io/gateway-api/pkg/client/clientset/versioned/fake"
-
-	"istio.io/api/annotation"
-	"istio.io/api/label"
-	clientextensions "istio.io/client-go/pkg/apis/extensions/v1alpha1"
-	clientnetworking "istio.io/client-go/pkg/apis/networking/v1"
-	clientnetworkingalpha "istio.io/client-go/pkg/apis/networking/v1alpha3"
-	clientnetworkingbeta "istio.io/client-go/pkg/apis/networking/v1beta1"
-	clientsecurity "istio.io/client-go/pkg/apis/security/v1"
-	clientsecuritybeta "istio.io/client-go/pkg/apis/security/v1beta1"
-	clienttelemetry "istio.io/client-go/pkg/apis/telemetry/v1"
-	clienttelemetryalpha "istio.io/client-go/pkg/apis/telemetry/v1alpha1"
-	istioclient "istio.io/client-go/pkg/clientset/versioned"
-	istiofake "istio.io/client-go/pkg/clientset/versioned/fake"
+	"istio.io/istio/istio.io/api/annotation"
+	"istio.io/istio/istio.io/api/label"
+	clientextensions "istio.io/istio/istio.io/client-go/pkg/apis/extensions/v1alpha1"
+	clientnetworking "istio.io/istio/istio.io/client-go/pkg/apis/networking/v1"
+	clientnetworkingalpha "istio.io/istio/istio.io/client-go/pkg/apis/networking/v1alpha3"
+	clientnetworkingbeta "istio.io/istio/istio.io/client-go/pkg/apis/networking/v1beta1"
+	clientsecurity "istio.io/istio/istio.io/client-go/pkg/apis/security/v1"
+	clientsecuritybeta "istio.io/istio/istio.io/client-go/pkg/apis/security/v1beta1"
+	clienttelemetry "istio.io/istio/istio.io/client-go/pkg/apis/telemetry/v1"
+	clienttelemetryalpha "istio.io/istio/istio.io/client-go/pkg/apis/telemetry/v1alpha1"
+	istioclient "istio.io/istio/istio.io/client-go/pkg/clientset/versioned"
 	"istio.io/istio/pilot/pkg/features"
 	"istio.io/istio/pkg/cluster"
 	"istio.io/istio/pkg/config"
@@ -93,7 +54,35 @@ import (
 	"istio.io/istio/pkg/log"
 	"istio.io/istio/pkg/sleep"
 	"istio.io/istio/pkg/test/util/yml"
-	"istio.io/istio/pkg/version"
+	"istio.io/istio/pkg/version_over"
+	v1 "k8s.io/api/core/v1"
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	kubeExtClient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
+	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/meta"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/runtime/serializer"
+	"k8s.io/apimachinery/pkg/runtime/serializer/yaml"
+	"k8s.io/apimachinery/pkg/types"
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	"k8s.io/apimachinery/pkg/util/wait"
+	kubeVersion "k8s.io/apimachinery/pkg/version"
+	"k8s.io/client-go/discovery"
+	"k8s.io/client-go/dynamic"
+	"k8s.io/client-go/kubernetes"
+	kubescheme "k8s.io/client-go/kubernetes/scheme"
+	"k8s.io/client-go/metadata"
+	"k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/cache"
+	"k8s.io/client-go/tools/clientcmd"
+	"k8s.io/client-go/tools/remotecommand"
+	gatewayapiv1 "sigs.k8s.io/gateway-api/apis/v1"
+	gatewayapi "sigs.k8s.io/gateway-api/apis/v1alpha2"
+	gatewayapibeta "sigs.k8s.io/gateway-api/apis/v1beta1"
+	gatewayapiclient "sigs.k8s.io/gateway-api/pkg/client/clientset/versioned"
 )
 
 const (
@@ -132,8 +121,6 @@ type Client interface {
 	// CrdWatcher returns the CRD watcher for this client
 	CrdWatcher() kubetypes.CrdWatcher
 
-	// ObjectFilter returns an object filter that can be used to filter out unwanted objects based on configuration.
-	// This must be set on a client with SetObjectFilter.
 	ObjectFilter() kubetypes.DynamicObjectFilter
 
 	// RunAndWait starts all informers and waits for their caches to sync.
@@ -172,7 +159,7 @@ type CLIClient interface {
 	AllDiscoveryDo(ctx context.Context, namespace, path string) (map[string][]byte, error)
 
 	// GetIstioVersions gets the version for each Istio control plane component.
-	GetIstioVersions(ctx context.Context, namespace string) (*version.MeshInfo, error)
+	GetIstioVersions(ctx context.Context, namespace string) (*version_over.MeshInfo, error)
 
 	// PodsForSelector finds pods matching selector.
 	PodsForSelector(ctx context.Context, namespace string, labelSelectors ...string) (*v1.PodList, error)
@@ -223,147 +210,6 @@ type CLIClient interface {
 
 	// DynamicClientFor builds a dynamic client to a resource
 	DynamicClientFor(gvk schema.GroupVersionKind, obj *unstructured.Unstructured, namespace string) (dynamic.ResourceInterface, error)
-}
-
-type PortManager func() (uint16, error)
-
-var (
-	_ Client    = &client{}
-	_ CLIClient = &client{}
-)
-
-// setupFakeClient builds the initial state for a fake client
-func setupFakeClient[T fakeClient](fc T, group string, objects []runtime.Object) T {
-	tracker := fc.Tracker()
-	// We got a set of objects... but which client do they apply to? Filter based on the group
-	filterGroup := func(object runtime.Object) bool {
-		g := object.GetObjectKind().GroupVersionKind().Group
-		if strings.Contains(g, "istio.io") {
-			return group == "istio"
-		}
-		if strings.Contains(g, "gateway.networking.k8s.io") {
-			return group == "gateway"
-		}
-		return group == "kube"
-	}
-	for _, obj := range objects {
-		if !filterGroup(obj) {
-			continue
-		}
-		gk := config.FromKubernetesGVK(obj.GetObjectKind().GroupVersionKind())
-		if gk.Group == "" {
-			gvks, _, _ := IstioScheme.ObjectKinds(obj)
-			gk = config.FromKubernetesGVK(gvks[0])
-		}
-		gvr, ok := gvk.ToGVR(gk)
-		if !ok {
-			gvr, _ = meta.UnsafeGuessKindToResource(gk.Kubernetes())
-		}
-		if gvr.Group == "core" {
-			gvr.Group = ""
-		}
-		// Run Create() instead of Add(), so we can pass the GVR. Otherwise, Kubernetes guesses, and it guesses wrong for 'Gateways'
-		// DeepCopy since it will mutate the managed fields/etc
-		if err := tracker.Create(gvr, obj.DeepCopyObject(), obj.(metav1.ObjectMetaAccessor).GetObjectMeta().GetNamespace()); err != nil {
-			panic(fmt.Sprintf("failed to create: %v", err))
-		}
-	}
-	return fc
-}
-
-// NewFakeClient creates a new, fake, client
-func NewFakeClient(objects ...runtime.Object) CLIClient {
-	c := &client{
-		informerWatchesPending: atomic.NewInt32(0),
-		clusterID:              "fake",
-	}
-
-	c.kube = setupFakeClient(fake.NewClientset(), "kube", objects)
-
-	c.config = &rest.Config{
-		Host: "server",
-	}
-
-	c.informerFactory = informerfactory.NewSharedInformerFactory()
-	s := FakeIstioScheme
-
-	c.metadata = metadatafake.NewSimpleMetadataClient(s)
-	c.dynamic = dynamicfake.NewSimpleDynamicClient(s)
-	c.istio = setupFakeClient(istiofake.NewSimpleClientset(), "istio", objects)
-	c.gatewayapi = setupFakeClient(gatewayapifake.NewSimpleClientset(), "gateway", objects)
-	c.extSet = extfake.NewClientset()
-
-	// https://github.com/kubernetes/kubernetes/issues/95372
-	// There is a race condition in the client fakes, where events that happen between the List and Watch
-	// of an informer are dropped. To avoid this, we explicitly manage the list and watch, ensuring all lists
-	// have an associated watch before continuing.
-	// This would likely break any direct calls to List(), but for now our tests don't do that anyways. If we need
-	// to in the future we will need to identify the Lists that have a corresponding Watch, possibly by looking
-	// at created Informers
-	// an atomic.Int is used instead of sync.WaitGroup because wg.Add and wg.Wait cannot be called concurrently
-	listReactor := func(action clienttesting.Action) (handled bool, ret runtime.Object, err error) {
-		c.informerWatchesPending.Inc()
-		return false, nil, nil
-	}
-	watchReactor := func(tracker clienttesting.ObjectTracker) func(action clienttesting.Action) (handled bool, ret watch.Interface, err error) {
-		return func(action clienttesting.Action) (handled bool, ret watch.Interface, err error) {
-			gvr := action.GetResource()
-			ns := action.GetNamespace()
-			watch, err := tracker.Watch(gvr, ns)
-			if err != nil {
-				return false, nil, err
-			}
-			c.informerWatchesPending.Dec()
-			return true, watch, nil
-		}
-	}
-	// https://github.com/kubernetes/client-go/issues/439
-	createReactor := func(action clienttesting.Action) (handled bool, ret runtime.Object, err error) {
-		ret = action.(clienttesting.CreateAction).GetObject()
-		meta, ok := ret.(metav1.Object)
-		if !ok {
-			return
-		}
-
-		if meta.GetName() == "" && meta.GetGenerateName() != "" {
-			meta.SetName(names.SimpleNameGenerator.GenerateName(meta.GetGenerateName()))
-		}
-
-		return
-	}
-	for _, fc := range []fakeClient{
-		c.kube.(*fake.Clientset),
-		c.istio.(*istiofake.Clientset),
-		c.gatewayapi.(*gatewayapifake.Clientset),
-		c.dynamic.(*dynamicfake.FakeDynamicClient),
-		c.metadata.(*metadatafake.FakeMetadataClient),
-	} {
-		fc.PrependReactor("list", "*", listReactor)
-		fc.PrependWatchReactor("*", watchReactor(fc.Tracker()))
-		fc.PrependReactor("create", "*", createReactor)
-	}
-
-	c.fastSync = true
-
-	c.version = lazy.NewWithRetry(c.kube.Discovery().ServerVersion)
-
-	if NewCrdWatcher != nil {
-		c.crdWatcher = NewCrdWatcher(c)
-	}
-
-	return c
-}
-
-func NewFakeClientWithVersion(minor string, objects ...runtime.Object) CLIClient {
-	c := NewFakeClient(objects...).(*client)
-	c.Kube().Discovery().(*fakediscovery.FakeDiscovery).FakedServerVersion = &kubeVersion.Info{Major: "1", Minor: minor, GitVersion: fmt.Sprintf("v1.%v.0", minor)}
-	return c
-}
-
-type fakeClient interface {
-	PrependReactor(verb, resource string, reaction clienttesting.ReactionFunc)
-	PrependWatchReactor(resource string, reaction clienttesting.WatchReactionFunc)
-	Tracker() clienttesting.ObjectTracker
 }
 
 // Client is a helper wrapper around the Kube RESTClient for istioctl -> Pilot/Envoy/Mesh related things
@@ -480,24 +326,6 @@ func newClientInternal(clientFactory *clientFactory, opts ...ClientOption) (*cli
 	return &c, nil
 }
 
-// SetObjectFilter adds an object filter to the client, which can later be returned with client.ObjectFilter()
-func SetObjectFilter(c Client, filter kubetypes.DynamicObjectFilter) Client {
-	c.(*client).objectFilter = filter
-	return c
-}
-
-// EnableCrdWatcher enables the CRD watcher on the client.
-func EnableCrdWatcher(c Client) Client {
-	if NewCrdWatcher == nil {
-		panic("NewCrdWatcher is unset. Likely the crd watcher library is not imported anywhere")
-	}
-	if c.(*client).crdWatcher != nil {
-		panic("EnableCrdWatcher called twice for the same client")
-	}
-	c.(*client).crdWatcher = NewCrdWatcher(c)
-	return c
-}
-
 var NewCrdWatcher func(Client) kubetypes.CrdWatcher
 
 // NewCLIClient creates a Kubernetes client from the given ClientConfig. The "revision" parameter
@@ -527,11 +355,6 @@ func WithRevision(revision string) ClientOption {
 		client.revision = revision
 		return client
 	}
-}
-
-// NewClient creates a Kubernetes client from the given rest config.
-func NewClient(clientConfig clientcmd.ClientConfig, cluster cluster.ID) (Client, error) {
-	return newClientInternal(newClientFactory(clientConfig, false), WithCluster(cluster))
 }
 
 func (c *client) RESTConfig() *rest.Config {
@@ -572,10 +395,6 @@ func (c *client) Informers() informerfactory.InformerFactory {
 
 func (c *client) CrdWatcher() kubetypes.CrdWatcher {
 	return c.crdWatcher
-}
-
-func (c *client) ObjectFilter() kubetypes.DynamicObjectFilter {
-	return c.objectFilter
 }
 
 // RunAndWait starts all informers and waits for their caches to sync.
@@ -709,19 +528,6 @@ func WaitForCacheSync(name string, stop <-chan struct{}, cacheSyncs ...cache.Inf
 			return false
 		}
 	}
-}
-
-// WaitForCacheSync is a specialized version of the general WaitForCacheSync function which also
-// handles fake client syncing.
-// This is only required in cases where fake clients are used without RunAndWait.
-func (c *client) WaitForCacheSync(name string, stop <-chan struct{}, cacheSyncs ...cache.InformerSynced) bool {
-	if c.informerWatchesPending == nil {
-		return WaitForCacheSync(name, stop, cacheSyncs...)
-	}
-	syncFns := append(cacheSyncs, func() bool {
-		return c.informerWatchesPending.Load() == 0
-	})
-	return WaitForCacheSync(name, stop, syncFns...)
 }
 
 func (c *client) Revision() string {
@@ -889,7 +695,7 @@ func (c *client) GetIstioPods(ctx context.Context, namespace string, opts metav1
 	return pl.Items, nil
 }
 
-func (c *client) GetIstioVersions(ctx context.Context, namespace string) (*version.MeshInfo, error) {
+func (c *client) GetIstioVersions(ctx context.Context, namespace string) (*version_over.MeshInfo, error) {
 	pods, err := c.GetIstioPods(ctx, namespace, metav1.ListOptions{
 		LabelSelector: "app=istiod",
 		FieldSelector: RunningStatus,
@@ -909,10 +715,10 @@ func (c *client) GetIstioVersions(ctx context.Context, namespace string) (*versi
 	}
 
 	var errs error
-	res := version.MeshInfo{}
+	res := version_over.MeshInfo{}
 	for _, pod := range readyPods {
 		component := pod.Labels["istio"]
-		server := version.ServerInfo{
+		server := version_over.ServerInfo{
 			Component: component,
 			Revision:  pod.GetLabels()[label.IoIstioRev.Name],
 		}
@@ -926,7 +732,7 @@ func (c *client) GetIstioVersions(ctx context.Context, namespace string) (*versi
 			)
 			continue
 		}
-		var v version.Version
+		var v version_over.Version
 		err = json.Unmarshal(result, &v)
 		if err == nil && v.ClientVersion.Version != "" {
 			server.Info = *v.ClientVersion
@@ -1293,7 +1099,7 @@ func istioScheme() *runtime.Scheme {
 	return scheme
 }
 
-func setServerInfoWithIstiodVersionInfo(serverInfo *version.BuildInfo, istioInfo string) {
+func setServerInfoWithIstiodVersionInfo(serverInfo *version_over.BuildInfo, istioInfo string) {
 	versionParts := strings.Split(istioInfo, "-")
 	nParts := len(versionParts)
 	if nParts >= 3 {
@@ -1336,4 +1142,43 @@ func FilterIfEnhancedFilteringEnabled(k Client) kubetypes.DynamicObjectFilter {
 		return k.ObjectFilter()
 	}
 	return nil
+}
+
+// NewClient creates a Kubernetes client from the given rest config.
+func NewClient(clientConfig clientcmd.ClientConfig, cluster cluster.ID) (Client, error) {
+	return newClientInternal(newClientFactory(clientConfig, false), WithCluster(cluster))
+}
+
+// EnableCrdWatcher enables the CRD watcher on the client.
+func EnableCrdWatcher(c Client) Client {
+	if NewCrdWatcher == nil {
+		panic("NewCrdWatcher is unset. Likely the crd watcher library is not imported anywhere")
+	}
+	if c.(*client).crdWatcher != nil {
+		panic("EnableCrdWatcher called twice for the same client")
+	}
+	c.(*client).crdWatcher = NewCrdWatcher(c)
+	return c
+}
+
+// WaitForCacheSync is a specialized version of the general WaitForCacheSync function which also
+// handles fake client syncing.
+// This is only required in cases where fake clients are used without RunAndWait.
+func (c *client) WaitForCacheSync(name string, stop <-chan struct{}, cacheSyncs ...cache.InformerSynced) bool {
+	if c.informerWatchesPending == nil {
+		return WaitForCacheSync(name, stop, cacheSyncs...)
+	}
+	syncFns := append(cacheSyncs, func() bool {
+		return c.informerWatchesPending.Load() == 0
+	})
+	return WaitForCacheSync(name, stop, syncFns...)
+}
+
+func SetObjectFilter(c Client, filter kubetypes.DynamicObjectFilter) Client {
+	c.(*client).objectFilter = filter
+	return c
+}
+
+func (c *client) ObjectFilter() kubetypes.DynamicObjectFilter {
+	return c.objectFilter
 }

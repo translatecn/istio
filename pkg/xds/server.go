@@ -140,9 +140,6 @@ type Connection struct {
 	// Currently based on the node name and a counter.
 	conID string
 
-	// Sending on this channel results in a push.
-	pushChannel chan any
-
 	// Both ADS and SDS streams implement this interface
 	stream DiscoveryStream
 
@@ -158,27 +155,8 @@ type Connection struct {
 
 	// errorChan is used to process error during discovery request processing.
 	errorChan chan error
-}
 
-func NewConnection(peerAddr string, stream DiscoveryStream) Connection {
-	return Connection{
-		pushChannel: make(chan any),
-		initialized: make(chan struct{}),
-		stop:        make(chan struct{}),
-		reqChan:     make(chan *discovery.DiscoveryRequest, 1),
-		errorChan:   make(chan error, 1),
-		peerAddr:    peerAddr,
-		connectedAt: time.Now(),
-		stream:      stream,
-	}
-}
-
-func (conn *Connection) InitializedCh() chan struct{} {
-	return conn.initialized
-}
-
-func (conn *Connection) PushCh() chan any {
-	return conn.pushChannel
+	pushChannel chan any
 }
 
 func (conn *Connection) StopCh() chan struct{} {
@@ -205,41 +183,19 @@ func (conn *Connection) SetID(id string) {
 	conn.conID = id
 }
 
-func (conn *Connection) ConnectedAt() time.Time {
-	return conn.connectedAt
-}
-
-func (conn *Connection) Stop() {
-	close(conn.stop)
-}
-
-func (conn *Connection) MarkInitialized() {
-	close(conn.initialized)
-}
-
 // ConnectionContext is used by the RPC event loop to respond to requests and pushes.
 type ConnectionContext interface {
 	XdsConnection() *Connection
 	Watcher() Watcher
-	// Initialize checks the first request.
 	Initialize(node *core.Node) error
-	// Close discards the connection.
 	Close()
-	// Process responds to a discovery request.
 	Process(req *discovery.DiscoveryRequest) error
-	// Push responds to a push event queue
 	Push(ev any) error
 }
 
 func Stream(ctx ConnectionContext) error {
 	con := ctx.XdsConnection()
-	// Do not call: defer close(con.pushChannel). The push channel will be garbage collected
-	// when the connection is no longer used. Closing the channel can cause subtle race conditions
-	// with push. According to the spec: "It's only necessary to close a channel when it is important
-	// to tell the receiving goroutines that all data have been sent."
 
-	// Block until either a request is received or a push is triggered.
-	// We need 2 go routines because 'read' blocks in Recv().
 	go Receive(ctx)
 
 	// Wait for the proxy to be fully initialized before we start serving traffic. Because
@@ -452,6 +408,39 @@ func ShouldRespond(w Watcher, id string, request *discovery.DiscoveryRequest) (b
 // properly handles by not adding it to the watched resource list.
 func shouldUnsubscribe(request *discovery.DiscoveryRequest) bool {
 	return len(request.ResourceNames) == 0 && !IsWildcardTypeURL(request.TypeUrl)
+}
+
+func NewConnection(peerAddr string, stream DiscoveryStream) Connection {
+	return Connection{
+		pushChannel: make(chan any),
+		initialized: make(chan struct{}),
+		stop:        make(chan struct{}),
+		reqChan:     make(chan *discovery.DiscoveryRequest, 1),
+		errorChan:   make(chan error, 1),
+		peerAddr:    peerAddr,
+		connectedAt: time.Now(),
+		stream:      stream,
+	}
+}
+
+func (conn *Connection) ConnectedAt() time.Time {
+	return conn.connectedAt
+}
+
+func (conn *Connection) Stop() {
+	close(conn.stop)
+}
+
+func (conn *Connection) MarkInitialized() {
+	close(conn.initialized)
+}
+
+func (conn *Connection) InitializedCh() chan struct{} {
+	return conn.initialized
+}
+
+func (conn *Connection) PushCh() chan any {
+	return conn.pushChannel
 }
 
 func Send(ctx ConnectionContext, res *discovery.DiscoveryResponse) error {

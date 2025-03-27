@@ -31,9 +31,6 @@ type Tracker[T comparable] struct {
 }
 
 // NewTracker builds a tracker which records events that occur
-func NewTracker[T comparable](t test.Failer) *Tracker[T] {
-	return &Tracker[T]{t: t}
-}
 
 // Record that an event occurred.
 func (t *Tracker[T]) Record(event T) {

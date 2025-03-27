@@ -25,19 +25,16 @@ import (
 	"istio.io/istio/pkg/util/sets"
 )
 
-func (s *Server) ServiceController() *aggregate.Controller {
-	return s.environment.ServiceDiscovery.(*aggregate.Controller)
-}
-
-// initServiceControllers creates and initializes the service controllers
 func (s *Server) initServiceControllers(args *PilotArgs) error {
 	serviceControllers := s.ServiceController()
 
 	s.serviceEntryController = serviceentry.NewController(
-		s.configController, s.XDSServer,
+		s.configController,
+		s.XDSServer,
 		s.environment.Watcher,
 		serviceentry.WithClusterID(s.clusterID),
 	)
+
 	serviceControllers.AddRegistry(s.serviceEntryController)
 
 	registered := sets.New[provider.ID]()
@@ -68,13 +65,12 @@ func (s *Server) initServiceControllers(args *PilotArgs) error {
 	return nil
 }
 
-// initKubeRegistry creates all the k8s service controllers under this pilot
 func (s *Server) initKubeRegistry(args *PilotArgs) (err error) {
 	args.RegistryOptions.KubeOptions.ClusterID = s.clusterID
 	args.RegistryOptions.KubeOptions.Revision = args.Revision
 	args.RegistryOptions.KubeOptions.Metrics = s.environment
 	args.RegistryOptions.KubeOptions.XDSUpdater = s.XDSServer
-	args.RegistryOptions.KubeOptions.MeshNetworksWatcher = s.environment.NetworksWatcher
+	args.RegistryOptions.KubeOptions.NetworksWatcher = s.environment.NetworksWatcher //  本环境的
 	args.RegistryOptions.KubeOptions.MeshWatcher = s.environment.Watcher
 	args.RegistryOptions.KubeOptions.SystemNamespace = args.Namespace
 	args.RegistryOptions.KubeOptions.MeshServiceController = s.ServiceController()
@@ -83,6 +79,7 @@ func (s *Server) initKubeRegistry(args *PilotArgs) (err error) {
 		s.kubeClient.Kube(),
 		args.RegistryOptions.ClusterRegistriesNamespace,
 		args.RegistryOptions.KubeOptions,
+
 		s.serviceEntryController,
 		s.configController,
 		s.istiodCertBundleWatcher,
@@ -90,7 +87,11 @@ func (s *Server) initKubeRegistry(args *PilotArgs) (err error) {
 		s.shouldStartNsController(),
 		s.environment.ClusterLocal(),
 		s.server,
-		s.multiclusterController)
+		s.secretController)
 
 	return
+}
+
+func (s *Server) ServiceController() *aggregate.Controller {
+	return s.environment.ServiceDiscovery.(*aggregate.Controller)
 }

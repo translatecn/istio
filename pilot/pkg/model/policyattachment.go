@@ -17,8 +17,8 @@ package model
 import (
 	"k8s.io/apimachinery/pkg/types"
 
-	"istio.io/api/label"
-	"istio.io/api/type/v1beta1"
+	"istio.io/istio/istio.io/api/label"
+	"istio.io/istio/istio.io/api/type/v1beta1"
 	"istio.io/istio/pilot/pkg/features"
 	"istio.io/istio/pilot/pkg/serviceregistry/provider"
 	"istio.io/istio/pkg/config"

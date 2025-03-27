@@ -33,23 +33,13 @@ var (
 		false,
 		"Skip validating the peer is from the same trust domain when mTLS is enabled in authentication policy").Get()
 
-	XDSAuth = env.Register("XDS_AUTH", true,
-		"If true, will authenticate XDS clients.").Get()
+	CertSignerDomain = env.Register("CERT_SIGNER_DOMAIN", "", "The cert signer domain info").Get()
 
-	EnableXDSIdentityCheck = env.Register(
-		"PILOT_ENABLE_XDS_IDENTITY_CHECK",
-		true,
-		"If enabled, pilot will authorize XDS clients, to ensure they are acting only as namespaces they have permissions for.",
-	).Get()
+	UseCacertsForSelfSignedCA = env.Register("USE_CACERTS_FOR_SELF_SIGNED_CA", false, "If enabled, istiod will use a secret named cacerts to store its self-signed istio-generated root certificate.").Get()
+	EnableXDSIdentityCheck    = env.Register("PILOT_ENABLE_XDS_IDENTITY_CHECK", true, "如果启用，pilot将授权XDS客户机，以确保它们只作为具有权限的名称空间。").Get()
 
 	// TODO: Move this to proper API.
-	trustedGatewayCIDR = env.Register(
-		"TRUSTED_GATEWAY_CIDR",
-		"",
-		"If set, any connections from gateway to Istiod with this CIDR range are treated as trusted for using authentication mechanisms like XFCC."+
-			" This can only be used when the network where Istiod and the authenticating gateways are running in a trusted/secure network",
-	)
-
+	trustedGatewayCIDR = env.Register("TRUSTED_GATEWAY_CIDR", "", "如果设置了这个CIDR范围，任何从网关到Istiod的连接都被认为是可信的，可以使用像XFCC这样的身份验证机制。只有当Istiod和身份验证网关所在的网络在受信任/安全的网络中运行时，才能使用这种方法")
 	TrustedGatewayCIDR = func() []string {
 		cidr := trustedGatewayCIDR.Get()
 
@@ -61,6 +51,7 @@ var (
 		return strings.Split(cidr, ",")
 	}()
 
+	XDSAuth               = env.Register("XDS_AUTH", true, "If true, will authenticate XDS clients.").Get()
 	CATrustedNodeAccounts = func() sets.Set[types.NamespacedName] {
 		accounts := env.Register(
 			"CA_TRUSTED_NODE_ACCOUNTS",
@@ -80,6 +71,7 @@ var (
 				log.Warnf("Invalid CA_TRUSTED_NODE_ACCOUNTS, ignoring: %v", v)
 				continue
 			}
+
 			res.Insert(types.NamespacedName{
 				Namespace: ns,
 				Name:      sa,
@@ -87,10 +79,4 @@ var (
 		}
 		return res
 	}()
-
-	CertSignerDomain = env.Register("CERT_SIGNER_DOMAIN", "", "The cert signer domain info").Get()
-
-	UseCacertsForSelfSignedCA = env.Register("USE_CACERTS_FOR_SELF_SIGNED_CA", false,
-		"If enabled, istiod will use a secret named cacerts to store its self-signed istio-"+
-			"generated root certificate.").Get()
 )

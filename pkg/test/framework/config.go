@@ -234,6 +234,7 @@ func (c *configPlan) EvalFile(ns string, args any, paths ...string) config.Plan 
 
 func (c *configPlan) Apply(opts ...apply.Option) error {
 	// Apply the options.
+
 	options := apply.Options{}
 	for _, o := range opts {
 		o.Set(&options)
@@ -275,6 +276,7 @@ func (c *configPlan) ApplyOrFail(t test.Failer, opts ...apply.Option) {
 
 func (c *configPlan) Delete() error {
 	// Delete for each namespace concurrently.
+
 	g, _ := errgroup.WithContext(context.TODO())
 	for ns, y := range c.yamlText {
 		ns, y := ns, y

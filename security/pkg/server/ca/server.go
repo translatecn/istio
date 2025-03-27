@@ -23,7 +23,7 @@ import (
 	"google.golang.org/grpc/status"
 	"k8s.io/apimachinery/pkg/types"
 
-	pb "istio.io/api/security/v1alpha1"
+	pb "istio.io/istio/istio.io/api/security/v1alpha1"
 	"istio.io/istio/pilot/pkg/features"
 	"istio.io/istio/pkg/kube/multicluster"
 	"istio.io/istio/pkg/log"
@@ -96,7 +96,6 @@ func (s *Server) CreateCertificate(ctx context.Context, request *pb.IstioCertifi
 			// Return an opaque error (for security purposes) but log the full reason
 			serverCaLog.Warnf("impersonation not allowed, as node authorizer (CA_TRUSTED_NODE_ACCOUNTS) is not configured")
 			return nil, status.Error(codes.Unauthenticated, "request impersonation authentication failure")
-
 		}
 		if err := s.nodeAuthorizer.authenticateImpersonation(ctx, caller.KubernetesInfo, impersonatedIdentity); err != nil {
 			s.monitoring.AuthnError.Increment()
@@ -151,6 +150,7 @@ func (s *Server) CreateCertificate(ctx context.Context, request *pb.IstioCertifi
 // RecordCertsExpiry updates the certificate-expiration related metrics given a new keycertbundle
 func RecordCertsExpiry(keyCertBundle *util.KeyCertBundle) {
 	// Expiry of the first root cert in trust bundle
+
 	rootCertExpiry, err := keyCertBundle.ExtractRootCertExpiryTimestamp()
 	if err != nil {
 		serverCaLog.Errorf("failed to extract root cert expiry timestamp (error %v)", err)

@@ -61,9 +61,3 @@ func (l *HealthzAdaptor) SetLeaderElection(le *LeaderElector) {
 // NewLeaderHealthzAdaptor creates a basic healthz adaptor to monitor a leader election.
 // timeout determines the time beyond the lease expiry to be allowed for timeout.
 // checks within the timeout period after the lease expires will still return healthy.
-func NewLeaderHealthzAdaptor(timeout time.Duration) *HealthzAdaptor {
-	result := &HealthzAdaptor{
-		timeout: timeout,
-	}
-	return result
-}

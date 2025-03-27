@@ -37,10 +37,11 @@ type SwitchMetric interface {
 
 type noopMetric struct{}
 
-func (noopMetric) On(name string)  {}
-func (noopMetric) Off(name string) {}
+func (noopMetric) On(name string) {}
+func (noopMetric) Off(name string) {
+	// defaultLeaderMetrics expects the caller to lock before setting any metrics.
+}
 
-// defaultLeaderMetrics expects the caller to lock before setting any metrics.
 type defaultLeaderMetrics struct {
 	// leader's value indicates if the current process is the owner of name lease
 	leader SwitchMetric
@@ -62,10 +63,11 @@ func (m *defaultLeaderMetrics) leaderOff(name string) {
 
 type noMetrics struct{}
 
-func (noMetrics) leaderOn(name string)  {}
-func (noMetrics) leaderOff(name string) {}
+func (noMetrics) leaderOn(name string) {}
+func (noMetrics) leaderOff(name string) {
+	// MetricsProvider generates various metrics used by the leader election.
+}
 
-// MetricsProvider generates various metrics used by the leader election.
 type MetricsProvider interface {
 	NewLeaderMetric() SwitchMetric
 }
@@ -104,6 +106,3 @@ func (f *leaderMetricsFactory) newLeaderMetrics() leaderMetricsAdapter {
 
 // SetProvider sets the metrics provider for all subsequently created work
 // queues. Only the first call has an effect.
-func SetProvider(metricsProvider MetricsProvider) {
-	globalMetricsFactory.setProvider(metricsProvider)
-}

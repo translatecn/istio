@@ -19,7 +19,7 @@ import (
 
 	k8sext "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 
-	"istio.io/api/networking/v1alpha3"
+	"istio.io/istio/istio.io/api/networking/v1alpha3"
 	"istio.io/istio/pkg/config"
 	"istio.io/istio/pkg/config/analysis"
 	"istio.io/istio/pkg/config/analysis/msg"

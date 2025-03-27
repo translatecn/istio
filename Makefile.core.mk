@@ -38,13 +38,7 @@ SHELL := /bin/bash -o pipefail
 # Version can be defined:
 # (1) in a $VERSION shell variable, which takes precedence; or
 # (2) in the VERSION file, in which we will append "-dev" to it
-ifeq ($(VERSION),)
-VERSION_FROM_FILE := $(shell cat VERSION)
-ifeq ($(VERSION_FROM_FILE),)
-$(error VERSION not detected. Make sure it's stored in the VERSION file or defined in VERSION variable)
-endif
-VERSION := $(VERSION_FROM_FILE)-dev
-endif
+VERSION := 1.24-dev
 
 export VERSION
 

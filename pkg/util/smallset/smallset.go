@@ -33,9 +33,6 @@ type Set[T cmp.Ordered] struct {
 
 // NewPresorted creates a new Set with the given items.
 // If items is not sorted or contains duplicates, this gives undefined behavior; use New instead.
-func NewPresorted[T cmp.Ordered](items ...T) Set[T] {
-	return Set[T]{items: items}
-}
 
 // New creates a new Set with the given items.
 // Duplicates are removed
@@ -50,8 +47,10 @@ func New[T cmp.Ordered](items ...T) Set[T] {
 
 // CopyAndInsert builds a *new* with all the current items plus new items
 func (s Set[T]) CopyAndInsert(items ...T) Set[T] {
-	slices.Sort(items)
 	// This is basically the 'merge' part of merge sort.
+
+	slices.Sort(items)
+
 	a := s.items
 	b := items
 	nl := make([]T, 0, len(a)+len(b))
@@ -89,10 +88,11 @@ func (s Set[T]) CopyAndInsert(items ...T) Set[T] {
 
 // List returns the underlying slice. Must not be modified
 func (s Set[T]) List() []T {
+	// Contains returns whether the given item is in the set.
+
 	return s.items
 }
 
-// Contains returns whether the given item is in the set.
 func (s Set[T]) Contains(item T) bool {
 	_, f := slices.BinarySearch(s.items, item)
 	return f

@@ -11,9 +11,9 @@ spec:
     # with these labels
     istio: ingressgateway
   servers:
-  - port:
-      number: 31400
-      protocol: TCP
-      name: tcp
-    hosts:
-    - a.istio-system.svc.cluster.local
+    - port:
+        number: 31400
+        protocol: TCP
+        name: tcp
+      hosts:
+        - a.istio-system.svc.cluster.local

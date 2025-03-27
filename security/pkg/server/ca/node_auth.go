@@ -38,19 +38,6 @@ type MulticlusterNodeAuthorizor struct {
 	component           *multicluster.Component[*ClusterNodeAuthorizer]
 }
 
-func NewMulticlusterNodeAuthenticator(
-	trustedNodeAccounts sets.Set[types.NamespacedName],
-	controller multicluster.ComponentBuilder,
-) *MulticlusterNodeAuthorizor {
-	m := &MulticlusterNodeAuthorizor{
-		trustedNodeAccounts: trustedNodeAccounts,
-		component: multicluster.BuildMultiClusterComponent(controller, func(cluster *multicluster.Cluster) *ClusterNodeAuthorizer {
-			return NewClusterNodeAuthorizer(cluster.Client, trustedNodeAccounts)
-		}),
-	}
-	return m
-}
-
 func (m *MulticlusterNodeAuthorizor) authenticateImpersonation(ctx context.Context, caller security.KubernetesInfo, requestedIdentityString string) error {
 	clusterID := kubeauth.ExtractClusterID(ctx)
 	na := m.component.ForCluster(clusterID)
@@ -69,34 +56,6 @@ type ClusterNodeAuthorizer struct {
 	trustedNodeAccounts sets.Set[types.NamespacedName]
 	pods                kclient.Client[*v1.Pod]
 	nodeIndex           kclient.Index[SaNode, *v1.Pod]
-}
-
-func NewClusterNodeAuthorizer(client kube.Client, trustedNodeAccounts sets.Set[types.NamespacedName]) *ClusterNodeAuthorizer {
-	pods := kclient.NewFiltered[*v1.Pod](client, kclient.Filter{
-		ObjectFilter:    client.ObjectFilter(),
-		ObjectTransform: kube.StripPodUnusedFields,
-	})
-	// Add an Index on the pods, storing the service account and node. This allows us to later efficiently query.
-	index := kclient.CreateIndex[SaNode, *v1.Pod](pods, func(pod *v1.Pod) []SaNode {
-		if len(pod.Spec.NodeName) == 0 {
-			return nil
-		}
-		if len(pod.Spec.ServiceAccountName) == 0 {
-			return nil
-		}
-		return []SaNode{{
-			ServiceAccount: types.NamespacedName{
-				Namespace: pod.Namespace,
-				Name:      pod.Spec.ServiceAccountName,
-			},
-			Node: pod.Spec.NodeName,
-		}}
-	})
-	return &ClusterNodeAuthorizer{
-		pods:                pods,
-		nodeIndex:           index,
-		trustedNodeAccounts: trustedNodeAccounts,
-	}
 }
 
 func (na *ClusterNodeAuthorizer) Close() {
@@ -153,4 +112,47 @@ func (na *ClusterNodeAuthorizer) authenticateImpersonation(caller security.Kuber
 	}
 	serverCaLog.Debugf("Node caller %v impersonated %v", caller, requestedIdentityString)
 	return nil
+}
+
+func NewMulticlusterNodeAuthenticator(
+	trustedNodeAccounts sets.Set[types.NamespacedName],
+	controller multicluster.ComponentBuilder,
+) *MulticlusterNodeAuthorizor {
+	m := &MulticlusterNodeAuthorizor{
+		trustedNodeAccounts: trustedNodeAccounts,
+		component: multicluster.BuildMultiClusterComponent(controller,
+			func(cluster *multicluster.Cluster) *ClusterNodeAuthorizer {
+				return NewClusterNodeAuthorizer(cluster.Client, trustedNodeAccounts)
+			},
+		),
+	}
+	return m
+}
+
+func NewClusterNodeAuthorizer(client kube.Client, trustedNodeAccounts sets.Set[types.NamespacedName]) *ClusterNodeAuthorizer {
+	pods := kclient.NewFiltered[*v1.Pod](client, kclient.Filter{
+		ObjectFilter:    client.ObjectFilter(),
+		ObjectTransform: kube.StripPodUnusedFields,
+	})
+	// Add an Index on the pods, storing the service account and node. This allows us to later efficiently query.
+	index := kclient.CreateIndex[SaNode, *v1.Pod](pods, func(pod *v1.Pod) []SaNode {
+		if len(pod.Spec.NodeName) == 0 {
+			return nil
+		}
+		if len(pod.Spec.ServiceAccountName) == 0 {
+			return nil
+		}
+		return []SaNode{{
+			ServiceAccount: types.NamespacedName{
+				Namespace: pod.Namespace,
+				Name:      pod.Spec.ServiceAccountName,
+			},
+			Node: pod.Spec.NodeName,
+		}}
+	})
+	return &ClusterNodeAuthorizer{
+		pods:                pods,
+		nodeIndex:           index,
+		trustedNodeAccounts: trustedNodeAccounts,
+	}
 }

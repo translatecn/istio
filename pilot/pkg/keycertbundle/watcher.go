@@ -33,12 +33,6 @@ type Watcher struct {
 	watchers  map[int32]chan struct{}
 }
 
-func NewWatcher() *Watcher {
-	return &Watcher{
-		watchers: make(map[int32]chan struct{}),
-	}
-}
-
 // AddWatcher returns channel to receive the updated items.
 func (w *Watcher) AddWatcher() (int32, chan struct{}) {
 	ch := make(chan struct{}, 1)
@@ -60,27 +54,6 @@ func (w *Watcher) RemoveWatcher(id int32) {
 		close(ch)
 	}
 	delete(w.watchers, id)
-}
-
-// SetAndNotify sets the key cert and root cert and notify the watchers.
-func (w *Watcher) SetAndNotify(key, cert, caBundle []byte) {
-	w.mutex.Lock()
-	defer w.mutex.Unlock()
-	if len(key) != 0 {
-		w.bundle.KeyPem = key
-	}
-	if len(cert) != 0 {
-		w.bundle.CertPem = cert
-	}
-	if len(caBundle) != 0 {
-		w.bundle.CABundle = caBundle
-	}
-	for _, ch := range w.watchers {
-		select {
-		case ch <- struct{}{}:
-		default:
-		}
-	}
 }
 
 // SetFromFilesAndNotify sets the key cert and root cert from files and notify the watchers.
@@ -113,4 +86,31 @@ func (w *Watcher) GetKeyCertBundle() KeyCertBundle {
 	w.mutex.RLock()
 	defer w.mutex.RUnlock()
 	return w.bundle
+}
+
+func NewWatcher() *Watcher {
+	return &Watcher{
+		watchers: make(map[int32]chan struct{}),
+	}
+}
+
+// SetAndNotify sets the key cert and root cert and notify the watchers.
+func (w *Watcher) SetAndNotify(key, cert, caBundle []byte) {
+	w.mutex.Lock()
+	defer w.mutex.Unlock()
+	if len(key) != 0 {
+		w.bundle.KeyPem = key
+	}
+	if len(cert) != 0 {
+		w.bundle.CertPem = cert
+	}
+	if len(caBundle) != 0 {
+		w.bundle.CABundle = caBundle
+	}
+	for _, ch := range w.watchers {
+		select {
+		case ch <- struct{}{}:
+		default:
+		}
+	}
 }

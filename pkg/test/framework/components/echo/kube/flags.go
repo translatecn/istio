@@ -14,7 +14,9 @@
 
 package kube
 
-import "flag"
+import (
+	"flag"
+)
 
 var (
 	serviceTemplateFile      = "service.yaml"

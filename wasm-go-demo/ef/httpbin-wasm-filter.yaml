@@ -1,0 +1,38 @@
+# httpbin-wasm-filter.yaml
+apiVersion: networking.istio.io/v1alpha3
+kind: EnvoyFilter
+metadata:
+  name: httpbin-wasm-filter
+spec:
+  workloadSelector:
+    labels:
+      app: httpbin
+  configPatches:
+    - applyTo: HTTP_FILTER
+      match:
+        context: SIDECAR_INBOUND # 仅对入站流量进行过滤
+        listener:
+          filterChain:
+            filter:
+              name: envoy.filters.network.http_connection_manager
+              subFilter:
+                name: envoy.filters.http.router
+      patch:
+        operation: INSERT_BEFORE # 在 router 之前插入
+        value:
+          name: mydummy
+          typed_config:
+            "@type": type.googleapis.com/udpa.type.v1.TypedStruct
+            type_url: type.googleapis.com/envoy.extensions.filters.http.wasm.v3.Wasm
+            value:
+              config:
+                configuration:
+                  "@type": type.googleapis.com/google.protobuf.StringValue
+                  value: dummy
+                root_id: "regex_replace"
+                vm_config:
+                  code:
+                    local:
+                      filename: /var/local/wasm/new-filter.wasm
+                  runtime: envoy.wasm.runtime.v8
+                  vm_id: myvmdummy

@@ -29,8 +29,8 @@ metadata:
     service: sleep
 spec:
   ports:
-  - port: 80
-    name: http
+    - port: 80
+      name: http
   selector:
     app: sleep
 ---
@@ -55,16 +55,16 @@ spec:
       terminationGracePeriodSeconds: 0
       serviceAccountName: sleep
       containers:
-      - name: sleep
-        image: curlimages/curl
-        command: ["/bin/sleep", "infinity"]
-        imagePullPolicy: IfNotPresent
-        volumeMounts:
-        - name: tmp
-          mountPath: /tmp
-        securityContext:
-          runAsUser: 1000
+        - name: sleep
+          image: registry.cn-hangzhou.aliyuncs.com/acejilam/curl
+          command: [ "/bin/sleep", "infinity" ]
+          imagePullPolicy: IfNotPresent
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+          securityContext:
+            runAsUser: 1000
       volumes:
-      - name: tmp
-        emptyDir: {}
+        - name: tmp
+          emptyDir: { }
 ---

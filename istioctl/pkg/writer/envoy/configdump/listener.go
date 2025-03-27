@@ -180,7 +180,6 @@ func (c *ConfigWriter) PrintRemoteListenerSummary() error {
 			lname = "internal"
 		}
 		for _, fc := range chains {
-
 			name := fc.GetName()
 			matches := newMatcher(fc, l)
 			destination := getFilterType(fc.GetFilters())
@@ -327,7 +326,6 @@ func (c *ConfigWriter) PrintListenerSummary(filter ListenerFilter) error {
 		addresses = append(addresses, retrieveListenerAdditionalAddresses(l)...)
 		port := retrieveListenerPort(l)
 		if filter.Verbose {
-
 			matches := retrieveListenerMatches(l)
 			sort.Slice(matches, func(i, j int) bool {
 				return matches[i].destination > matches[j].destination

@@ -15,7 +15,10 @@
 # limitations under the License.
 
 WD=$(dirname "$0")
-WD=$(cd "$WD"; pwd)
+WD=$(
+	cd "$WD"
+	pwd
+)
 ROOT=$(dirname "$WD")
 
 # shellcheck source=prow/lib.sh
@@ -37,28 +40,28 @@ REPORT_PLAINTEXT="${REPORT_PLAINTEXT:-${ARTIFACTS}/benchmark-log.txt}"
 COMPARE_GIT_SHA="${COMPARE_GIT_SHA:-${PULL_BASE_SHA:-${GIT_SHA}}}"
 
 case "${1}" in
-  run)
-    shift
-    benchmarkjunit "$@" -l "${REPORT_PLAINTEXT}" --output="${REPORT_JUNIT}" \
-      --test-arg "--benchmem" \
-      --test-arg "--count=${BENCHMARK_COUNT}" \
-      --test-arg "--cpu=${BENCHMARK_CPUS}" \
-      --test-arg "--test.timeout=30m" \
-      --test-arg "-tags=vtprotobuf"
-    # Print out the results as well for ease of debugging, so they are in the logs instead of just output
-    cat "${REPORT_PLAINTEXT}"
-    ;;
-  report)
-    # Upload the reports to a well known path based on git SHA
-    gsutil cp "${REPORT_JUNIT}" "gs://${GCS_BENCHMARK_DIR}/${GIT_SHA}.xml"
-    gsutil cp "${REPORT_PLAINTEXT}" "gs://${GCS_BENCHMARK_DIR}/${GIT_SHA}.txt"
-    ;;
-  compare)
-    # Fetch previous results, and compare them.
-    curl "https://storage.googleapis.com/${GCS_BENCHMARK_DIR}/${COMPARE_GIT_SHA}.txt" > "${ARTIFACTS}/baseline-benchmark-log.txt"
-    benchstat "${ARTIFACTS}/baseline-benchmark-log.txt" "${REPORT_PLAINTEXT}"
-    ;;
-  *)
-    echo "unknown command, expect report, run, or compare."
-    ;;
+run)
+	shift
+	benchmarkjunit "$@" -l "${REPORT_PLAINTEXT}" --output="${REPORT_JUNIT}" \
+		--test-arg "--benchmem" \
+		--test-arg "--count=${BENCHMARK_COUNT}" \
+		--test-arg "--cpu=${BENCHMARK_CPUS}" \
+		--test-arg "--test.timeout=30m" \
+		--test-arg "-tags=vtprotobuf"
+	# Print out the results as well for ease of debugging, so they are in the logs instead of just output
+	cat "${REPORT_PLAINTEXT}"
+	;;
+report)
+	# Upload the reports to a well known path based on git SHA
+	gsutil cp "${REPORT_JUNIT}" "gs://${GCS_BENCHMARK_DIR}/${GIT_SHA}.xml"
+	gsutil cp "${REPORT_PLAINTEXT}" "gs://${GCS_BENCHMARK_DIR}/${GIT_SHA}.txt"
+	;;
+compare)
+	# Fetch previous results, and compare them.
+	curl "https://storage.googleapis.com/${GCS_BENCHMARK_DIR}/${COMPARE_GIT_SHA}.txt" >"${ARTIFACTS}/baseline-benchmark-log.txt"
+	benchstat "${ARTIFACTS}/baseline-benchmark-log.txt" "${REPORT_PLAINTEXT}"
+	;;
+*)
+	echo "unknown command, expect report, run, or compare."
+	;;
 esac

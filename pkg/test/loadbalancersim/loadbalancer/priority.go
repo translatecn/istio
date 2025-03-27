@@ -19,14 +19,3 @@ import (
 )
 
 type PrioritySelector func(src *mesh2.Client, dest *mesh2.Node) uint32
-
-func LocalityPrioritySelector(src *mesh2.Client, dest *mesh2.Node) uint32 {
-	priority := uint32(2)
-	if src.Locality().Region == dest.Locality().Region {
-		priority = 1
-		if src.Locality().Zone == dest.Locality().Zone {
-			priority = 0
-		}
-	}
-	return priority
-}

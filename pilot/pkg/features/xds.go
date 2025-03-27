@@ -59,8 +59,7 @@ var (
 			"should be enabled if applications access all services explicitly via a HTTP proxy port in the sidecar.",
 	).Get()
 
-	EnableXDSCaching = env.Register("PILOT_ENABLE_XDS_CACHE", true,
-		"If true, Pilot will cache XDS responses.").Get()
+	_ = env.Register("PILOT_ENABLE_XDS_CACHE", true, "If true, Pilot will cache XDS responses.").Get()
 
 	// EnableCDSCaching determines if CDS caching is enabled. This is explicitly split out of ENABLE_XDS_CACHE,
 	// so that in case there are issues with the CDS cache we can just disable the CDS cache.

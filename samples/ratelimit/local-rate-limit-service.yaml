@@ -41,7 +41,7 @@ spec:
           route:
             rate_limits:
               - actions:
-                  - remote_address: {}
+                  - remote_address: { }
               - actions:
                   - header_value_match:
                       descriptor_value: "productpage"

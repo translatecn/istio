@@ -33,10 +33,6 @@ type ValidationAnalyzer struct {
 
 var _ analysis.Analyzer = &ValidationAnalyzer{}
 
-func CollectionValidationAnalyzer(s sresource.Schema) analysis.Analyzer {
-	return &ValidationAnalyzer{s: s}
-}
-
 // AllValidationAnalyzers returns a slice with a validation analyzer for each Istio schema
 // This automation comes with an assumption: that the collection names used by the schema match the metadata used by Galley components
 func AllValidationAnalyzers() []analysis.Analyzer {

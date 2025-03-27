@@ -25,29 +25,15 @@ import (
 
 func bindCmdlineFlags(cfg *config.Config, cmd *cobra.Command) {
 	fs := cmd.Flags()
-	flag.BindEnv(fs, constants.DryRun, "n", "Do not call any external dependencies like iptables.",
-		&cfg.DryRun)
-
-	flag.BindEnv(fs, constants.ProxyUID, "u",
-		"Specify the UID of the user for which the redirection is not applied. Typically, this is the UID of the proxy container.",
-		&cfg.ProxyUID)
-
-	flag.BindEnv(fs, constants.ProxyGID, "g",
-		"Specify the GID of the user for which the redirection is not applied (same default value as -u param).",
-		&cfg.ProxyGID)
-
-	flag.BindEnv(fs, constants.RedirectDNS, "", "Enable capture of dns traffic by istio-agent.", &cfg.RedirectDNS)
+	flag.BindEnv(fs, constants.DryRun, "n", "不要调用任何外部依赖，比如iptables。", &cfg.DryRun)
+	flag.BindEnv(fs, constants.ProxyUID, "u", "指定不应用重定向的用户的UID。通常，这是代理容器的UID。", &cfg.ProxyUID)
+	flag.BindEnv(fs, constants.ProxyGID, "g", "指定不应用重定向的用户的GID（与-u param的默认值相同）。", &cfg.ProxyGID)
+	flag.BindEnv(fs, constants.RedirectDNS, "", "启用istio-agent捕获dns流量功能。", &cfg.RedirectDNS)
 	// Allow binding to a different var, for consistency with other components
 	flag.AdditionalEnv(fs, constants.RedirectDNS, "ISTIO_META_DNS_CAPTURE")
 
-	flag.BindEnv(fs, constants.CaptureAllDNS, "",
-		"Instead of only capturing DNS traffic to DNS server IP, capture all DNS traffic at port 53. This setting is only effective when redirect dns is enabled.",
-		&cfg.CaptureAllDNS)
-
-	flag.BindEnv(fs, constants.InboundInterceptionMode, "m",
-		"The mode used to redirect inbound connections to Envoy, either \"REDIRECT\" or \"TPROXY\".",
-		&cfg.InboundInterceptionMode)
-
+	flag.BindEnv(fs, constants.CaptureAllDNS, "", "不是只捕获到DNS服务器IP的DNS流量，而是捕获端口53的所有DNS流量。此设置仅在启用重定向dns时有效。", &cfg.CaptureAllDNS)
+	flag.BindEnv(fs, constants.InboundInterceptionMode, "m", "用于将入站连接重定向到Envoy的模式，可以是“redirect”或“TPROXY”。", &cfg.InboundInterceptionMode)
 	flag.BindEnv(fs, constants.InboundTProxyMark, "t", "", &cfg.InboundTProxyMark)
 }
 

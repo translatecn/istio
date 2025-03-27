@@ -25,7 +25,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/gateway-api/apis/v1beta1"
 
-	"istio.io/api/label"
+	"istio.io/istio/istio.io/api/label"
 	"istio.io/istio/pilot/pkg/features"
 	"istio.io/istio/pilot/pkg/model"
 	"istio.io/istio/pilot/pkg/serviceregistry/kube"
@@ -66,28 +66,6 @@ type networkManager struct {
 
 	// implements NetworkGatewaysWatcher; we need to call c.NotifyGatewayHandlers when our gateways change
 	model.NetworkGatewaysHandler
-}
-
-func initNetworkManager(c *Controller, options Options) *networkManager {
-	n := &networkManager{
-		clusterID:           options.ClusterID,
-		meshNetworksWatcher: options.MeshNetworksWatcher,
-		// zero values are a workaround structcheck issue: https://github.com/golangci/golangci-lint/issues/826
-		ranger:                         nil,
-		network:                        "",
-		networkFromMeshConfig:          "",
-		registryServiceNameGateways:    make(map[host.Name][]model.NetworkGateway),
-		networkGatewaysBySvc:           make(map[host.Name]model.NetworkGatewaySet),
-		gatewaysFromResource:           make(map[types.UID]model.NetworkGatewaySet),
-		discoverRemoteGatewayResources: options.ConfigCluster,
-	}
-	// initialize the gateway resource client when any feature that uses it is enabled
-	if features.MultiNetworkGatewayAPI {
-		n.gatewayResourceClient = kclient.NewDelayedInformer[*v1beta1.Gateway](c.client, gvr.KubernetesGateway, kubetypes.StandardInformer, kubetypes.Filter{})
-		// conditionally register this handler
-		registerHandlers(c, n.gatewayResourceClient, "Gateways", n.handleGatewayResource, nil)
-	}
-	return n
 }
 
 // setNetworkFromNamespace sets network got from system namespace, returns whether it has changed
@@ -140,11 +118,11 @@ type namedRangerEntry struct {
 }
 
 // Network returns the IPNet for the network
-func (n namedRangerEntry) Network() net.IPNet {
+func (n namedRangerEntry) Network() net.IPNet { // onNetworkChange is fired if the default network is changed either via the namespace label or mesh-networks
+
 	return n.network
 }
 
-// onNetworkChange is fired if the default network is changed either via the namespace label or mesh-networks
 func (c *Controller) onNetworkChange() {
 	// the network for endpoints are computed when we process the events; this will fix the cache
 	// NOTE: this must run before the other network watcher handler that creates a force push
@@ -162,8 +140,6 @@ func (c *Controller) onNetworkChange() {
 	}
 }
 
-// reloadMeshNetworks will read the mesh networks configuration to setup
-// fromRegistry and cidr based network lookups for this registry
 func (n *networkManager) reloadMeshNetworks() {
 	n.Lock()
 	defer n.Unlock()
@@ -239,16 +215,6 @@ func (c *Controller) NetworkGateways() []model.NetworkGateway {
 
 	unsorted := out.UnsortedList()
 	return model.SortGateways(unsorted)
-}
-
-// extractGatewaysFromService checks if the service is a cross-network gateway
-// and if it is, updates the controller's gateways.
-func (c *Controller) extractGatewaysFromService(svc *model.Service) bool {
-	changed := c.extractGatewaysInner(svc)
-	if changed {
-		c.NotifyGatewayHandlers()
-	}
-	return changed
 }
 
 // reloadNetworkGateways performs extractGatewaysFromService for all services registered with the controller.
@@ -437,6 +403,7 @@ func (n *networkManager) HasSynced() bool {
 // updateServiceNodePortAddresses updates ClusterExternalAddresses for Services of nodePort type
 func (c *Controller) updateServiceNodePortAddresses(svcs ...*model.Service) bool {
 	// node event, update all nodePort gateway services
+
 	if len(svcs) == 0 {
 		svcs = c.getNodePortGatewayServices()
 	}
@@ -478,4 +445,34 @@ func (c *Controller) getNodePortGatewayServices() []*model.Service {
 	}
 
 	return out
+}
+
+func (c *Controller) extractGatewaysFromService(svc *model.Service) bool {
+	changed := c.extractGatewaysInner(svc)
+	if changed {
+		c.NotifyGatewayHandlers()
+	}
+	return changed
+}
+
+func initNetworkManager(c *Controller, options Options) *networkManager {
+	n := &networkManager{
+		clusterID:           options.ClusterID,
+		meshNetworksWatcher: options.NetworksWatcher,
+		// zero values are a workaround structcheck issue: https://github.com/golangci/golangci-lint/issues/826
+		ranger:                         nil,
+		network:                        "",
+		networkFromMeshConfig:          "",
+		registryServiceNameGateways:    make(map[host.Name][]model.NetworkGateway),
+		networkGatewaysBySvc:           make(map[host.Name]model.NetworkGatewaySet),
+		gatewaysFromResource:           make(map[types.UID]model.NetworkGatewaySet),
+		discoverRemoteGatewayResources: options.ConfigCluster,
+	}
+	// initialize the gateway resource subClusterKubeClient when any feature that uses it is enabled
+	if features.MultiNetworkGatewayAPI {
+		n.gatewayResourceClient = kclient.NewDelayedInformer[*v1beta1.Gateway](c.subClusterKubeClient, gvr.KubernetesGateway, kubetypes.StandardInformer, kubetypes.Filter{})
+		// conditionally register this handler
+		registerHandlers(c, n.gatewayResourceClient, "Gateways", n.handleGatewayResource, nil)
+	}
+	return n
 }

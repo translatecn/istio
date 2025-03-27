@@ -68,6 +68,7 @@ func listCommand() *cobra.Command {
 
 func runList(writer io.Writer) error {
 	// Sort flag names
+
 	keys := make([]string, len(settableFlags))
 	i := 0
 	for key := range settableFlags {
@@ -86,6 +87,7 @@ func runList(writer io.Writer) error {
 
 func configSource(flag string, v env.VariableInfo) string {
 	// Environment variables have high precedence in Viper
+
 	if v.IsSet() {
 		return "$" + v.GetName()
 	}

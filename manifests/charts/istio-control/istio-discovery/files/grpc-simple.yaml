@@ -4,7 +4,7 @@ metadata:
 spec:
   initContainers:
     - name: grpc-bootstrap-init
-      image: busybox:1.28
+      image: registry.cn-hangzhou.aliyuncs.com/acejilam/busybox:1.28
       volumeMounts:
         - mountPath: /var/lib/grpc/data/
           name: grpc-io-proxyless-bootstrap
@@ -23,7 +23,7 @@ spec:
               fieldPath: metadata.namespace
         - name: ISTIO_NAMESPACE
           value: |
-             {{ .Values.global.istioNamespace }}
+            {{ .Values.global.istioNamespace }}
       command:
         - sh
         - "-c"
@@ -47,8 +47,8 @@ spec:
             }
           }' > /var/lib/grpc/data/bootstrap.json
   containers:
-  {{- range $index, $container := .Spec.Containers }}
-  - name: {{ $container.Name }}
+  { { - range $index, $container := .Spec.Containers } }
+  - name: { { $container.Name } }
     env:
       - name: GRPC_XDS_BOOTSTRAP
         value: /var/lib/grpc/data/bootstrap.json
@@ -59,7 +59,7 @@ spec:
     volumeMounts:
       - mountPath: /var/lib/grpc/data/
         name: grpc-io-proxyless-bootstrap
-  {{- end }}
+  { { - end } }
   volumes:
     - name: grpc-io-proxyless-bootstrap
-      emptyDir: {}
+      emptyDir: { }

@@ -136,8 +136,6 @@ var (
 )
 
 type (
-	shouldFillFn     func() bool
-	metadataFn       func() (string, error)
 	metadataSupplier struct {
 		Property string
 		Fn       func() (string, error)
@@ -183,6 +181,7 @@ func (e *gcpEnv) Metadata() map[string]string {
 	// However, the motivation to provide static metadata is to remove the dependency on the metadata server, which is unreliable.
 	// As a result, it doesn't make much sense to do lookups when this is set.
 	// If needed, the remaining pieces of metadata can be added to the static env var (missing is the gce_* ones).
+
 	if len(GCPStaticMetadata) != 0 {
 		return GCPStaticMetadata
 	}
@@ -252,6 +251,7 @@ func waitForMetadataSuppliers(suppliers []metadataSupplier, md map[string]string
 // Converts a GCP zone into a region.
 func zoneToRegion(z string) (string, error) {
 	// Zones are in the form <region>-<zone_suffix>, so capture everything but the suffix.
+
 	re := regexp.MustCompile("(.*)-.*")
 	m := re.FindStringSubmatch(z)
 	if len(m) != 2 {
@@ -353,6 +353,7 @@ func createMetadataSupplier(property string, fn func() (string, error)) metadata
 
 func isMetadataEndpointAccessible() bool {
 	// From the Go package, but private so copied here
+
 	const metadataHostEnv = "GCE_METADATA_HOST"
 	const metadataIP = "169.254.169.254"
 	host := os.Getenv(metadataHostEnv)

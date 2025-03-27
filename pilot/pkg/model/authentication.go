@@ -20,7 +20,7 @@ import (
 	"strings"
 	"time"
 
-	"istio.io/api/security/v1beta1"
+	"istio.io/istio/istio.io/api/security/v1beta1"
 	"istio.io/istio/pkg/config"
 	"istio.io/istio/pkg/config/labels"
 	"istio.io/istio/pkg/config/schema/gvk"
@@ -111,8 +111,8 @@ func initAuthenticationPolicies(env *Environment) *AuthenticationPolicies {
 		rootNamespace:          env.Mesh().GetRootNamespace(),
 	}
 
-	policy.addRequestAuthentication(sortConfigByCreationTime(env.List(gvk.RequestAuthentication, NamespaceAll)))
-	policy.addPeerAuthentication(sortConfigByCreationTime(env.List(gvk.PeerAuthentication, NamespaceAll)))
+	policy.addRequestAuthentication(sortConfigByCreationTime(env.ConfigStore.List(gvk.RequestAuthentication, NamespaceAll)))
+	policy.addPeerAuthentication(sortConfigByCreationTime(env.ConfigStore.List(gvk.PeerAuthentication, NamespaceAll)))
 
 	return policy
 }
@@ -125,6 +125,7 @@ func (policy *AuthenticationPolicies) addRequestAuthentication(configs []config.
 
 func (policy *AuthenticationPolicies) addPeerAuthentication(configs []config.Config) {
 	// Sort configs in ascending order by their creation time.
+
 	sortConfigByCreationTime(configs)
 
 	foundNamespaceMTLS := make(map[string]v1beta1.PeerAuthentication_MutualTLS_Mode)

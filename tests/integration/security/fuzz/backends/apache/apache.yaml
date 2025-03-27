@@ -38,9 +38,9 @@ metadata:
     app: apache
 spec:
   ports:
-  - name: http
-    port: 8080
-    targetPort: 80
+    - name: http
+      port: 8080
+      targetPort: 80
   selector:
     app: apache
 ---
@@ -60,14 +60,14 @@ spec:
     spec:
       serviceAccountName: apache
       containers:
-      - image: httpd:2.4.46
-        imagePullPolicy: IfNotPresent
-        name: apache
-        ports:
-        - containerPort: 80
-        volumeMounts:
-          - name: public-html
-            mountPath: /usr/local/apache2/htdocs/private/
+        - image: httpd:2.4.46
+          imagePullPolicy: IfNotPresent
+          name: apache
+          ports:
+            - containerPort: 80
+          volumeMounts:
+            - name: public-html
+              mountPath: /usr/local/apache2/htdocs/private/
       volumes:
         - name: public-html
           configMap:

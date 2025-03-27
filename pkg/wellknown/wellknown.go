@@ -61,8 +61,7 @@ const (
 const (
 	// ClientSSLAuth network filter
 	ClientSSLAuth = "envoy.filters.network.client_ssl_auth"
-	// Echo network filter
-	Echo = "envoy.filters.network.echo"
+
 	// HTTPConnectionManager network filter
 	HTTPConnectionManager = "envoy.filters.network.http_connection_manager"
 	// TCPProxy network filter
@@ -71,8 +70,7 @@ const (
 	RateLimit = "envoy.filters.network.ratelimit"
 	// MongoProxy network filter
 	MongoProxy = "envoy.filters.network.mongo_proxy"
-	// ThriftProxy network filter
-	ThriftProxy = "envoy.filters.network.thrift_proxy"
+
 	// RedisProxy network filter
 	RedisProxy = "envoy.filters.network.redis_proxy"
 	// MySQLProxy network filter

@@ -9,9 +9,9 @@ spec:
       app: httpbin
       version: v1
   rules:
-  - to:
-    - operation:
-        methods: ["GET", "POST"]
+    - to:
+        - operation:
+            methods: [ "GET", "POST" ]
 ---
 apiVersion: security.istio.io/v1
 kind: AuthorizationPolicy
@@ -24,8 +24,8 @@ spec:
       app: httpbin
   rules:
     - to:
-      - operation:
-          paths: ["/v1", "/v2"]
+        - operation:
+            paths: [ "/v1", "/v2" ]
 ---
 apiVersion: security.istio.io/v1
 kind: AuthorizationPolicy
@@ -39,7 +39,7 @@ spec:
   rules:
     - to:
         - operation:
-            hosts: ["google.com", "httpbin.org"]
+            hosts: [ "google.com", "httpbin.org" ]
 ---
 apiVersion: security.istio.io/v1
 kind: AuthorizationPolicy
@@ -50,7 +50,7 @@ spec:
   rules:
     - to:
         - operation:
-            ports: ["80", "90"]
+            ports: [ "80", "90" ]
 ---
 apiVersion: security.istio.io/v1
 kind: AuthorizationPolicy
@@ -61,7 +61,7 @@ spec:
   rules:
     - from:
         - source:
-            principals: ["principals1", "principals2"]
+            principals: [ "principals1", "principals2" ]
 ---
 apiVersion: security.istio.io/v1
 kind: AuthorizationPolicy
@@ -72,7 +72,7 @@ spec:
   rules:
     - from:
         - source:
-            requestPrincipals: ["requestPrincipals1", "requestPrincipals2"]
+            requestPrincipals: [ "requestPrincipals1", "requestPrincipals2" ]
 ---
 apiVersion: security.istio.io/v1
 kind: AuthorizationPolicy
@@ -83,7 +83,7 @@ spec:
   rules:
     - from:
         - source:
-            namespaces: ["namespaces1", "namespaces2"]
+            namespaces: [ "namespaces1", "namespaces2" ]
 ---
 apiVersion: security.istio.io/v1
 kind: AuthorizationPolicy
@@ -94,7 +94,7 @@ spec:
   rules:
     - from:
         - source:
-            ipBlocks: ["1.2.3.4", "5.6.7.0/24"]
+            ipBlocks: [ "1.2.3.4", "5.6.7.0/24" ]
 ---
 apiVersion: security.istio.io/v1
 kind: AuthorizationPolicy
@@ -105,5 +105,5 @@ spec:
   rules:
     - when:
         - key: "request.headers[X-abc]"
-          values: ["abc1", "abc2"]
+          values: [ "abc1", "abc2" ]
 ---

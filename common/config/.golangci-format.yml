@@ -10,14 +10,14 @@ run:
   # Default: 1m
   timeout: 20m
   build-tags:
-  - integ
-  - integfuzz
+    - integ
+    - integfuzz
 linters:
   disable-all: true
   enable:
-  - goimports
-  - gofumpt
-  - gci
+    - goimports
+    - gofumpt
+    - gci
   fast: false
 linters-settings:
   gci:

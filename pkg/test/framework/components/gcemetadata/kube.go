@@ -101,10 +101,9 @@ func newKube(ctx resource.Context, cfg Config) (Instance, error) {
 }
 
 func (c *kubeComponent) ID() resource.ID {
-	return c.id
+	// Close implements io.Closer.	return c.id
 }
 
-// Close implements io.Closer.
 func (c *kubeComponent) Close() error {
 	return nil
 }

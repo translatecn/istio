@@ -17,7 +17,7 @@ package virtualservice
 import (
 	"fmt"
 
-	"istio.io/api/networking/v1alpha3"
+	"istio.io/istio/istio.io/api/networking/v1alpha3"
 	"istio.io/istio/pkg/config"
 	"istio.io/istio/pkg/config/analysis"
 	"istio.io/istio/pkg/config/analysis/analyzers/util"
@@ -52,6 +52,7 @@ func (a *DestinationHostAnalyzer) Metadata() analysis.Metadata {
 // Analyze implements Analyzer
 func (a *DestinationHostAnalyzer) Analyze(ctx analysis.Context) {
 	// Precompute the set of service entry hosts that exist (there can be more than one defined per ServiceEntry CRD)
+
 	serviceEntryHosts := util.InitServiceEntryHostMap(ctx)
 	virtualServiceDestinations := initVirtualServiceDestinations(ctx)
 
@@ -125,7 +126,6 @@ func (a *DestinationHostAnalyzer) analyzeVirtualService(r *resource.Instance, ct
 	for _, d := range getRouteDestinations(vs) {
 		s := util.GetDestinationHost(r.Metadata.FullName.Namespace, vs.ExportTo, d.Destination.GetHost(), serviceEntryHosts)
 		if s == nil {
-
 			m := msg.NewReferencedResourceNotFound(r, "host", d.Destination.GetHost())
 
 			key := fmt.Sprintf(util.DestinationHost, d.RouteRule, d.ServiceIndex, d.DestinationIndex)
@@ -142,7 +142,6 @@ func (a *DestinationHostAnalyzer) analyzeVirtualService(r *resource.Instance, ct
 	for _, d := range getHTTPMirrorDestinations(vs) {
 		s := util.GetDestinationHost(r.Metadata.FullName.Namespace, vs.ExportTo, d.Destination.GetHost(), serviceEntryHosts)
 		if s == nil {
-
 			m := msg.NewReferencedResourceNotFound(r, "mirror host", d.Destination.GetHost())
 
 			var key string
@@ -201,7 +200,6 @@ func checkServiceEntryPorts(ctx analysis.Context, r *resource.Instance, d *Annot
 		}
 	}
 	if !foundPort {
-
 		m := msg.NewReferencedResourceNotFound(r, "host:port",
 			fmt.Sprintf("%s:%d", d.Destination.GetHost(), d.Destination.GetPort().GetNumber()))
 

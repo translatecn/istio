@@ -16,6 +16,6 @@ roleRef:
   kind: Role
   name: {{ $gateway.name }}-sds
 subjects:
-- kind: ServiceAccount
-  name: {{ $gateway.name }}-service-account
+  - kind: ServiceAccount
+    name: {{ $gateway.name }}-service-account
 ---

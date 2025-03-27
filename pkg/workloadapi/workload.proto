@@ -15,7 +15,7 @@
 syntax = "proto3";
 
 package istio.workload;
-option go_package="pkg/workloadapi";
+option go_package = "pkg/workloadapi";
 
 // Address represents a unique address.
 //

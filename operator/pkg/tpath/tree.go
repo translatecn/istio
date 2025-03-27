@@ -412,6 +412,7 @@ func isMapOrInterface(v any) bool {
 func tryToUnmarshalStringToYAML(s any) (any, bool) {
 	// If value type is a string it could either be a literal string or a map type passed as a string. Try to unmarshal
 	// to discover it's the latter.
+
 	vv := s
 
 	if reflect.TypeOf(vv).Kind() == reflect.String {

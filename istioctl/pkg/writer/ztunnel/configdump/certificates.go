@@ -89,6 +89,7 @@ func valueOrNA(value string) string {
 
 func certNotExpired(cert *Cert) bool {
 	// case where cert state is in either Initializing or Unavailable state
+
 	if cert.ExpirationTime == "" && cert.ValidFrom == "" {
 		return false
 	}

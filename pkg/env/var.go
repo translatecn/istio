@@ -129,6 +129,7 @@ func Register[T Parseable](name string, defaultValue T, description string) Gene
 	// Specialized cases
 	// In the future, once only Register() remains, we can likely drop most of these.
 	// however, time.Duration is needed still as it doesn't implement json
+
 	switch d := any(defaultValue).(type) {
 	case time.Duration:
 		v := RegisterDurationVar(name, d, description)

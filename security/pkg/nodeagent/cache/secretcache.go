@@ -321,6 +321,7 @@ func (sc *SecretManagerClient) GenerateSecret(resourceName string) (secret *secu
 
 func (sc *SecretManagerClient) addFileWatcher(file string, resourceName string) {
 	// Try adding file watcher and if it fails start a retry loop.
+
 	if err := sc.tryAddFileWatcher(file, resourceName); err == nil {
 		return
 	}
@@ -340,6 +341,7 @@ func (sc *SecretManagerClient) addFileWatcher(file string, resourceName string) 
 func (sc *SecretManagerClient) tryAddFileWatcher(file string, resourceName string) error {
 	// Check if this file is being already watched, if so ignore it. This check is needed here to
 	// avoid processing duplicate events for the same file.
+
 	sc.certMutex.Lock()
 	defer sc.certMutex.Unlock()
 	file, err := filepath.Abs(file)
@@ -430,6 +432,7 @@ func (sc *SecretManagerClient) generateRootCertFromExistingFile(rootCertPath, re
 func (sc *SecretManagerClient) generateKeyCertFromExistingFiles(certChainPath, keyPath, resourceName string) (*security.SecretItem, error) {
 	// There is a remote possibility that key is written and cert is not written yet.
 	// To handle that case, check if cert and key are valid if they are valid then only send to proxy.
+
 	o := backoff.DefaultOption()
 	o.InitialInterval = sc.configOptions.FileDebounceDuration
 	b := backoff.NewExponentialBackOff(o)

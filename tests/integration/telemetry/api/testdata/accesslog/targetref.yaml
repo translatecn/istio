@@ -4,11 +4,11 @@ metadata:
   name: logs
 spec:
   targetRef:
-    name: {{ .TargetGatewayName }}
+    name: { { .TargetGatewayName } }
     kind: Gateway
     group: gateway.networking.k8s.io
   accessLogging:
-  - providers:
-    - name: envoy
-    disabled: {{ .DisableLogs }}
+    - providers:
+        - name: envoy
+      disabled: { { .DisableLogs } }
     

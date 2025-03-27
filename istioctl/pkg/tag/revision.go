@@ -22,7 +22,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"istio.io/api/label"
+	"istio.io/istio/istio.io/api/label"
 	iopv1alpha1 "istio.io/istio/operator/pkg/apis"
 	"istio.io/istio/pkg/kube"
 )

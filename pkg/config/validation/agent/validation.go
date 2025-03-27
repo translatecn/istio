@@ -27,8 +27,8 @@ import (
 	"github.com/hashicorp/go-multierror"
 	"google.golang.org/protobuf/types/known/durationpb"
 
-	meshconfig "istio.io/api/mesh/v1alpha1"
-	networking "istio.io/api/networking/v1alpha3"
+	meshconfig "istio.io/istio/istio.io/api/mesh/v1alpha1"
+	networking "istio.io/istio/istio.io/api/networking/v1alpha3"
 	"istio.io/istio/pilot/pkg/features"
 	"istio.io/istio/pilot/pkg/serviceregistry/util/label"
 	"istio.io/istio/pkg/config/labels"
@@ -273,6 +273,7 @@ func ValidateZipkinCollector(z *meshconfig.Tracing_Zipkin) error {
 // ValidateDatadogCollector validates the configuration for sending envoy spans to Datadog
 func ValidateDatadogCollector(d *meshconfig.Tracing_Datadog) error {
 	// If the address contains $(HOST_IP), replace it with a valid IP before validation.
+
 	return ValidateProxyAddress(strings.Replace(d.GetAddress(), "$(HOST_IP)", "127.0.0.1", 1))
 }
 
@@ -839,6 +840,7 @@ func ValidatePartialWildCard(host string) error {
 // API specs
 func validateSidecarOrGatewayHostnamePart(hostname string, isGateway bool) (errs error) {
 	// short name hosts are not allowed
+
 	if hostname != "*" && !strings.Contains(hostname, ".") {
 		errs = AppendErrors(errs, fmt.Errorf("short names (non FQDN) are not allowed"))
 	}
@@ -900,6 +902,7 @@ func ValidateNamespaceSlashWildcardHostname(hostname string, isGateway bool, gat
 func ValidateIPSubnet(subnet string) error {
 	// We expect a string in "CIDR notation" or "Dot-decimal notation"
 	// E.g., a.b.c.d/xx form or just a.b.c.d or 2001:1::1/64
+
 	if strings.Count(subnet, "/") == 1 {
 		// We expect a string in "CIDR notation", i.e. a.b.c.d/xx or 2001:1::1/64 form
 		if _, err := netip.ParsePrefix(subnet); err != nil {
@@ -909,6 +912,18 @@ func ValidateIPSubnet(subnet string) error {
 		return nil
 	}
 	return ValidateIPAddress(subnet)
+}
+
+// ValidateMeshNetworks validates meshnetworks.
+func ValidateMeshNetworks(meshnetworks *meshconfig.MeshNetworks) (errs error) {
+	// TODO validate using the same gateway on multiple networks?
+
+	for name, network := range meshnetworks.Networks {
+		if err := validateNetwork(network); err != nil {
+			errs = multierror.Append(errs, multierror.Prefix(err, fmt.Sprintf("invalid network %v:", name)))
+		}
+	}
+	return
 }
 
 func validateNetwork(network *meshconfig.Network) (errs error) {
@@ -942,17 +957,6 @@ func validateNetwork(network *meshconfig.Network) (errs error) {
 		}
 		if err := ValidatePort(int(n.Port)); err != nil {
 			errs = multierror.Append(errs, err)
-		}
-	}
-	return
-}
-
-// ValidateMeshNetworks validates meshnetworks.
-func ValidateMeshNetworks(meshnetworks *meshconfig.MeshNetworks) (errs error) {
-	// TODO validate using the same gateway on multiple networks?
-	for name, network := range meshnetworks.Networks {
-		if err := validateNetwork(network); err != nil {
-			errs = multierror.Append(errs, multierror.Prefix(err, fmt.Sprintf("invalid network %v:", name)))
 		}
 	}
 	return

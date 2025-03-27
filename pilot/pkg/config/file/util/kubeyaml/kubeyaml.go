@@ -28,49 +28,8 @@ const (
 )
 
 // Join the given yaml parts into a single multipart document.
-func Join(parts ...[]byte) []byte {
-	var b bytes.Buffer
-
-	var lastIsNewLine bool
-	for _, p := range parts {
-		if len(p) == 0 {
-			continue
-		}
-		if b.Len() != 0 {
-			if !lastIsNewLine {
-				_, _ = b.WriteString("\n")
-			}
-			b.WriteString(yamlSeparator)
-		}
-		_, _ = b.Write(p)
-		s := string(p)
-		lastIsNewLine = s[len(s)-1] == '\n'
-	}
-
-	return b.Bytes()
-}
 
 // JoinString joins the given yaml parts into a single multipart document.
-func JoinString(parts ...string) string {
-	var st strings.Builder
-
-	var lastIsNewLine bool
-	for _, p := range parts {
-		if len(p) == 0 {
-			continue
-		}
-		if st.Len() != 0 {
-			if !lastIsNewLine {
-				_, _ = st.WriteString("\n")
-			}
-			st.WriteString(yamlSeparator)
-		}
-		_, _ = st.WriteString(p)
-		lastIsNewLine = p[len(p)-1] == '\n'
-	}
-
-	return st.String()
-}
 
 type Reader interface {
 	Read() ([]byte, error)

@@ -16,7 +16,6 @@ package monitortest
 
 import (
 	"fmt"
-	"math"
 	"strings"
 	"time"
 
@@ -61,30 +60,6 @@ func TestRegistry(t test.Failer) prometheus.Gatherer {
 	return r
 }
 
-func New(t test.Failer) *MetricsTest {
-	r := TestRegistry(t)
-	mt := &MetricsTest{t: t, reg: r, deltas: computeDeltas(t, r)}
-	return mt
-}
-
-func computeDeltas(t test.Failer, reg prometheus.Gatherer) map[metricKey]float64 {
-	res := map[metricKey]float64{}
-	metrics, err := reg.Gather()
-	if err != nil {
-		t.Fatal(err)
-	}
-	for _, metric := range metrics {
-		for _, row := range metric.Metric {
-			if row.Counter == nil {
-				continue
-			}
-			key := toMetricKey(row, metric)
-			res[key] = *row.Counter.Value
-		}
-	}
-	return res
-}
-
 func toMetricKey(row *dto.Metric, metric *dto.MetricFamily) metricKey {
 	kvs := []attribute.KeyValue{}
 	for _, lv := range row.Label {
@@ -101,70 +76,14 @@ type Compare func(any) error
 
 func DoesNotExist(any) error {
 	// special case logic in the Assert
+
 	return nil
 }
 
 // Check if two floats are equal with some room for errors (for example, rounding errors)
 // For rounding errors, setting `eps` to 1e-7 is a good default
-func AlmostEquals(v float64, eps float64) func(any) error {
-	return func(f any) error {
-		if math.Abs(v-toFloat(f)) > eps {
-			return fmt.Errorf("%v and %v and not within %v", v, toFloat(f), eps)
-		}
-		return nil
-	}
-}
-
-func Exactly(v float64) func(any) error {
-	return func(f any) error {
-		if v != toFloat(f) {
-			return fmt.Errorf("want %v, got %v", v, toFloat(f))
-		}
-		return nil
-	}
-}
-
-func LessThan(v float64) func(any) error {
-	return func(f any) error {
-		if v <= toFloat(f) {
-			return fmt.Errorf("want <= %v (got %v)", v, toFloat(f))
-		}
-		return nil
-	}
-}
-
-func Distribution(count uint64, sum float64) func(any) error {
-	return func(f any) error {
-		d := f.(*dto.Histogram)
-		if *d.SampleCount != count {
-			return fmt.Errorf("want %v samples, got %v", count, *d.SampleCount)
-		}
-		if *d.SampleSum != sum {
-			return fmt.Errorf("want %v sum, got %v", count, *d.SampleSum)
-		}
-		return nil
-	}
-}
 
 // Buckets asserts a distribution has the number of buckets
-func Buckets(count int) func(any) error {
-	return func(f any) error {
-		d := f.(*dto.Histogram)
-		if len(d.Bucket) != count {
-			return fmt.Errorf("want %v buckets, got %v", count, len(d.Bucket))
-		}
-		return nil
-	}
-}
-
-func AtLeast(want float64) func(any) error {
-	return func(got any) error {
-		if want > toFloat(got) {
-			return fmt.Errorf("want %v <= %v (got %v)", want, toFloat(got), want)
-		}
-		return nil
-	}
-}
 
 func (m *MetricsTest) Assert(name string, tags map[string]string, compare Compare, opts ...retry.Option) {
 	m.t.Helper()
@@ -241,17 +160,6 @@ func (m *MetricsTest) Assert(name string, tags map[string]string, compare Compar
 	}
 	if len(problems) > 0 {
 		m.t.Logf("WARNING: Prometheus linter issue: %v", problems)
-	}
-}
-
-func toFloat(r interface{}) float64 {
-	switch v := r.(type) {
-	default:
-		panic(fmt.Sprintf("unknown type %T", r))
-	case int64:
-		return float64(v)
-	case float64:
-		return v
 	}
 }
 

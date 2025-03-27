@@ -11,11 +11,11 @@ metadata:
   name: python-https
 spec:
   hosts:
-  - pypi.python.org
+    - pypi.python.org
   ports:
-  - number: 443
-    name: https
-    protocol: HTTPS
+    - number: 443
+      name: https
+      protocol: HTTPS
 ---
 # pypi.python.org may 301 redirect to pypi.org, so we need this too.
 apiVersion: networking.istio.io/v1
@@ -24,11 +24,11 @@ metadata:
   name: pypi-https
 spec:
   hosts:
-  - pypi.org
+    - pypi.org
   ports:
-  - number: 443
-    name: https
-    protocol: HTTPS
+    - number: 443
+      name: https
+      protocol: HTTPS
 ---
 # pip install may fetch files from files.pythonhosted.org
 apiVersion: networking.istio.io/v1
@@ -37,8 +37,8 @@ metadata:
   name: pythonhosted-https
 spec:
   hosts:
-  - files.pythonhosted.org
+    - files.pythonhosted.org
   ports:
-  - number: 443
-    name: https
-    protocol: HTTPS
+    - number: 443
+      name: https
+      protocol: HTTPS

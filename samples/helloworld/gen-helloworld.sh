@@ -17,48 +17,49 @@
 set -euo pipefail
 
 display_usage() {
-    echo
-    echo "USAGE: ./gen-helloworld.sh [--version] [--includeService value] [--includeDeployment value]"
-    echo "    -h|--help: Prints usage information"
-    echo "    --version: Specifies the version that will be returned by the helloworld service, default: 'v1'"
-    echo "    --includeService: If 'true' the service will be included in the YAML, default: 'true'"
-    echo "    --includeDeployment: If 'true' the deployment will be included in the YAML, default: 'true'"
+	echo
+	echo "USAGE: ./gen-helloworld.sh [--version] [--includeService value] [--includeDeployment value]"
+	echo "    -h|--help: Prints usage information"
+	echo "    --version: Specifies the version that will be returned by the helloworld service, default: 'v1'"
+	echo "    --includeService: If 'true' the service will be included in the YAML, default: 'true'"
+	echo "    --includeDeployment: If 'true' the deployment will be included in the YAML, default: 'true'"
 }
 
 INCLUDE_SERVICE=${INCLUDE_SERVICE:-"true"}
 INCLUDE_DEPLOYMENT=${INCLUDE_DEPLOYMENT:-"true"}
 SERVICE_VERSION=${SERVICE_VERSION:-"v1"}
-while (( "$#" )); do
-  case "$1" in
-    -h|--help)
-      display_usage
-      exit 0
-      ;;
+while (("$#")); do
+	case "$1" in
+	-h | --help)
+		display_usage
+		exit 0
+		;;
 
-    --version)
-      SERVICE_VERSION=$2
-      shift 2
-      ;;
+	--version)
+		SERVICE_VERSION=$2
+		shift 2
+		;;
 
-    --includeService)
-      INCLUDE_SERVICE=$2
-      shift 2
-      ;;
+	--includeService)
+		INCLUDE_SERVICE=$2
+		shift 2
+		;;
 
-    --includeDeployment)
-      INCLUDE_DEPLOYMENT=$2
-      shift 2
-      ;;
+	--includeDeployment)
+		INCLUDE_DEPLOYMENT=$2
+		shift 2
+		;;
 
-    *)
-      echo "Error: Unsupported flag $1" >&2
-      display_usage
-      exit 1
-      ;;
-  esac
+	*)
+		echo "Error: Unsupported flag $1" >&2
+		display_usage
+		exit 1
+		;;
+	esac
 done
 
-SERVICE_YAML=$(cat <<EOF
+SERVICE_YAML=$(
+	cat <<EOF
 apiVersion: v1
 kind: Service
 metadata:
@@ -75,7 +76,8 @@ spec:
 EOF
 )
 
-DEPLOYMENT_YAML=$(cat <<EOF
+DEPLOYMENT_YAML=$(
+	cat <<EOF
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -100,7 +102,7 @@ spec:
         env:
         - name: SERVICE_VERSION
           value: ${SERVICE_VERSION}
-        image: docker.io/istio/examples-helloworld-v1
+        image: registry.cn-hangzhou.aliyuncs.com/acejilam/examples-helloworld-v1
         resources:
           requests:
             cpu: "100m"
@@ -114,18 +116,18 @@ OUT=""
 
 # Add the service to the output.
 if [[ "$INCLUDE_SERVICE" == "true" ]]; then
-  OUT="${SERVICE_YAML}"
+	OUT="${SERVICE_YAML}"
 fi
 
 # Add the deployment to the output.
 if [[ "$INCLUDE_DEPLOYMENT" == "true" ]]; then
-  # Add a separator
-  if [[ -n "$OUT" ]]; then
-    OUT+="
+	# Add a separator
+	if [[ -n "$OUT" ]]; then
+		OUT+="
 ---
 "
-  fi
-  OUT+="${DEPLOYMENT_YAML}"
+	fi
+	OUT+="${DEPLOYMENT_YAML}"
 fi
 
 echo "$OUT"

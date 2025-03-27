@@ -28,8 +28,8 @@ import (
 	"google.golang.org/protobuf/types/known/wrapperspb"
 	"k8s.io/apimachinery/pkg/types"
 
-	extensions "istio.io/api/extensions/v1alpha1"
-	typeapi "istio.io/api/type/v1beta1"
+	extensions "istio.io/istio/istio.io/api/extensions/v1alpha1"
+	typeapi "istio.io/istio/istio.io/api/type/v1beta1"
 	"istio.io/istio/pilot/pkg/model/credentials"
 	istionetworking "istio.io/istio/pilot/pkg/networking"
 	"istio.io/istio/pilot/pkg/util/protoconv"
@@ -219,9 +219,11 @@ func matchPorts(portSelectors []*typeapi.PortSelector, port int) bool {
 }
 
 func convertToWasmPluginWrapper(originPlugin config.Config) *WasmPluginWrapper {
-	var ok bool
 	// Make a deep copy since we are going to mutate the resource later for secret env variable.
 	// We do not want to mutate the underlying resource at informer cache.
+
+	var ok bool
+
 	plugin := originPlugin.DeepCopy()
 	var wasmPlugin *extensions.WasmPlugin
 	if wasmPlugin, ok = plugin.Spec.(*extensions.WasmPlugin); !ok {

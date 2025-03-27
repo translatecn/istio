@@ -4,27 +4,27 @@ metadata:
   name: mesh-route-outbound-traffic-to-external-svc-via-egress-gw
 spec:
   hosts:
-  - external.{{ .externalNamespace }}.svc.cluster.local
+    - external.{{ .externalNamespace }}.svc.cluster.local
   gateways:
-  - mesh
+    - mesh
   tcp:
-  - match:
-    - port: {{ .externalSvcTcpPort }}
-    route:
-    - destination:
-        host: {{ .EgressGatewayServiceName | default "istio-egressgateway" }}.{{ .EgressGatewayServiceNamespace | default "istio-system" }}.svc.cluster.local
-        port:
-          number: 80
+    - match:
+        - port: { { .externalSvcTcpPort } }
+      route:
+        - destination:
+            host: { { .EgressGatewayServiceName | default "istio-egressgateway" } }.{{ .EgressGatewayServiceNamespace | default "istio-system" }}.svc.cluster.local
+            port:
+              number: 80
   tls:
-  - match:
-    - port: {{ .externalSvcTlsPort }}
-      sniHosts:
-      - external.{{ .externalNamespace }}.svc.cluster.local
-    route:
-    - destination:
-        host: {{ .EgressGatewayServiceName | default "istio-egressgateway" }}.{{ .EgressGatewayServiceNamespace | default "istio-system" }}.svc.cluster.local
-        port:
-          number: 443
+    - match:
+        - port: { { .externalSvcTlsPort } }
+          sniHosts:
+            - external.{{ .externalNamespace }}.svc.cluster.local
+      route:
+        - destination:
+            host: { { .EgressGatewayServiceName | default "istio-egressgateway" } }.{{ .EgressGatewayServiceNamespace | default "istio-system" }}.svc.cluster.local
+            port:
+              number: 443
 ---
 apiVersion: networking.istio.io/v1
 kind: VirtualService
@@ -32,23 +32,23 @@ metadata:
   name: egress-gw-route-outbound-traffic-to-external-svc-via-external-forward-proxy
 spec:
   hosts:
-  - external.{{ .externalNamespace }}.svc.cluster.local
+    - external.{{ .externalNamespace }}.svc.cluster.local
   gateways:
-  - {{ .EgressGatewayServiceName | default "istio-egressgateway" }}
+    - { { .EgressGatewayServiceName | default "istio-egressgateway" } }
   tcp:
-  - match:
-    - port: 80
-    route:
-    - destination:
-        host: external-forward-proxy.{{ .externalNamespace }}.svc.cluster.local
-        subset: external-svc-tcp
-        port:
-          number: {{ .forwardProxyPort }}
-  - match:
-    - port: 443
-    route:
-    - destination:
-        host: external-forward-proxy.{{ .externalNamespace }}.svc.cluster.local
-        subset: external-svc-tls
-        port:
-          number: {{ .forwardProxyPort }}
+    - match:
+        - port: 80
+      route:
+        - destination:
+            host: external-forward-proxy.{{ .externalNamespace }}.svc.cluster.local
+            subset: external-svc-tcp
+            port:
+              number: { { .forwardProxyPort } }
+    - match:
+        - port: 443
+      route:
+        - destination:
+            host: external-forward-proxy.{{ .externalNamespace }}.svc.cluster.local
+            subset: external-svc-tls
+            port:
+              number: { { .forwardProxyPort } }

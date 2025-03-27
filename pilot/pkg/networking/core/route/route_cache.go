@@ -19,7 +19,7 @@ import (
 	"strconv"
 	"strings"
 
-	networking "istio.io/api/networking/v1alpha3"
+	networking "istio.io/istio/istio.io/api/networking/v1alpha3"
 	"istio.io/istio/pilot/pkg/model"
 	"istio.io/istio/pkg/config"
 	"istio.io/istio/pkg/config/schema/kind"
@@ -125,6 +125,7 @@ func (r *Cache) DependentConfigs() []model.ConfigHash {
 func (r *Cache) Key() any {
 	// nolint: gosec
 	// Not security sensitive code
+
 	h := hash.New()
 
 	h.WriteString(r.RouteName)

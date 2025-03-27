@@ -21,16 +21,13 @@ import (
 
 	"istio.io/istio/tools/istio-clean-iptables/pkg/config"
 	"istio.io/istio/tools/istio-iptables/pkg/builder"
-	common "istio.io/istio/tools/istio-iptables/pkg/capture"
+	common "istio.io/istio/tools/istio-iptables/pkg/capture_over"
 	types "istio.io/istio/tools/istio-iptables/pkg/config"
 	"istio.io/istio/tools/istio-iptables/pkg/constants"
 	dep "istio.io/istio/tools/istio-iptables/pkg/dependencies"
 )
 
 func NewDependencies(cfg *config.Config) dep.Dependencies {
-	if cfg.DryRun {
-		return &dep.DependenciesStub{}
-	}
 	return &dep.RealDependencies{}
 }
 
@@ -77,15 +74,6 @@ func separateV4V6(cidrList string) (NetworkRange, NetworkRange, error) {
 	return ipv4Ranges, ipv6Ranges, nil
 }
 
-func NewIptablesCleaner(cfg *config.Config, iptV, ipt6V *dep.IptablesVersion, ext dep.Dependencies) *IptablesCleaner {
-	return &IptablesCleaner{
-		ext:   ext,
-		cfg:   cfg,
-		iptV:  iptV,
-		ipt6V: ipt6V,
-	}
-}
-
 // TODO BML why are these not on the type?
 func flushAndDeleteChains(ext dep.Dependencies, iptV *dep.IptablesVersion, table string, chains []string) {
 	for _, chain := range chains {
@@ -101,6 +89,7 @@ func DeleteRule(ext dep.Dependencies, iptV *dep.IptablesVersion, table string, c
 
 func removeOldChains(cfg *config.Config, ext dep.Dependencies, iptV *dep.IptablesVersion) {
 	// Remove the old TCP rules
+
 	for _, table := range []string{constants.NAT, constants.MANGLE} {
 		ext.RunQuietlyAndIgnore(constants.IPTables, iptV, nil, "-t", table, "-D", constants.PREROUTING, "-p", constants.TCP, "-j", constants.ISTIOINBOUND)
 	}
@@ -114,10 +103,8 @@ func removeOldChains(cfg *config.Config, ext dep.Dependencies, iptV *dep.Iptable
 	flushAndDeleteChains(ext, iptV, constants.MANGLE, chains)
 
 	if cfg.InboundInterceptionMode == constants.TPROXY {
-		DeleteRule(ext, iptV, constants.MANGLE, constants.PREROUTING,
-			"-p", constants.TCP, "-m", "mark", "--mark", cfg.InboundTProxyMark, "-j", "CONNMARK", "--save-mark")
-		DeleteRule(ext, iptV, constants.MANGLE, constants.OUTPUT,
-			"-p", constants.TCP, "-m", "connmark", "--mark", cfg.InboundTProxyMark, "-j", "CONNMARK", "--restore-mark")
+		DeleteRule(ext, iptV, constants.MANGLE, constants.PREROUTING, "-p", constants.TCP, "-m", "mark", "--mark", cfg.InboundTProxyMark, "-j", "CONNMARK", "--save-mark")
+		DeleteRule(ext, iptV, constants.MANGLE, constants.OUTPUT, "-p", constants.TCP, "-m", "connmark", "--mark", cfg.InboundTProxyMark, "-j", "CONNMARK", "--restore-mark")
 	}
 
 	// Must be last, the others refer to it
@@ -159,6 +146,7 @@ func cleanupKubeVirt(cfg *config.Config, ext dep.Dependencies, iptV *dep.Iptable
 // or create unique abstractions for them
 func cleanupDNSUDP(cfg *config.Config, ext dep.Dependencies, iptV, ipt6V *dep.IptablesVersion) {
 	// Remove UDP jumps from OUTPUT chain to ISTIOOUTPUT chain
+
 	ext.RunQuietlyAndIgnore(constants.IPTables, iptV, nil, "-t", constants.NAT, "-D", constants.OUTPUT, "-p", constants.UDP, "-j", constants.ISTIOOUTPUT)
 	ext.RunQuietlyAndIgnore(constants.IPTables, iptV, nil, "-t", constants.RAW, "-D", constants.OUTPUT, "-p", constants.UDP, "-j", constants.ISTIOOUTPUT)
 	ext.RunQuietlyAndIgnore(constants.IPTables, ipt6V, nil, "-t", constants.NAT, "-D", constants.OUTPUT, "-p", constants.UDP, "-j", constants.ISTIOOUTPUT)
@@ -167,9 +155,7 @@ func cleanupDNSUDP(cfg *config.Config, ext dep.Dependencies, iptV, ipt6V *dep.Ip
 	// Remove the old DNS UDP rules
 	if cfg.RedirectDNS {
 		ownerGroupsFilter := types.ParseInterceptFilter(cfg.OwnerGroupsInclude, cfg.OwnerGroupsExclude)
-
-		common.HandleDNSUDP(common.DeleteOps, builder.NewIptablesRuleBuilder(nil), ext, iptV, ipt6V, cfg.ProxyUID, cfg.ProxyGID,
-			cfg.DNSServersV4, cfg.DNSServersV6, cfg.CaptureAllDNS, ownerGroupsFilter)
+		common.HandleDNSUDP(common.DeleteOps, builder.NewIptablesRuleBuilder(nil), ext, iptV, ipt6V, cfg.ProxyUID, cfg.ProxyGID, cfg.DNSServersV4, cfg.DNSServersV6, cfg.CaptureAllDNS, ownerGroupsFilter)
 	}
 
 	// Drop the ISTIO_OUTPUT chain
@@ -193,4 +179,13 @@ func (c *IptablesCleaner) Run() {
 
 	// Remove DNS UDP (runs for both v4 and v6 at the same time)
 	cleanupDNSUDP(c.cfg, c.ext, c.iptV, c.ipt6V)
+}
+
+func NewIptablesCleaner(cfg *config.Config, iptV, ipt6V *dep.IptablesVersion, ext dep.Dependencies) *IptablesCleaner {
+	return &IptablesCleaner{
+		ext:   ext,
+		cfg:   cfg,
+		iptV:  iptV,
+		ipt6V: ipt6V,
+	}
 }

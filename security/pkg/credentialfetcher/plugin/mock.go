@@ -20,8 +20,6 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
-	"net/url"
-	"os"
 	"sync"
 
 	"istio.io/istio/pkg/log"
@@ -55,9 +53,10 @@ func (p *MockPlugin) GetIdentityProvider() string {
 	return "fakeIDP"
 }
 
-func (p *MockPlugin) Stop() {}
+func (p *MockPlugin) Stop() {
+	// MetadataServer mocks GCE metadata server.
+}
 
-// MetadataServer mocks GCE metadata server.
 type MetadataServer struct {
 	server *httptest.Server
 
@@ -67,21 +66,6 @@ type MetadataServer struct {
 }
 
 // StartMetadataServer starts a mock GCE metadata server.
-func StartMetadataServer() (*MetadataServer, error) {
-	ms := &MetadataServer{}
-	httpServer := httptest.NewServer(http.HandlerFunc(ms.getToken))
-	ms.server = httpServer
-	url, err := url.Parse(httpServer.URL)
-	if err != nil {
-		return nil, fmt.Errorf("parse URL failed: %v", err)
-	}
-	if err := os.Setenv("GCE_METADATA_HOST", url.Host); err != nil {
-		fmt.Printf("Error running os.Setenv: %v", err)
-		ms.Stop()
-		return nil, err
-	}
-	return ms, nil
-}
 
 func (ms *MetadataServer) setToken(t string) {
 	ms.mutex.Lock()

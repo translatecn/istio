@@ -97,9 +97,10 @@ func StringMatcherExact(exact string, ignoreCase bool) *matcher.StringMatcher {
 // created string matcher, note the prefix is ignored if v is wildcard ("*").
 // The wildcard "*" will be generated as ".+" instead of ".*".
 func StringMatcherWithPrefix(v, prefix string) *matcher.StringMatcher {
-	switch {
 	// Check if v is "*" first to make sure we won't generate an empty prefix/suffix StringMatcher,
 	// the Envoy StringMatcher doesn't allow empty prefix/suffix.
+
+	switch {
 	case v == "*":
 		return StringMatcherRegex(".+")
 	case strings.HasPrefix(v, "*"):

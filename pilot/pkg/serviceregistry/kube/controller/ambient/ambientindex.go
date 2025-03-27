@@ -24,10 +24,10 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/gateway-api/apis/v1beta1"
 
-	"istio.io/api/label"
-	"istio.io/api/meta/v1alpha1"
-	networkingclient "istio.io/client-go/pkg/apis/networking/v1"
-	securityclient "istio.io/client-go/pkg/apis/security/v1"
+	"istio.io/istio/istio.io/api/label"
+	"istio.io/istio/istio.io/api/meta/v1alpha1"
+	networkingclient "istio.io/istio/istio.io/client-go/pkg/apis/networking/v1"
+	securityclient "istio.io/istio/istio.io/client-go/pkg/apis/security/v1"
 	"istio.io/istio/pilot/pkg/features"
 	"istio.io/istio/pilot/pkg/model"
 	"istio.io/istio/pilot/pkg/serviceregistry/kube/controller/ambient/statusqueue"
@@ -457,6 +457,7 @@ func translateKubernetesCondition(conds []metav1.Condition) map[string]model.Con
 // Lookup finds all addresses associated with a given key. Many different key formats are supported; see inline comments.
 func (a *index) Lookup(key string) []model.AddressInfo {
 	// 1. Workload UID
+
 	if w := a.workloads.GetKey(krt.Key[model.WorkloadInfo](key)); w != nil {
 		return []model.AddressInfo{workloadToAddressInfo(w.Workload)}
 	}
@@ -486,6 +487,7 @@ func (a *index) Lookup(key string) []model.AddressInfo {
 
 func (a *index) lookupService(key string) *model.ServiceInfo {
 	// 1. namespace/hostname format
+
 	s := a.services.GetKey(krt.Key[model.ServiceInfo](key))
 	if s != nil {
 		return s

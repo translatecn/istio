@@ -22,7 +22,7 @@ import (
 
 	"github.com/hashicorp/go-multierror"
 
-	meshconfig "istio.io/api/mesh/v1alpha1"
+	meshconfig "istio.io/istio/istio.io/api/mesh/v1alpha1"
 	"istio.io/istio/pkg/config/protocol"
 	"istio.io/istio/pkg/test/env"
 	"istio.io/istio/pkg/test/framework/components/echo"
@@ -130,6 +130,7 @@ func newKubeServer(ctx resource.Context, ns namespace.Instance) (server *serverI
 
 func readDeploymentYAML(ctx resource.Context) (string, error) {
 	// Read the samples file.
+
 	filePath := fmt.Sprintf("%s/samples/extauthz/ext-authz.yaml", env.IstioSrc)
 	data, err := os.ReadFile(filePath)
 	if err != nil {
@@ -200,6 +201,7 @@ func (s *serverImpl) deploy(ctx resource.Context) error {
 
 func (s *serverImpl) installProviders(ctx resource.Context) error {
 	// Update the mesh config extension provider for the ext-authz service.
+
 	providerYAML, err := tmpl.Evaluate(providerTemplate, s.templateArgs())
 	if err != nil {
 		return err

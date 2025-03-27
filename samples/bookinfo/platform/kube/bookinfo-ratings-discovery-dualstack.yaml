@@ -24,10 +24,10 @@ metadata:
     service: ratings
 spec:
   ipFamilyPolicy: RequireDualStack
-  ipFamilies: [IPv6, IPv4]
+  ipFamilies: [ IPv6, IPv4 ]
   ports:
-  - port: 9080
-    name: http
+    - port: 9080
+      name: http
   selector:
     app: ratings
 ---

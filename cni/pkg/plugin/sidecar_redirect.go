@@ -21,7 +21,7 @@ import (
 	"strconv"
 	"strings"
 
-	"istio.io/api/annotation"
+	"istio.io/istio/istio.io/api/annotation"
 	"istio.io/istio/pkg/log"
 	"istio.io/istio/tools/istio-iptables/pkg/cmd"
 )
@@ -101,10 +101,11 @@ type annotationParam struct {
 }
 
 func alwaysValidFunc(value string) error {
+	// validateInterceptionMode validates the interceptionMode annotation
+
 	return nil
 }
 
-// validateInterceptionMode validates the interceptionMode annotation
 func validateInterceptionMode(mode string) error {
 	switch mode {
 	case redirectModeREDIRECT:

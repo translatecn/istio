@@ -14,61 +14,7 @@
 
 package util
 
-import (
-	"bytes"
-	"errors"
-	"os/exec"
-	"strings"
-
-	"istio.io/istio/pkg/log"
-)
-
 type ExecList struct {
 	Cmd  string
 	Args []string
-}
-
-func NewExec(cmd string, args []string) *ExecList {
-	return &ExecList{
-		Cmd:  cmd,
-		Args: args,
-	}
-}
-
-func ExecuteOutput(cmd string, args ...string) (string, error) {
-	externalCommand := exec.Command(cmd, args...)
-	stdout := &bytes.Buffer{}
-	stderr := &bytes.Buffer{}
-	externalCommand.Stdout = stdout
-	externalCommand.Stderr = stderr
-
-	err := externalCommand.Run()
-
-	if err != nil || len(stderr.Bytes()) != 0 {
-		return stderr.String(), err
-	}
-
-	return strings.TrimSuffix(stdout.String(), "\n"), err
-}
-
-func Execute(cmd string, args ...string) error {
-	log.Debugf("Running command: %s %s", cmd, strings.Join(args, " "))
-	externalCommand := exec.Command(cmd, args...)
-	stdout := &bytes.Buffer{}
-	stderr := &bytes.Buffer{}
-	externalCommand.Stdout = stdout
-	externalCommand.Stderr = stderr
-
-	err := externalCommand.Run()
-
-	if len(stdout.String()) != 0 {
-		log.Debugf("Command output: \n%v", stdout.String())
-	}
-
-	if err != nil || len(stderr.Bytes()) != 0 {
-		log.Debugf("Command error output: \n%v", stderr.String())
-		return errors.New(stderr.String())
-	}
-
-	return nil
 }

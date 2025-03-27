@@ -18,48 +18,48 @@ set -euo pipefail
 
 SINGLE_CLUSTER=0
 REVISION=""
-while (( "$#" )); do
-  case "$1" in
-    --single-cluster)
-      SINGLE_CLUSTER=1
-      shift
-    ;;
-    --cluster)
-      # No longer does anything, but keep it around to avoid breaking users
-      shift 2
-    ;;
-    --network)
-      NETWORK=$2
-      shift 2
-    ;;
-    --mesh)
-      # No longer does anything, but keep it around to avoid breaking users
-      shift 2
-    ;;
-    --revision)
-      REVISION=$2
-      shift 2
-    ;;
-    -*)
-      echo "Error: Unsupported flag $1" >&2
-      exit 1
-      ;;
-  esac
+while (("$#")); do
+	case "$1" in
+	--single-cluster)
+		SINGLE_CLUSTER=1
+		shift
+		;;
+	--cluster)
+		# No longer does anything, but keep it around to avoid breaking users
+		shift 2
+		;;
+	--network)
+		NETWORK=$2
+		shift 2
+		;;
+	--mesh)
+		# No longer does anything, but keep it around to avoid breaking users
+		shift 2
+		;;
+	--revision)
+		REVISION=$2
+		shift 2
+		;;
+	-*)
+		echo "Error: Unsupported flag $1" >&2
+		exit 1
+		;;
+	esac
 done
-
 
 # single-cluster installations may need this gateway to allow VMs to get discovery
 # for non-single cluster, we add additional topology information
 SINGLE_CLUSTER="${SINGLE_CLUSTER:-0}"
 if [[ "${SINGLE_CLUSTER}" -eq 0 ]]; then
-  if [[ -z "${NETWORK:-}" ]]; then
-    echo "Must specify either --single-cluster or --network."
-    exit 1
-  fi
+	if [[ -z "${NETWORK:-}" ]]; then
+		echo "Must specify either --single-cluster or --network."
+		exit 1
+	fi
 fi
 
 # base
-IOP=$(cat <<EOF
+IOP=$(
+	cat <<EOF
 apiVersion: install.istio.io/v1alpha1
 kind: IstioOperator
 metadata:
@@ -78,33 +78,37 @@ EOF
 
 # mark this as a multi-network gateway
 if [[ "${SINGLE_CLUSTER}" -eq 0 ]]; then
-  IOP=$(cat <<EOF
+	IOP=$(
+		cat <<EOF
 $IOP
           topology.istio.io/network: $NETWORK
 EOF
-)
+	)
 fi
 
 # env
-IOP=$(cat <<EOF
+IOP=$(
+	cat <<EOF
 $IOP
         enabled: true
         k8s:
 EOF
 )
 if [[ "${SINGLE_CLUSTER}" -eq 0 ]]; then
-  IOP=$(cat <<EOF
+	IOP=$(
+		cat <<EOF
 $IOP
           env:
             # traffic through this gateway should be routed inside the network
             - name: ISTIO_META_REQUESTED_NETWORK_VIEW
               value: ${NETWORK}
 EOF
-)
+	)
 fi
 
 # Ports
-IOP=$(cat <<EOF
+IOP=$(
+	cat <<EOF
 $IOP
           service:
             ports:
@@ -124,7 +128,8 @@ EOF
 )
 
 # Gateway injection template
-IOP=$(cat <<EOF
+IOP=$(
+	cat <<EOF
 $IOP
   values:
     gateways:
@@ -135,12 +140,13 @@ EOF
 
 # additional multicluster/multinetwork meta
 if [[ "${SINGLE_CLUSTER}" -eq 0 ]]; then
-  IOP=$(cat <<EOF
+	IOP=$(
+		cat <<EOF
 $IOP
     global:
       network: ${NETWORK}
 EOF
-)
+	)
 fi
 
 echo "$IOP"

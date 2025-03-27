@@ -4,7 +4,7 @@ _internal_defaults_do_not_set:
   autoscaleEnabled: true
   autoscaleMin: 1
   autoscaleMax: 5
-  autoscaleBehavior: {}
+  autoscaleBehavior: { }
   replicaCount: 1
   rollingMaxSurge: 100%
   rollingMaxUnavailable: 25%
@@ -24,7 +24,7 @@ _internal_defaults_do_not_set:
       memory: 2048Mi
 
   # Set to `type: RuntimeDefault` to use the default profile if available.
-  seccompProfile: {}
+  seccompProfile: { }
 
   # Whether to use an existing CNI installation
   cni:
@@ -32,9 +32,9 @@ _internal_defaults_do_not_set:
     provider: default
 
   # Additional container arguments
-  extraContainerArgs: []
+  extraContainerArgs: [ ]
 
-  env: {}
+  env: { }
 
   # Settings related to the untaint controller
   # This controller will remove `cni.istio.io/not-ready` from nodes when the istio-cni pod becomes ready
@@ -45,31 +45,31 @@ _internal_defaults_do_not_set:
     # What namespace the untaint controller should watch for istio-cni pods. This is only required when istio-cni is running in a different namespace than istiod
     namespace: ""
 
-  affinity: {}
+  affinity: { }
 
-  tolerations: []
+  tolerations: [ ]
 
   cpu:
     targetAverageUtilization: 80
-  memory: {}
-    # targetAverageUtilization: 80
+  memory: { }
+  # targetAverageUtilization: 80
 
   # Additional volumeMounts to the istiod container
-  volumeMounts: []
+  volumeMounts: [ ]
 
   # Additional volumes to the istiod pod
-  volumes: []
+  volumes: [ ]
 
   # Inject initContainers into the istiod pod
-  initContainers: []
+  initContainers: [ ]
 
-  nodeSelector: {}
-  podAnnotations: {}
-  serviceAnnotations: {}
-  serviceAccountAnnotations: {}
-  sidecarInjectorWebhookAnnotations: {}
+  nodeSelector: { }
+  podAnnotations: { }
+  serviceAnnotations: { }
+  serviceAccountAnnotations: { }
+  sidecarInjectorWebhookAnnotations: { }
 
-  topologySpreadConstraints: []
+  topologySpreadConstraints: [ ]
 
   # You can use jwksResolverExtraRootCA to provide a root certificate
   # in PEM format. This will then be trusted by pilot when resolving
@@ -82,7 +82,7 @@ _internal_defaults_do_not_set:
   keepaliveMaxServerConnectionAge: 30m
 
   # Additional labels to apply to the deployment.
-  deploymentLabels: {}
+  deploymentLabels: { }
 
   ## Mesh config settings
 
@@ -91,11 +91,11 @@ _internal_defaults_do_not_set:
   configMap: true
 
   # Additional labels to apply on the pod level for monitoring and logging configuration.
-  podLabels: {}
+  podLabels: { }
 
   # Setup how istiod Service is configured. See https://kubernetes.io/docs/concepts/services-networking/dual-stack/#services
   ipFamilyPolicy: ""
-  ipFamilies: []
+  ipFamilies: [ ]
 
   # Ambient mode only.
   # Set this if you install ztunnel to a different namespace from `istiod`.
@@ -109,8 +109,8 @@ _internal_defaults_do_not_set:
     # You can use the field called alwaysInjectSelector and neverInjectSelector which will always inject the sidecar or
     # always skip the injection on pods that match that label selector, regardless of the global policy.
     # See https://istio.io/docs/setup/kubernetes/additional-setup/sidecar-injection/#more-control-adding-exceptions
-    neverInjectSelector: []
-    alwaysInjectSelector: []
+    neverInjectSelector: [ ]
+    alwaysInjectSelector: [ ]
 
     # injectedAnnotations are additional annotations that will be added to the pod spec after injection
     # This is primarily to support PSP annotations. For example, if you defined a PSP with the annotations:
@@ -124,7 +124,7 @@ _internal_defaults_do_not_set:
     # injectedAnnotations:
     #   container.apparmor.security.beta.kubernetes.io/istio-init: runtime/default
     #   container.apparmor.security.beta.kubernetes.io/istio-proxy: runtime/default
-    injectedAnnotations: {}
+    injectedAnnotations: { }
 
     # This enables injection of sidecar in all namespaces,
     # with the exception of namespaces with "istio-injection:disabled" annotation
@@ -149,7 +149,7 @@ _internal_defaults_do_not_set:
     # Then starting a pod with the `inject.istio.io/templates: hello` annotation, will result in the pod
     # being injected with the hello=world labels.
     # This is intended for advanced configuration only; most users should use the built in template
-    templates: {}
+    templates: { }
 
     # Default templates specifies a set of default templates that are used in sidecar injection.
     # By default, a template `sidecar` is always provided, which contains the template of default sidecar.
@@ -164,7 +164,7 @@ _internal_defaults_do_not_set:
     #         hello: world
     #
     # defaultTemplates: ["sidecar", "hello"]
-    defaultTemplates: []
+    defaultTemplates: [ ]
   istiodRemote:
     # If `true`, indicates that this cluster/install should consume a "remote istiod" installation,
     # and istiod itself will NOT be installed in this cluster - only the support resources necessary
@@ -197,7 +197,7 @@ _internal_defaults_do_not_set:
   revision: ""
 
   # Revision tags are aliases to Istio control plane revisions
-  revisionTags: []
+  revisionTags: [ ]
 
   # For Helm compatibility.
   ownerName: ""
@@ -217,7 +217,7 @@ _internal_defaults_do_not_set:
     #
     # certSigners:
     #   - clusterissuers.cert-manager.io/istio-ca
-    certSigners: []
+    certSigners: [ ]
     # enable pod disruption budget for the control plane, which is used to
     # ensure Istio control plane components are gradually upgraded or recovered.
     defaultPodDisruptionBudget:
@@ -240,7 +240,7 @@ _internal_defaults_do_not_set:
     # Default hub for Istio images.
     # Releases are published to docker hub under 'istio' project.
     # Dev builds from prow are on gcr.io
-    hub: gcr.io/istio-testing
+    hub: registry.cn-hangzhou.aliyuncs.com/acejilam
     # Default tag for Istio images.
     tag: latest
     # Variant of the image to use.
@@ -256,7 +256,7 @@ _internal_defaults_do_not_set:
     # For components that don't use ServiceAccounts (i.e. grafana, servicegraph, tracing)
     # ImagePullSecrets will be added to the corresponding Deployment(StatefulSet) objects.
     # Must be set for any cluster configured with private docker registry.
-    imagePullSecrets: []
+    imagePullSecrets: [ ]
     # - private-registry-key
 
     # Enabled by default in master for maximising testing.
@@ -458,7 +458,7 @@ _internal_defaults_do_not_set:
     #     - registryServiceName: istio-ingressgateway.istio-system.svc.cluster.local
     #       port: 443
     #
-    meshNetworks: {}
+    meshNetworks: { }
 
     # Use the user-specified, secret volume mounted key and certs for Pilot and workloads.
     mountMtlsCerts: false
@@ -513,16 +513,16 @@ _internal_defaults_do_not_set:
           memory: 1Gi
 
       # If specified, affinity defines the scheduling constraints of waypoint pods.
-      affinity: {}
+      affinity: { }
 
       # Topology Spread Constraints for the waypoint proxy.
-      topologySpreadConstraints: []
+      topologySpreadConstraints: [ ]
 
       # Node labels for the waypoint proxy.
-      nodeSelector: {}
+      nodeSelector: { }
 
       # Tolerations for the waypoint proxy.
-      tolerations: []
+      tolerations: [ ]
 
   base:
     # For istioctl usage to disable istio config crds in base
@@ -533,7 +533,7 @@ _internal_defaults_do_not_set:
     # Define the security context for the pod.
     # If unset, this will be automatically set to the minimum privileges required to bind to port 80 and 443.
     # On Kubernetes 1.22+, this only requires the `net.ipv4.ip_unprivileged_port_start` sysctl.
-    securityContext: {}
+    securityContext: { }
 
     # Set to `type: RuntimeDefault` to use the default profile for templated gateways, if your container runtime supports it
-    seccompProfile: {}
+    seccompProfile: { }

@@ -16,19 +16,17 @@ package istio
 
 import (
 	"net/netip"
-	"time"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 
-	meshconfig "istio.io/api/mesh/v1alpha1"
+	meshconfig "istio.io/istio/istio.io/api/mesh/v1alpha1"
 	"istio.io/istio/pkg/kube/inject"
 	"istio.io/istio/pkg/test"
 	"istio.io/istio/pkg/test/framework/components/cluster"
 	"istio.io/istio/pkg/test/framework/components/istio/ingress"
 	"istio.io/istio/pkg/test/framework/resource"
 	"istio.io/istio/pkg/test/framework/resource/config/cleanup"
-	"istio.io/istio/pkg/test/scopes"
 )
 
 // Instance represents a deployed Istio instance
@@ -129,49 +127,5 @@ func Ingresses(ctx resource.Context) (ingress.Instances, error) {
 }
 
 // IngressesOrFail calls Ingresses and fails if an error is encountered.
-func IngressesOrFail(t test.Failer, ctx resource.Context) ingress.Instances {
-	t.Helper()
-	i, err := Ingresses(ctx)
-	if err != nil {
-		t.Fatal(err)
-	}
-	return i
-}
 
 // Setup is a setup function that will deploy Istio on Kubernetes environment
-func Setup(i *Instance, cfn SetupConfigFn, ctxFns ...SetupContextFn) resource.SetupFn {
-	return func(ctx resource.Context) error {
-		cfg, err := DefaultConfig(ctx)
-		if err != nil {
-			return err
-		}
-		if cfn != nil {
-			cfn(ctx, &cfg)
-		}
-		for _, ctxFn := range ctxFns {
-			if ctxFn != nil {
-				err := ctxFn(ctx)
-				if err != nil {
-					scopes.Framework.Infof("=== FAILED: context setup function [err=%v] ===", err)
-					return err
-				}
-				scopes.Framework.Info("=== SUCCESS: context setup function ===")
-			}
-		}
-
-		t0 := time.Now()
-		scopes.Framework.Infof("=== BEGIN: Deploy Istio [Suite=%s] ===", ctx.Settings().TestID)
-
-		ins, err := newKube(ctx, cfg)
-		if err != nil {
-			scopes.Framework.Infof("=== FAILED: Deploy Istio in %v [Suite=%s] ===", time.Since(t0), ctx.Settings().TestID)
-			return err
-		}
-
-		if i != nil {
-			*i = ins
-		}
-		scopes.Framework.Infof("=== SUCCEEDED: Deploy Istio in %v [Suite=%s]===", time.Since(t0), ctx.Settings().TestID)
-		return nil
-	}
-}

@@ -45,6 +45,7 @@ type Client struct {
 func New(address string, tlsSettings *common.TLSSettings, extraDialOpts ...grpc.DialOption) (*Client, error) {
 	// Connect to the GRPC (command) endpoint of 'this' app.
 	// TODO: make use of common.ConnectionTimeout once it increases
+
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
 	dialOptions := []grpc.DialOption{grpc.WithBlock()}
@@ -110,6 +111,7 @@ func (c *Client) Echo(ctx context.Context, request *proto.EchoRequest) (Response
 // ForwardEcho sends the given forward request and parses the response for easier processing. Only fails if the request fails.
 func (c *Client) ForwardEcho(ctx context.Context, request *proto.ForwardEchoRequest) (Responses, error) {
 	// Forward a request from 'this' service to the destination service.
+
 	GlobalEchoRequests.Add(uint64(request.Count))
 	resp, err := c.client.ForwardEcho(ctx, request)
 	if err != nil {

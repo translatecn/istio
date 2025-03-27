@@ -7,8 +7,8 @@ metadata:
     service: liveness-http
 spec:
   ports:
-  - name: http
-    port: 8001
+    - name: http
+      port: 8001
   selector:
     app: liveness-http
 ---
@@ -28,13 +28,13 @@ spec:
         version: v1
     spec:
       containers:
-      - name: liveness-http
-        image: docker.io/istio/health:example
-        ports:
-        - containerPort: 8001
-        livenessProbe:
-          httpGet:
-            path: /foo
-            port: 8001
-          initialDelaySeconds: 5
-          periodSeconds: 5
+        - name: liveness-http
+          image: registry.cn-hangzhou.aliyuncs.com/acejilam/health:example
+          ports:
+            - containerPort: 8001
+          livenessProbe:
+            httpGet:
+              path: /foo
+              port: 8001
+            initialDelaySeconds: 5
+            periodSeconds: 5

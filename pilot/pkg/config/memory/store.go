@@ -35,14 +35,10 @@ var (
 
 const ResourceVersion string = "ResourceVersion"
 
-// Make creates an in-memory config store from a config schemas
-// It is with validation
 func Make(schemas collection.Schemas) model.ConfigStore {
 	return newStore(schemas, false)
 }
 
-// MakeSkipValidation creates an in-memory config store from a config schemas
-// It is without validation
 func MakeSkipValidation(schemas collection.Schemas) model.ConfigStore {
 	return newStore(schemas, true)
 }

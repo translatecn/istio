@@ -15,7 +15,7 @@
 package match
 
 import (
-	"istio.io/api/annotation"
+	"istio.io/istio/istio.io/api/annotation"
 	"istio.io/istio/pkg/test/framework/components/cluster"
 	"istio.io/istio/pkg/test/framework/components/echo"
 	"istio.io/istio/pkg/test/framework/components/namespace"
@@ -148,7 +148,7 @@ var StatefulSet Matcher = func(i echo.Instance) bool {
 }
 
 // NotStatefulSet is equivalent to Not(StatefulSet)
-var NoStatefulSet = Not(StatefulSet)
+var _ = Not(StatefulSet)
 
 // ProxylessGRPC matches instances that are Pods with a SidecarInjectTemplate annotation equal to grpc.
 var ProxylessGRPC Matcher = func(i echo.Instance) bool {
@@ -175,11 +175,6 @@ var WorkloadAddressedWaypoint Matcher = func(i echo.Instance) bool {
 var NotWaypoint = And(Not(ServiceAddressedWaypoint), Not(WorkloadAddressedWaypoint))
 
 // add a "waypointed service" matcher
-func WaypointService() Matcher {
-	return func(i echo.Instance) bool {
-		return ServiceAddressedWaypoint(i)
-	}
-}
 
 func AmbientCaptured() Matcher {
 	return func(i echo.Instance) bool {
@@ -215,4 +210,4 @@ var MultiVersion Matcher = func(i echo.Instance) bool {
 	return matchIstio && matchLegacy
 }
 
-var NotMultiVersion = Not(MultiVersion)
+var _ = Not(MultiVersion)

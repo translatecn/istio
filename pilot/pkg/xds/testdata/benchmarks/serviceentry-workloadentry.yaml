@@ -27,7 +27,7 @@ spec:
         security.istio.io/tlsMode: istio
 ---
 # Set up .Services number of services. Each will have 4 ports (one for each protocol)
-{{- range $i := until .Services }}
+  { { - range $i := until .Services } }
 apiVersion: networking.istio.io/v1
 kind: ServiceEntry
 metadata:
@@ -54,10 +54,10 @@ spec:
       app: random-{{$i}}
 
 ---
-{{- end }}
+{ { - end } }
 
 ---
-{{- range $j := until .Instances }}
+  { { - range $j := until .Instances } }
 apiVersion: networking.istio.io/v1
 kind: WorkloadEntry
 metadata:
@@ -68,4 +68,4 @@ spec:
   labels:
     app: random-{{mod $j $.Services}}
 ---
-{{- end }}
+{ { - end } }

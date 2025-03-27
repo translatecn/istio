@@ -21,22 +21,22 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-if BUILD_GIT_REVISION=$(git rev-parse HEAD 2> /dev/null); then
-  if [[ -z "${IGNORE_DIRTY_TREE}" ]] && [[ -n "$(git status --porcelain 2>/dev/null)" ]]; then
-    BUILD_GIT_REVISION=${BUILD_GIT_REVISION}"-dirty"
-  fi
+if BUILD_GIT_REVISION=$(git rev-parse HEAD 2>/dev/null); then
+	if [[ -z "${IGNORE_DIRTY_TREE}" ]] && [[ -n "$(git status --porcelain 2>/dev/null)" ]]; then
+		BUILD_GIT_REVISION=${BUILD_GIT_REVISION}"-dirty"
+	fi
 else
-  BUILD_GIT_REVISION=unknown
+	BUILD_GIT_REVISION=unknown
 fi
 
 # Check for local changes
 tree_status="Clean"
 if [[ -z "${IGNORE_DIRTY_TREE}" ]] && ! git diff-index --quiet HEAD --; then
-  tree_status="Modified"
+	tree_status="Modified"
 fi
 
 GIT_DESCRIBE_TAG=$(git describe --tags --always)
-HUB=${HUB:-"docker.io/istio"}
+HUB=${HUB:-"registry.cn-hangzhou.aliyuncs.com/acejilam"}
 
 # used by common/scripts/gobuild.sh
 echo "istio.io/istio/pkg/version.buildVersion=${VERSION:-$BUILD_GIT_REVISION}"

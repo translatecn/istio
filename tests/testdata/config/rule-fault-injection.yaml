@@ -4,14 +4,14 @@ metadata:
   name: fault
   namespace: testns
 spec:
-   hosts:
-   - fault.test.istio.io
-   ports:
-   - number: 8080
-     name: http
-     protocol: HTTP
-   resolution: STATIC
-   endpoints:
+  hosts:
+    - fault.test.istio.io
+  ports:
+    - number: 8080
+      name: http
+      protocol: HTTP
+  resolution: STATIC
+  endpoints:
     - address: 127.0.0.2
       ports:
         http: 8080
@@ -49,16 +49,16 @@ spec:
     - fault.test.istio.io
   http:
     - match:
-      - headers:
-          version:
-            exact: v2
-        sourceLabels:
-          version: v1
+        - headers:
+            version:
+              exact: v2
+          sourceLabels:
+            version: v1
       route:
-      - destination:
-          host: c
-          subset: v2
-        weight: 100
+        - destination:
+            host: c
+            subset: v2
+          weight: 100
       fault:
         delay:
           percentage:

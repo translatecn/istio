@@ -31,30 +31,6 @@ import (
 	"istio.io/istio/pkg/util/sets"
 )
 
-func ServerOptions(options *istiokeepalive.Options, interceptors ...grpc.UnaryServerInterceptor) []grpc.ServerOption {
-	maxStreams := features.MaxConcurrentStreams
-	maxRecvMsgSize := features.MaxRecvMsgSize
-
-	grpcOptions := []grpc.ServerOption{
-		grpc.UnaryInterceptor(middleware.ChainUnaryServer(interceptors...)),
-		grpc.MaxConcurrentStreams(uint32(maxStreams)),
-		grpc.MaxRecvMsgSize(maxRecvMsgSize),
-		// Ensure we allow clients sufficient ability to send keep alives. If this is higher than client
-		// keep alive setting, it will prematurely get a GOAWAY sent.
-		grpc.KeepaliveEnforcementPolicy(keepalive.EnforcementPolicy{
-			MinTime: options.Time / 2,
-		}),
-		grpc.KeepaliveParams(keepalive.ServerParameters{
-			Time:                  options.Time,
-			Timeout:               options.Timeout,
-			MaxConnectionAge:      options.MaxServerConnectionAge,
-			MaxConnectionAgeGrace: options.MaxServerConnectionAgeGrace,
-		}),
-	}
-
-	return grpcOptions
-}
-
 const (
 	defaultClientMaxReceiveMessageSize = math.MaxInt32
 	defaultInitialConnWindowSize       = 1024 * 1024 // default gRPC InitialWindowSize
@@ -138,4 +114,28 @@ func GRPCErrorType(err error) ErrorType {
 	}
 
 	return ExpectedError
+}
+
+func ServerOptions(options *istiokeepalive.Options, interceptors ...grpc.UnaryServerInterceptor) []grpc.ServerOption {
+	maxStreams := features.MaxConcurrentStreams
+	maxRecvMsgSize := features.MaxRecvMsgSize
+
+	grpcOptions := []grpc.ServerOption{
+		grpc.UnaryInterceptor(middleware.ChainUnaryServer(interceptors...)),
+		grpc.MaxConcurrentStreams(uint32(maxStreams)),
+		grpc.MaxRecvMsgSize(maxRecvMsgSize),
+		// Ensure we allow clients sufficient ability to send keep alives. If this is higher than client
+		// keep alive setting, it will prematurely get a GOAWAY sent.
+		grpc.KeepaliveEnforcementPolicy(keepalive.EnforcementPolicy{
+			MinTime: options.Time / 2,
+		}),
+		grpc.KeepaliveParams(keepalive.ServerParameters{
+			Time:                  options.Time,
+			Timeout:               options.Timeout,
+			MaxConnectionAge:      options.MaxServerConnectionAge,
+			MaxConnectionAgeGrace: options.MaxServerConnectionAgeGrace,
+		}),
+	}
+
+	return grpcOptions
 }

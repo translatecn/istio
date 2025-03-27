@@ -4,7 +4,7 @@ metadata:
   name: bookinfo
   labels:
     istio-injection: "enabled"
-spec: {}
+spec: { }
 ---
 apiVersion: v1
 kind: Namespace
@@ -12,7 +12,7 @@ metadata:
   name: bookinfo2
   labels:
     istio-injection: "enabled"
-spec: {}
+spec: { }
 ---
 # Deployment should not generate a warning: although two services using that deployment
 # using the same port, they are in different namespaces.
@@ -39,7 +39,7 @@ spec:
       serviceAccountName: bookinfo-details
       containers:
         - name: details
-          image: docker.io/istio/examples-bookinfo-details-v1:1.15.0
+          image: registry.cn-hangzhou.aliyuncs.com/acejilam/examples-bookinfo-details-v1:1.15.0
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 9080

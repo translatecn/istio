@@ -136,12 +136,6 @@ func NewPatchVersion(major, minor, patch uint32) PatchVersion {
 }
 
 // NewVersion creates an initialized Version struct.
-func NewVersion(major, minor, patch uint32, suffix string) Version {
-	return Version{
-		PatchVersion: NewPatchVersion(major, minor, patch),
-		Suffix:       suffix,
-	}
-}
 
 // String implements the Stringer interface.
 func (v MajorVersion) String() string {

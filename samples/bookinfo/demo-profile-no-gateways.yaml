@@ -2,11 +2,24 @@
 apiVersion: install.istio.io/v1alpha1
 kind: IstioOperator
 spec:
+  hub: registry.cn-hangzhou.aliyuncs.com/acejilam
   profile: demo
   components:
     ingressGateways:
-    - name: istio-ingressgateway
-      enabled: false
+      - name: istio-ingressgateway
+        enabled: false
     egressGateways:
-    - name: istio-egressgateway
-      enabled: false
+      - name: istio-egressgateway
+        enabled: false
+
+
+  meshConfig:
+    defaultProviders:
+      tracing:
+        - "skywalking"
+    enableTracing: true
+    extensionProviders:
+      - name: "skywalking"
+        skywalking:
+          service: tracing.istio-system.svc.cluster.local
+          port: 11800

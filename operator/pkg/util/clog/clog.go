@@ -56,9 +56,6 @@ func NewConsoleLogger(stdOut, stdErr io.Writer, scope *log.Scope) *ConsoleLogger
 }
 
 // NewDefaultLogger creates a new logger that outputs to stdout/stderr at default scope.
-func NewDefaultLogger() *ConsoleLogger {
-	return NewConsoleLogger(os.Stdout, os.Stderr, nil)
-}
 
 func (l *ConsoleLogger) LogAndPrint(v ...any) {
 	if len(v) == 0 {

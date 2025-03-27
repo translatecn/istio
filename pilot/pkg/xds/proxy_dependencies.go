@@ -30,8 +30,6 @@ var UnAffectedConfigKinds = map[model.NodeType]sets.Set[kind.Kind]{
 	model.SidecarProxy: sets.New(kind.Gateway, kind.KubernetesGateway),
 }
 
-// ConfigAffectsProxy checks if a pushEv will affect a specified proxy. That means whether the push will be performed
-// towards the proxy.
 func ConfigAffectsProxy(req *model.PushRequest, proxy *model.Proxy) bool {
 	// Empty changes means "all" to get a backward compatibility.
 	if len(req.ConfigsUpdated) == 0 {
@@ -42,13 +40,11 @@ func ConfigAffectsProxy(req *model.PushRequest, proxy *model.Proxy) bool {
 		// TODO: implement ambient aware scoping
 		return true
 	}
-
 	for config := range req.ConfigsUpdated {
 		if proxyDependentOnConfig(proxy, config, req.Push) {
 			return true
 		}
 	}
-
 	return false
 }
 
@@ -57,7 +53,6 @@ func proxyDependentOnConfig(proxy *model.Proxy, config model.ConfigKey, push *mo
 	if UnAffectedConfigKinds[proxy.Type].Contains(config.Kind) {
 		return false
 	}
-	// Detailed config dependencies check.
 	switch proxy.Type {
 	case model.SidecarProxy:
 		if proxy.SidecarScope.DependsOnConfig(config, push.Mesh.RootNamespace) {
@@ -71,11 +66,9 @@ func proxyDependentOnConfig(proxy *model.Proxy, config model.ConfigKey, push *mo
 			if features.FilterGatewayClusterConfig && !push.ServiceAttachedToGateway(config.Name, proxy) {
 				return false
 			}
-
 			hostname := host.Name(config.Name)
 			// gateways have default sidecar scopes
-			if proxy.SidecarScope.GetService(hostname) == nil &&
-				proxy.PrevSidecarScope.GetService(hostname) == nil {
+			if proxy.SidecarScope.GetService(hostname) == nil && proxy.PrevSidecarScope.GetService(hostname) == nil {
 				// skip the push when the service is not visible to the gateway,
 				// and the old service is not visible/existent
 				return false
@@ -89,13 +82,11 @@ func proxyDependentOnConfig(proxy *model.Proxy, config model.ConfigKey, push *mo
 	return false
 }
 
-// DefaultProxyNeedsPush check if a proxy needs push for this push event.
 func DefaultProxyNeedsPush(proxy *model.Proxy, req *model.PushRequest) bool {
 	if ConfigAffectsProxy(req, proxy) {
 		return true
 	}
 
-	// If the proxy's service updated, need push for it.
 	if len(proxy.ServiceTargets) > 0 && req.ConfigsUpdated != nil {
 		for _, svc := range proxy.ServiceTargets {
 			if _, ok := req.ConfigsUpdated[model.ConfigKey{

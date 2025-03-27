@@ -71,9 +71,10 @@ const (
 	// as it's running separately from the main flow.
 	networkFetchRetryCountOnRefreshFlow = 7
 
-	// jwksExtraRootCABundlePath is the path to any additional CA certificates pilot should accept when resolving JWKS URIs
-	jwksExtraRootCABundlePath = "/cacerts/extra.pem"
+	// JwksExtraRootCABundlePath is the path to any additional CA certificates pilot should accept when resolving JWKS URIs
 )
+
+var JwksExtraRootCABundlePath = "/cacerts/extra.pem"
 
 var (
 	// Close channel
@@ -147,16 +148,6 @@ type JwksResolver struct {
 
 	// How many times refresh job failed to fetch the public key from network, used in unit test.
 	refreshJobFetchFailedCount uint64
-}
-
-func NewJwksResolver(evictionDuration, refreshDefaultInterval, refreshIntervalOnFailure, retryInterval time.Duration) *JwksResolver {
-	return newJwksResolverWithCABundlePaths(
-		evictionDuration,
-		refreshDefaultInterval,
-		refreshIntervalOnFailure,
-		retryInterval,
-		[]string{jwksExtraRootCABundlePath},
-	)
 }
 
 func newJwksResolverWithCABundlePaths(
@@ -321,6 +312,7 @@ const FakeJwks = `{
 // Resolve jwks_uri through openID discovery.
 func (r *JwksResolver) resolveJwksURIUsingOpenID(issuer string, timeout time.Duration) (string, error) {
 	// Try to get jwks_uri through OpenID Discovery.
+
 	issuer = strings.TrimSuffix(issuer, "/")
 	body, err := r.getRemoteContentWithRetry(issuer+openIDDiscoveryCfgURLSuffix, networkFetchRetryCountOnMainFlow, timeout)
 	if err != nil {
@@ -411,6 +403,7 @@ func (r *JwksResolver) getRemoteContentWithRetry(uri string, retry int, timeout 
 
 func (r *JwksResolver) refresher() {
 	// Wake up once in a while and refresh stale items.
+
 	r.refreshTicker = time.NewTicker(r.refreshInterval)
 	lastHasError := false
 	for {
@@ -609,4 +602,14 @@ func compareJWKSResponse(oldKeyString string, newKeyString string) (bool, error)
 	// If we aren't able to compare using keys, we should return true
 	// since we already checked exact equality of the responses
 	return true, nil
+}
+
+func NewJwksResolver(evictionDuration, refreshDefaultInterval, refreshIntervalOnFailure, retryInterval time.Duration) *JwksResolver {
+	return newJwksResolverWithCABundlePaths(
+		evictionDuration,
+		refreshDefaultInterval,
+		refreshIntervalOnFailure,
+		retryInterval,
+		[]string{JwksExtraRootCABundlePath},
+	)
 }

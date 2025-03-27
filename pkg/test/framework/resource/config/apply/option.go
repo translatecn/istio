@@ -14,7 +14,9 @@
 
 package apply
 
-import "istio.io/istio/pkg/test/framework/resource/config/cleanup"
+import (
+	"istio.io/istio/pkg/test/framework/resource/config/cleanup"
+)
 
 // Option is a strategy for updating Options.
 type Option interface {
@@ -27,10 +29,11 @@ type OptionFunc func(*Options)
 
 // Set just invokes this function to update the Options.
 func (f OptionFunc) Set(opts *Options) {
+	// NoCleanup is an Option that disables config cleanup.
+
 	f(opts)
 }
 
-// NoCleanup is an Option that disables config cleanup.
 var NoCleanup Option = OptionFunc(func(opts *Options) {
 	opts.Cleanup = cleanup.None
 })

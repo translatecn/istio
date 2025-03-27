@@ -4,16 +4,16 @@ metadata:
   name: server-default-svc
 spec:
   exportTo:
-  - "."
+    - "."
   hosts:
-  - server.default.svc
+    - server.default.svc
   addresses:
-  - {{ .Address }}
+    - { { .Address } }
   endpoints:
-  - address: external.{{.Namespace}}.svc.cluster.local
+    - address: external.{{.Namespace}}.svc.cluster.local
   location: MESH_EXTERNAL
   resolution: DNS
   ports:
-  - name: https
-    number: 443
-    protocol: HTTPS
+    - name: https
+      number: 443
+      protocol: HTTPS

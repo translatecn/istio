@@ -24,13 +24,13 @@ kdir="${1:?Kubernetes directory}"
 registry="${2:?registry}"
 
 ARCHES="${ARCHES:-amd64 arm64}"
-IFS=" " read -r -a __arches__ <<< "$ARCHES"
+IFS=" " read -r -a __arches__ <<<"$ARCHES"
 
 images=()
 for arch in "${__arches__[@]}"; do
-    image="${registry}-${arch}"
-    kind build node-image --image="${image}" --arch="${arch}" "${kdir}"
-    images+=("${image}")
+	image="${registry}-${arch}"
+	kind build node-image --image="${image}" --arch="${arch}" "${kdir}"
+	images+=("${image}")
 done
 
 # combine to manifest list tagged with kubernetes version
@@ -38,7 +38,7 @@ export DOCKER_CLI_EXPERIMENTAL=enabled
 # images must be pushed to be referenced by docker manifest
 # we push only after all builds have succeeded
 for image in "${images[@]}"; do
-    docker push "${image}"
+	docker push "${image}"
 done
 docker manifest rm "${registry}" || true
 docker manifest create "${registry}" "${images[@]}"

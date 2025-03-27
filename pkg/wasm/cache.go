@@ -198,6 +198,7 @@ func getModulePath(baseDir string, mkey moduleKey) (string, error) {
 // Get returns path the local Wasm module file.
 func (c *LocalFileCache) Get(downloadURL string, opts GetOptions) (string, error) {
 	// Construct Wasm cache key with downloading URL and provided checksum of the module.
+
 	key := cacheKey{
 		downloadURL: downloadURL,
 		moduleKey: moduleKey{
@@ -303,6 +304,7 @@ func (c *LocalFileCache) Cleanup() {
 
 func (c *LocalFileCache) updateChecksum(key cacheKey) bool {
 	// If OCI URL having a tag or just http/https URL, we need to update checksum.
+
 	needChecksumUpdate := !strings.HasPrefix(key.downloadURL, ociURLPrefix) || !strings.Contains(key.downloadURL, "@")
 	if needChecksumUpdate {
 		ce := c.checksums[key.downloadURL]
@@ -442,5 +444,6 @@ var wasmMagicNumber = []byte{0x00, 0x61, 0x73, 0x6d}
 
 func isValidWasmBinary(in []byte) bool {
 	// Wasm file header is 8 bytes (magic number + version).
+
 	return len(in) >= 8 && bytes.Equal(in[:4], wasmMagicNumber)
 }

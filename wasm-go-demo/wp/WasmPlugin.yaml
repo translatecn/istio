@@ -1,0 +1,17 @@
+apiVersion: extensions.istio.io/v1alpha1
+kind: WasmPlugin
+metadata:
+  name: your-filter
+spec:
+  selector:
+    matchLabels:
+      app: server
+  phase: AUTHN
+  priority: 10
+  pluginConfig:
+    someSetting: true
+    someOtherSetting: false
+    youNameIt:
+      - first
+      - second
+  url: oci://registry.cn-hangzhou.aliyuncs.com/acejilam/test:wasm

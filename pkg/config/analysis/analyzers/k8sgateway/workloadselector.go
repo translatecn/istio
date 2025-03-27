@@ -15,8 +15,8 @@
 package k8sgateway
 
 import (
-	"istio.io/api/label"
-	typev1beta1 "istio.io/api/type/v1beta1"
+	"istio.io/istio/istio.io/api/label"
+	typev1beta1 "istio.io/istio/istio.io/api/type/v1beta1"
 	"istio.io/istio/pkg/config"
 	"istio.io/istio/pkg/config/analysis"
 	"istio.io/istio/pkg/config/analysis/msg"

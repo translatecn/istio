@@ -32,11 +32,3 @@ var all = NewSet(
 	IPv4)
 
 // Find the label with the given name
-func Find(name string) (Instance, bool) {
-	candidate := Instance(name)
-	if _, ok := all[candidate]; ok {
-		return candidate, true
-	}
-
-	return "", false
-}

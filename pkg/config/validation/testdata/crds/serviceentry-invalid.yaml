@@ -9,7 +9,7 @@ apiVersion: networking.istio.io/v1
 kind: ServiceEntry
 metadata:
   name: missing-host
-spec: {}
+spec: { }
 ---
 #_err: "TODO"
 #apiVersion: networking.istio.io/v1alpha3
@@ -29,7 +29,7 @@ kind: ServiceEntry
 metadata:
   name: bad-selector-value
 spec:
-  hosts: ["example.com"]
+  hosts: [ "example.com" ]
   workloadSelector:
     labels:
       "val": "*"
@@ -40,8 +40,8 @@ kind: ServiceEntry
 metadata:
   name: selector-and-endpoints
 spec:
-  hosts: ["example.com"]
-  workloadSelector: {}
+  hosts: [ "example.com" ]
+  workloadSelector: { }
   endpoints:
     - address: "1.2.3.4"
 ---
@@ -51,7 +51,7 @@ kind: ServiceEntry
 metadata:
   name: bad-host-wildcard
 spec:
-  hosts: ["*"]
+  hosts: [ "*" ]
 #---
 #_err: "TODO"
 #apiVersion: networking.istio.io/v1alpha3
@@ -76,8 +76,8 @@ kind: ServiceEntry
 metadata:
   name: bad-cidr-resolution
 spec:
-  hosts: ["example.com"]
-  addresses: [1.2.3.4/16]
+  hosts: [ "example.com" ]
+  addresses: [ 1.2.3.4/16 ]
   resolution: DNS
 ---
 _err: "Duplicate value"
@@ -86,7 +86,7 @@ kind: ServiceEntry
 metadata:
   name: duplicate-ports-name
 spec:
-  hosts: ["example.com"]
+  hosts: [ "example.com" ]
   ports:
     - name: a
       number: 1
@@ -99,7 +99,7 @@ kind: ServiceEntry
 metadata:
   name: duplicate-ports-number
 spec:
-  hosts: ["example.com"]
+  hosts: [ "example.com" ]
   ports:
     - name: a
       number: 1
@@ -112,7 +112,7 @@ kind: ServiceEntry
 metadata:
   name: bad-port
 spec:
-  hosts: ["example.com"]
+  hosts: [ "example.com" ]
   ports:
     - name: a
       number: 99999
@@ -123,7 +123,7 @@ kind: ServiceEntry
 metadata:
   name: bad-port-target
 spec:
-  hosts: ["example.com"]
+  hosts: [ "example.com" ]
   ports:
     - name: a
       number: 1
@@ -135,7 +135,7 @@ kind: ServiceEntry
 metadata:
   name: none-with-endpoints
 spec:
-  hosts: ["example.com"]
+  hosts: [ "example.com" ]
   endpoints:
     - address: "1.2.3.4"
   resolution: NONE
@@ -146,7 +146,7 @@ kind: ServiceEntry
 metadata:
   name: dns-rr-with-multiple-endpoints
 spec:
-  hosts: ["example.com"]
+  hosts: [ "example.com" ]
   resolution: DNS_ROUND_ROBIN
   endpoints:
     - address: "sub1.example.com"

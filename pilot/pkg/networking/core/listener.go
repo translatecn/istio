@@ -29,9 +29,9 @@ import (
 	auth "github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3"
 	"google.golang.org/protobuf/types/known/durationpb"
 
-	extensions "istio.io/api/extensions/v1alpha1"
-	meshconfig "istio.io/api/mesh/v1alpha1"
-	networking "istio.io/api/networking/v1alpha3"
+	extensions "istio.io/istio/istio.io/api/extensions/v1alpha1"
+	meshconfig "istio.io/istio/istio.io/api/mesh/v1alpha1"
+	networking "istio.io/istio/istio.io/api/networking/v1alpha3"
 	"istio.io/istio/pilot/pkg/features"
 	"istio.io/istio/pilot/pkg/model"
 	istionetworking "istio.io/istio/pilot/pkg/networking"
@@ -344,7 +344,6 @@ func (lb *ListenerBuilder) buildSidecarOutboundListeners(node *model.Proxy,
 	// If no Sidecar CRD is provided for this config namespace,
 	// push.SidecarScope will generate a default catch all egress listener.
 	for _, egressListener := range node.SidecarScope.EgressListeners {
-
 		services := egressListener.Services()
 		virtualServices := egressListener.VirtualServices()
 
@@ -793,6 +792,7 @@ func (lb *ListenerBuilder) buildSidecarOutboundListener(listenerOpts outboundLis
 	listenerMap map[listenerKey]*outboundListenerEntry, virtualServices []config.Config, actualWildcards []string,
 ) {
 	// Alias services do not get listeners generated
+
 	if listenerOpts.service.Resolution == model.Alias {
 		return
 	}

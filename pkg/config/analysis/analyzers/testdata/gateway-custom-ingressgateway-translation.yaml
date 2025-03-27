@@ -8,12 +8,12 @@ spec:
   selector:
     myapp: private-ingressgateway
   servers:
-  - port:
-      number: 80
-      name: http2
-      protocol: HTTP
-    hosts:
-    - "*"
+    - port:
+        number: 80
+        name: http2
+        protocol: HTTP
+      hosts:
+        - "*"
 ---
 apiVersion: v1
 kind: Pod
@@ -32,10 +32,10 @@ metadata:
   name: my-ingressgateway
 spec:
   ports:
-  - name: http2
-    nodePort: 31380
-    port: 80
-    protocol: TCP
-    targetPort: 8003
+    - name: http2
+      nodePort: 31380
+      port: 80
+      protocol: TCP
+      targetPort: 8003
   selector:
     myapp: private-ingressgateway

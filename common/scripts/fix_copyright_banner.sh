@@ -24,16 +24,19 @@
 set -e
 
 WD=$(dirname "$0")
-WD=$(cd "$WD"; pwd)
+WD=$(
+	cd "$WD"
+	pwd
+)
 
 for fn in "$@"; do
-  if ! grep -L -q -e "Apache License, Version 2" -e "Copyright" "${fn}"; then
-    if [[ "${fn}" == *.go || "${fn}" == *.rs ]]; then
-      newfile=$(cat "${WD}/copyright-banner-go.txt" "${fn}")
-      echo "${newfile}" > "${fn}"
-      echo "Fixing license: ${fn}"
-    else
-      echo "Cannot fix license: ${fn}. Unknown file type"
-    fi
-  fi
+	if ! grep -L -q -e "Apache License, Version 2" -e "Copyright" "${fn}"; then
+		if [[ "${fn}" == *.go || "${fn}" == *.rs ]]; then
+			newfile=$(cat "${WD}/copyright-banner-go.txt" "${fn}")
+			echo "${newfile}" >"${fn}"
+			echo "Fixing license: ${fn}"
+		else
+			echo "Cannot fix license: ${fn}. Unknown file type"
+		fi
+	fi
 done

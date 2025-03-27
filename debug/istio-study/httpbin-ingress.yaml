@@ -1,0 +1,34 @@
+#httpbin-ext.yaml
+apiVersion: networking.istio.io/v1
+kind: ServiceEntry
+metadata:
+  name: httpbin-ext
+spec:
+  hosts:
+    - httpbin.org
+  ports:
+    - number: 80
+      name: http
+      protocol: HTTP
+    - number: 443
+      name: https
+      protocol: HTTPS
+  resolution: DNS # 主机的服务发现模式
+  location: MESH_EXTERNAL # 指定服务是否应被视为网格外部的一部分还是网格的一部分
+---
+# 设置访问超时 3s
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: httpbin-ext-vs
+spec:
+  hosts:
+    - httpbin.org
+  http:
+    - timeout: 3s
+      route:
+        - destination:
+            host: httpbin.org
+          weight: 100
+
+# curl -sSI http://httpbin.org/headers

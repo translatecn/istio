@@ -29,7 +29,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/yaml"
 
-	meshconfig "istio.io/api/mesh/v1alpha1"
+	meshconfig "istio.io/istio/istio.io/api/mesh/v1alpha1"
 	"istio.io/istio/pkg/config/mesh"
 	"istio.io/istio/pkg/log"
 	"istio.io/istio/pkg/util/protomarshal"
@@ -219,6 +219,7 @@ func applicationPorts(containers []corev1.Container) string {
 
 func includeInboundPorts(containers []corev1.Container) string {
 	// Include the ports from all containers in the deployment.
+
 	return getContainerPorts(containers, func(corev1.Container) bool { return true })
 }
 

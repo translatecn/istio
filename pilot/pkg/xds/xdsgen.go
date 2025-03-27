@@ -28,7 +28,7 @@ import (
 	v3 "istio.io/istio/pilot/pkg/xds/v3"
 	"istio.io/istio/pkg/env"
 	"istio.io/istio/pkg/lazy"
-	istioversion "istio.io/istio/pkg/version"
+	istioversion "istio.io/istio/pkg/version_over"
 	"istio.io/istio/pkg/xds"
 )
 
@@ -60,40 +60,15 @@ var controlPlane = lazy.New(func() (*core.ControlPlane, error) {
 // ControlPlane identifies the instance and Istio version.
 func ControlPlane() *core.ControlPlane {
 	// Error will never happen because the getter of lazy does not return error.
+
 	cp, _ := controlPlane.Get()
 	return cp
-}
-
-func (s *DiscoveryServer) findGenerator(typeURL string, con *Connection) model.XdsResourceGenerator {
-	if g, f := s.Generators[con.proxy.Metadata.Generator+"/"+typeURL]; f {
-		return g
-	}
-	if g, f := s.Generators[string(con.proxy.Type)+"/"+typeURL]; f {
-		return g
-	}
-
-	if g, f := s.Generators[typeURL]; f {
-		return g
-	}
-
-	// XdsResourceGenerator is the default generator for this connection. We want to allow
-	// some types to use custom generators - for example EDS.
-	g := con.proxy.XdsResourceGenerator
-	if g == nil {
-		if strings.HasPrefix(typeURL, TypeDebugPrefix) {
-			g = s.Generators["event"]
-		} else {
-			// TODO move this to just directly using the resource TypeUrl
-			g = s.Generators["api"] // default to "MCP" generators - any type supported by store
-		}
-	}
-	return g
 }
 
 // Push an XDS resource for the given connection. Configuration will be generated
 // based on the passed in generator. Based on the updates field, generators may
 // choose to send partial or even no response if there are no changes.
-func (s *DiscoveryServer) pushXds(con *Connection, w *model.WatchedResource, req *model.PushRequest) error {
+func (s *DiscoveryServer) pushXds(con *ConnectionServer, w *model.WatchedResource, req *model.PushRequest) error {
 	if w == nil {
 		return nil
 	}
@@ -181,9 +156,36 @@ func (s *DiscoveryServer) pushXds(con *Connection, w *model.WatchedResource, req
 func ResourceSize(r model.Resources) int {
 	// Approximate size by looking at the Any marshaled size. This avoids high cost
 	// proto.Size, at the expense of slightly under counting.
+
 	size := 0
 	for _, r := range r {
 		size += len(r.Resource.Value)
 	}
 	return size
+}
+
+func (s *DiscoveryServer) findGenerator(typeURL string, con *ConnectionServer) model.XdsResourceGenerator {
+	if g, f := s.Generators[con.proxy.Metadata.Generator+"/"+typeURL]; f {
+		return g
+	}
+	if g, f := s.Generators[string(con.proxy.Type)+"/"+typeURL]; f {
+		return g
+	}
+
+	if g, f := s.Generators[typeURL]; f {
+		return g
+	}
+
+	// XdsResourceGenerator is the default generator for this connection. We want to allow
+	// some types to use custom generators - for example EDS.
+	g := con.proxy.XdsResourceGenerator
+	if g == nil {
+		if strings.HasPrefix(typeURL, TypeDebugPrefix) {
+			g = s.Generators["event"]
+		} else {
+			// TODO move this to just directly using the resource TypeUrl
+			g = s.Generators["api"] // default to "MCP" generators - any type supported by store
+		}
+	}
+	return g
 }

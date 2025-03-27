@@ -25,8 +25,8 @@ import (
 	klabels "k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
 
-	apiv1alpha3 "istio.io/api/networking/v1alpha3"
-	networkingv1 "istio.io/client-go/pkg/apis/networking/v1"
+	apiv1alpha3 "istio.io/istio/istio.io/api/networking/v1alpha3"
+	networkingv1 "istio.io/istio/istio.io/client-go/pkg/apis/networking/v1"
 	autoallocate "istio.io/istio/pilot/pkg/networking/serviceentry"
 	"istio.io/istio/pkg/config"
 	cfghost "istio.io/istio/pkg/config/host"

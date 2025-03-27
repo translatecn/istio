@@ -32,8 +32,8 @@ import (
 	k8salpha "sigs.k8s.io/gateway-api/apis/v1alpha2"
 	k8sbeta "sigs.k8s.io/gateway-api/apis/v1beta1"
 
-	"istio.io/api/annotation"
-	istio "istio.io/api/networking/v1alpha3"
+	"istio.io/istio/istio.io/api/annotation"
+	istio "istio.io/istio/istio.io/api/networking/v1alpha3"
 	"istio.io/istio/pilot/pkg/features"
 	"istio.io/istio/pilot/pkg/model"
 	creds "istio.io/istio/pilot/pkg/model/credentials"
@@ -67,6 +67,7 @@ func sortConfigByCreationTime(configs []config.Config) {
 // on KubernetesResources inputs.
 func convertResources(r GatewayResources) IstioResources {
 	// sort HTTPRoutes by creation timestamp and namespace/name
+
 	sortConfigByCreationTime(r.HTTPRoute)
 	sortConfigByCreationTime(r.GRPCRoute)
 
@@ -198,6 +199,7 @@ func convertHTTPRoute(r k8s.HTTPRouteRule, ctx configContext,
 	obj config.Config, pos int, enforceRefGrant bool,
 ) (*istio.HTTPRoute, *ConfigError) {
 	// TODO: implement rewrite, corspolicy, retries
+
 	vs := &istio.HTTPRoute{}
 	if r.Name != nil {
 		vs.Name = string(*r.Name)
@@ -310,6 +312,7 @@ func convertGRPCRoute(r k8s.GRPCRouteRule, ctx configContext,
 	obj config.Config, pos int, enforceRefGrant bool,
 ) (*istio.HTTPRoute, *ConfigError) {
 	// TODO: implement rewrite, timeout, mirror, corspolicy, retries
+
 	vs := &istio.HTTPRoute{}
 	if r.Name != nil {
 		vs.Name = string(*r.Name)
@@ -856,6 +859,7 @@ func parentMeta(obj config.Config, sectionName *k8s.SectionName) map[string]stri
 
 func hostnameToStringList(h []k8s.Hostname) []string {
 	// In the Istio API, empty hostname is not allowed. In the Kubernetes API hosts means "any"
+
 	if len(h) == 0 {
 		return []string{"*"}
 	}
@@ -1319,6 +1323,7 @@ func buildTCPDestination(
 
 func buildTLSMatch(hostnames []k8s.Hostname) []*istio.TLSMatchAttributes {
 	// Currently, the spec only supports extensions beyond hostname, which are not currently implemented by Istio.
+
 	return []*istio.TLSMatchAttributes{{
 		SniHosts: hostnamesToStringListWithWildcard(hostnames),
 	}}
@@ -1497,6 +1502,7 @@ func buildGRPCDestination(
 
 func buildDestination(ctx configContext, to k8s.BackendRef, ns string, enforceRefGrant bool, k config.GroupVersionKind) (*istio.Destination, *ConfigError) {
 	// check if the reference is allowed
+
 	if enforceRefGrant {
 		refs := ctx.AllowedReferences
 		if toNs := to.Namespace; toNs != nil && string(*toNs) != ns {
@@ -1878,33 +1884,6 @@ func createGRPCURIMatch(match k8s.GRPCRouteMatch) (*istio.StringMatch, *ConfigEr
 	}
 }
 
-// getGatewayClass finds all gateway class that are owned by Istio
-// Response is ClassName -> Controller type
-func getGatewayClasses(r GatewayResources) map[string]k8s.GatewayController {
-	res := map[string]k8s.GatewayController{}
-	// Setup builtin ones - these can be overridden possibly
-	for name, controller := range builtinClasses {
-		res[string(name)] = controller
-	}
-	for _, obj := range r.GatewayClass {
-		gwc := obj.Spec.(*k8s.GatewayClassSpec)
-		_, known := classInfos[gwc.ControllerName]
-		if !known {
-			continue
-		}
-		res[obj.Name] = gwc.ControllerName
-
-		// Set status. If we created it, it may already be there. If not, set it again
-		obj.Status.(*kstatus.WrappedStatus).Mutate(func(s config.Status) config.Status {
-			gcs := s.(*k8s.GatewayClassStatus)
-			*gcs = GetClassStatus(gcs, obj.Generation)
-			return gcs
-		})
-	}
-
-	return res
-}
-
 // parentKey holds info about a parentRef (eg route binding to a Gateway). This is a mirror of
 // k8s.ParentReference in a form that can be stored in a map
 type parentKey struct {
@@ -2040,6 +2019,7 @@ func getDefaultName(name string, kgw *k8s.GatewaySpec, disableNameSuffix bool) s
 
 func convertGateways(r configContext) ([]config.Config, map[parentKey][]*parentInfo, sets.String) {
 	// result stores our generated Istio Gateways
+
 	result := []config.Config{}
 	// gwMap stores an index to access parentInfo (which corresponds to a Kubernetes Gateway)
 	gwMap := map[parentKey][]*parentInfo{}
@@ -2065,7 +2045,7 @@ func convertGateways(r configContext) ([]config.Config, map[parentKey][]*parentI
 			continue
 		}
 
-		servers := []*istio.Server{}
+		var servers []*istio.Server
 
 		// Extract the addresses. A gateway will bind to a specific Service
 		gatewayServices, err := extractGatewayServices(r.GatewayResources, kgw, obj, classInfo)
@@ -2199,6 +2179,7 @@ func reportGatewayStatus(
 	gatewayErr *ConfigError,
 ) {
 	// TODO: we lose address if servers is empty due to an error
+
 	internal, internalIP, external, pending, warnings, allUsable := r.Context.ResolveGatewayInstances(obj.Namespace, gatewayServices, servers)
 
 	// Setup initial conditions to the success state. If we encounter errors, we will update this.
@@ -2367,6 +2348,7 @@ func IsManaged(gw *k8s.GatewaySpec) bool {
 func extractGatewayServices(r GatewayResources, kgw *k8s.GatewaySpec, obj config.Config, info classInfo) ([]string, *ConfigError) {
 	if IsManaged(kgw) {
 		name := model.GetOrDefault(obj.Annotations[annotation.GatewayNameOverride.Name], getDefaultName(obj.Name, kgw, info.disableNameSuffix))
+		fmt.Println(name) // bookinfo-gateway-istio
 		return []string{fmt.Sprintf("%s.%s.svc.%v", name, obj.Namespace, r.Domain)}, nil
 	}
 	gatewayServices := []string{}
@@ -2486,6 +2468,7 @@ func buildListener(r configContext, obj config.Config, l k8s.Listener, listenerI
 
 func listenerProtocolToIstio(protocol k8s.ProtocolType) string {
 	// Currently, all gateway-api protocols are valid Istio protocols.
+
 	return string(protocol)
 }
 
@@ -2599,6 +2582,7 @@ func parentRefString(ref k8s.ParentReference) string {
 // buildHostnameMatch generates a Gateway.spec.servers.hosts section from a listener
 func buildHostnameMatch(localNamespace string, r GatewayResources, l k8s.Listener) []string {
 	// We may allow all hostnames or a specific one
+
 	hostname := "*"
 	if l.Hostname != nil {
 		hostname = string(*l.Hostname)
@@ -2624,6 +2608,7 @@ func buildHostnameMatch(localNamespace string, r GatewayResources, l k8s.Listene
 // namespacesFromSelector determines a list of allowed namespaces for a given AllowedRoutes
 func namespacesFromSelector(localNamespace string, r GatewayResources, lr *k8s.AllowedRoutes) []string {
 	// Default is to allow only the same namespace
+
 	if lr == nil || lr.Namespaces == nil || lr.Namespaces.From == nil || *lr.Namespaces.From == k8s.NamespacesFromSame {
 		return []string{localNamespace}
 	}
@@ -2677,6 +2662,7 @@ const NamespaceNameLabel = "kubernetes.io/metadata.name"
 // toNamespaceSet converts a set of namespace labels to a Set that can be used to select against.
 func toNamespaceSet(name string, labels map[string]string) klabels.Set {
 	// If namespace label is not set, implicitly insert it to support older Kubernetes versions
+
 	if labels[NamespaceNameLabel] == name {
 		// Already set, avoid copies
 		return labels
@@ -2727,4 +2713,31 @@ func (kr GatewayResources) FuzzValidate() bool {
 		}
 	}
 	return true
+}
+
+// getGatewayClass finds all gateway class that are owned by Istio
+// Response is ClassName -> Controller type
+func getGatewayClasses(r GatewayResources) map[string]k8s.GatewayController {
+	res := map[string]k8s.GatewayController{}
+	// Setup builtin ones - these can be overridden possibly
+	for name, controller := range builtinClasses {
+		res[string(name)] = controller
+	}
+	for _, obj := range r.GatewayClass {
+		gwc := obj.Spec.(*k8s.GatewayClassSpec)
+		_, known := classInfos[gwc.ControllerName]
+		if !known {
+			continue
+		}
+		res[obj.Name] = gwc.ControllerName
+
+		// Set status. If we created it, it may already be there. If not, set it again
+		obj.Status.(*kstatus.WrappedStatus).Mutate(func(s config.Status) config.Status {
+			gcs := s.(*k8s.GatewayClassStatus)
+			*gcs = GetClassStatus(gcs, obj.Generation)
+			return gcs
+		})
+	}
+
+	return res
 }

@@ -25,7 +25,7 @@ import (
 	matcher "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
 	"google.golang.org/protobuf/types/known/structpb"
 
-	meshconfig "istio.io/api/mesh/v1alpha1"
+	meshconfig "istio.io/istio/istio.io/api/mesh/v1alpha1"
 	"istio.io/istio/pilot/pkg/serviceregistry/util/label"
 	networkutil "istio.io/istio/pilot/pkg/util/network"
 	"istio.io/istio/pkg/cluster"
@@ -363,6 +363,7 @@ func (m NodeMetadata) ProxyConfigOrDefault(def *meshconfig.ProxyConfig) *meshcon
 
 func (m *BootstrapNodeMetadata) UnmarshalJSON(data []byte) error {
 	// Create a new type from the target type to avoid recursion.
+
 	type BootstrapNodeMetadata2 BootstrapNodeMetadata
 
 	t2 := &BootstrapNodeMetadata2{}

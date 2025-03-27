@@ -40,7 +40,6 @@ type Controller interface {
 	// Note: AppendXXXHandler is used to register high level handlers.
 	// For per cluster handlers, they should be registered by the `AppendXXXHandlerForCluster` interface.
 
-	// AppendServiceHandler notifies about changes to the service catalog.
 	AppendServiceHandler(f ServiceHandler)
 
 	// AppendWorkloadHandler notifies about changes to workloads. This differs from InstanceHandler,
@@ -57,8 +56,6 @@ type Controller interface {
 // AggregateController is a wrapper of Controller, it supports registering handlers of a specific cluster。
 type AggregateController interface {
 	Controller
-	// AppendServiceHandlerForCluster is similar to Controller.AppendServiceHandler,
-	// but it is used to store the handler from a specific cluster.
 	AppendServiceHandlerForCluster(clusterID cluster.ID, f ServiceHandler)
 	UnRegisterHandlersForCluster(clusterID cluster.ID)
 }
@@ -72,6 +69,7 @@ type ControllerHandlers struct {
 
 func (c *ControllerHandlers) AppendServiceHandler(f ServiceHandler) {
 	// Copy on write.
+
 	c.mutex.Lock()
 	handlers := make([]ServiceHandler, 0, len(c.serviceHandlers)+1)
 	handlers = append(handlers, c.serviceHandlers...)
@@ -82,6 +80,7 @@ func (c *ControllerHandlers) AppendServiceHandler(f ServiceHandler) {
 
 func (c *ControllerHandlers) AppendWorkloadHandler(f func(*WorkloadInstance, Event)) {
 	// Copy on write.
+
 	c.mutex.Lock()
 	handlers := make([]func(*WorkloadInstance, Event), 0, len(c.workloadHandlers)+1)
 	handlers = append(handlers, c.workloadHandlers...)
@@ -90,24 +89,11 @@ func (c *ControllerHandlers) AppendWorkloadHandler(f func(*WorkloadInstance, Eve
 	c.mutex.Unlock()
 }
 
-func (c *ControllerHandlers) GetServiceHandlers() []ServiceHandler {
-	c.mutex.RLock()
-	defer c.mutex.RUnlock()
-	// Return a shallow copy of the array
-	return c.serviceHandlers
-}
-
 func (c *ControllerHandlers) GetWorkloadHandlers() []func(*WorkloadInstance, Event) {
 	c.mutex.RLock()
 	defer c.mutex.RUnlock()
 	// Return a shallow copy of the array
 	return c.workloadHandlers
-}
-
-func (c *ControllerHandlers) NotifyServiceHandlers(prev, curr *Service, event Event) {
-	for _, f := range c.GetServiceHandlers() {
-		f(prev, curr, event)
-	}
 }
 
 func (c *ControllerHandlers) NotifyWorkloadHandlers(w *WorkloadInstance, event Event) {
@@ -143,4 +129,17 @@ func (event Event) String() string {
 		out = "delete"
 	}
 	return out
+}
+
+func (c *ControllerHandlers) GetServiceHandlers() []ServiceHandler {
+	c.mutex.RLock()
+	defer c.mutex.RUnlock()
+	// Return a shallow copy of the array
+	return c.serviceHandlers
+}
+
+func (c *ControllerHandlers) NotifyServiceHandlers(prev, curr *Service, event Event) {
+	for _, f := range c.GetServiceHandlers() { // ✅
+		f(prev, curr, event)
+	}
 }

@@ -121,6 +121,7 @@ func (s *Settings) clusterConfigsFromFlags() ([]cluster.Config, error) {
 
 func (s *Settings) clusterConfigsFromFile() ([]cluster.Config, error) {
 	// Allow kubeconfig flag to override file
+
 	var err error
 	clusterConfigs, err = replaceKubeconfigs(clusterConfigs, s.KubeConfig)
 	if err != nil {

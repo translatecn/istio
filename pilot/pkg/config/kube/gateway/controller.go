@@ -45,7 +45,7 @@ import (
 	"istio.io/istio/pkg/kube/kubetypes"
 	istiolog "istio.io/istio/pkg/log"
 	"istio.io/istio/pkg/maps"
-	"istio.io/istio/pkg/revisions"
+	"istio.io/istio/pkg/revisions_over"
 	"istio.io/istio/pkg/slices"
 	"istio.io/istio/pkg/util/sets"
 )
@@ -89,49 +89,12 @@ type Controller struct {
 	// is only the case when we are the leader.
 	statusController *atomic.Pointer[status.Controller]
 
-	tagWatcher revisions.TagWatcher
+	tagWatcher revisions_over.TagWatcher
 
 	waitForCRD func(class schema.GroupVersionResource, stop <-chan struct{}) bool
 }
 
 var _ model.GatewayController = &Controller{}
-
-func NewController(
-	kc kube.Client,
-	c model.ConfigStoreController,
-	waitForCRD func(class schema.GroupVersionResource, stop <-chan struct{}) bool,
-	credsController credentials.MulticlusterController,
-	options controller.Options,
-) *Controller {
-	var ctl *status.Controller
-
-	namespaces := kclient.NewFiltered[*corev1.Namespace](kc, kubetypes.Filter{ObjectFilter: kc.ObjectFilter()})
-	gatewayController := &Controller{
-		client:                kc,
-		cache:                 c,
-		namespaces:            namespaces,
-		credentialsController: credsController,
-		cluster:               options.ClusterID,
-		domain:                options.DomainSuffix,
-		statusController:      atomic.NewPointer(ctl),
-		tagWatcher:            revisions.NewTagWatcher(kc, options.Revision),
-		waitForCRD:            waitForCRD,
-	}
-
-	namespaces.AddEventHandler(controllers.EventHandler[*corev1.Namespace]{
-		UpdateFunc: func(oldNs, newNs *corev1.Namespace) {
-			if !labels.Instance(oldNs.Labels).Equals(newNs.Labels) {
-				gatewayController.namespaceEvent(oldNs, newNs)
-			}
-		},
-	})
-
-	if credsController != nil {
-		credsController.AddSecretHandler(gatewayController.secretEvent)
-	}
-
-	return gatewayController
-}
 
 func (c *Controller) Schemas() collection.Schemas {
 	return collection.SchemasFor(
@@ -285,16 +248,6 @@ func (c *Controller) Delete(typ config.GroupVersionKind, name, namespace string,
 	return errUnsupportedOp
 }
 
-func (c *Controller) RegisterEventHandler(typ config.GroupVersionKind, handler model.EventHandler) {
-	switch typ {
-	case gvk.Namespace:
-		c.namespaceHandler = handler
-	case gvk.Secret:
-		c.secretHandler = handler
-	}
-	// For all other types, do nothing as c.cache has been registered
-}
-
 func (c *Controller) Run(stop <-chan struct{}) {
 	if features.EnableGatewayAPIGatewayClassController {
 		go func() {
@@ -318,61 +271,12 @@ func (c *Controller) SecretAllowed(resourceName string, namespace string) bool {
 	return c.state.AllowedReferences.SecretAllowed(resourceName, namespace)
 }
 
-// namespaceEvent handles a namespace add/update. Gateway's can select routes by label, so we need to handle
-// when the labels change.
-// Note: we don't handle delete as a delete would also clean up any relevant gateway-api types which will
-// trigger its own event.
-func (c *Controller) namespaceEvent(oldNs, newNs *corev1.Namespace) {
-	// First, find all the label keys on the old/new namespace. We include NamespaceNameLabel
-	// since we have special logic to always allow this on namespace.
-	touchedNamespaceLabels := sets.New(NamespaceNameLabel)
-	touchedNamespaceLabels.InsertAll(getLabelKeys(oldNs)...)
-	touchedNamespaceLabels.InsertAll(getLabelKeys(newNs)...)
-
-	// Next, we find all keys our Gateways actually reference.
-	c.stateMu.RLock()
-	intersection := touchedNamespaceLabels.IntersectInPlace(c.state.ReferencedNamespaceKeys)
-	c.stateMu.RUnlock()
-
-	// If there was any overlap, then a relevant namespace label may have changed, and we trigger a
-	// push. A more exact check could actually determine if the label selection result actually changed.
-	// However, this is a much simpler approach that is likely to scale well enough for now.
-	if !intersection.IsEmpty() && c.namespaceHandler != nil {
-		log.Debugf("namespace labels changed, triggering namespace handler: %v", intersection.UnsortedList())
-		c.namespaceHandler(config.Config{}, config.Config{}, model.EventUpdate)
-	}
-}
-
 // getLabelKeys extracts all label keys from a namespace object.
 func getLabelKeys(ns *corev1.Namespace) []string {
 	if ns == nil {
 		return nil
 	}
 	return maps.Keys(ns.Labels)
-}
-
-func (c *Controller) secretEvent(name, namespace string) {
-	var impactedConfigs []model.ConfigKey
-	c.stateMu.RLock()
-	impactedConfigs = c.state.ResourceReferences[model.ConfigKey{
-		Kind:      kind.Secret,
-		Namespace: namespace,
-		Name:      name,
-	}]
-	c.stateMu.RUnlock()
-	if len(impactedConfigs) > 0 {
-		log.Debugf("secret %s/%s changed, triggering secret handler", namespace, name)
-		for _, cfg := range impactedConfigs {
-			gw := config.Config{
-				Meta: config.Meta{
-					GroupVersionKind: gvk.KubernetesGateway,
-					Namespace:        cfg.Namespace,
-					Name:             cfg.Name,
-				},
-			}
-			c.secretHandler(gw, gw, model.EventUpdate)
-		}
-	}
 }
 
 // deepCopyStatus creates a copy of all configs, with a copy of the status field that we can mutate.
@@ -409,4 +313,101 @@ func (kr GatewayResources) hasResources() bool {
 		len(kr.TCPRoute) > 0 ||
 		len(kr.TLSRoute) > 0 ||
 		len(kr.ReferenceGrant) > 0
+}
+
+func NewController(
+	kc kube.Client,
+	c model.ConfigStoreController,
+	waitForCRD func(class schema.GroupVersionResource, stop <-chan struct{}) bool,
+	credsController credentials.MulticlusterController,
+	options controller.Options,
+) *Controller {
+	var ctl *status.Controller
+
+	namespaces := kclient.NewFiltered[*corev1.Namespace](kc, kubetypes.Filter{ObjectFilter: kc.ObjectFilter()})
+	gatewayController := &Controller{
+		client:                kc,
+		cache:                 c,
+		namespaces:            namespaces,
+		credentialsController: credsController,
+		cluster:               options.ClusterID,
+		domain:                options.DomainSuffix,
+		statusController:      atomic.NewPointer(ctl),
+		tagWatcher:            revisions_over.NewTagWatcher(kc, options.Revision),
+		waitForCRD:            waitForCRD,
+	}
+
+	namespaces.AddEventHandler(controllers.EventHandler[*corev1.Namespace]{
+		UpdateFunc: func(oldNs, newNs *corev1.Namespace) {
+			if !labels.Instance(oldNs.Labels).Equals(newNs.Labels) {
+				gatewayController.namespaceEvent(oldNs, newNs)
+			}
+		},
+	})
+
+	if credsController != nil {
+		credsController.AddSecretHandler(gatewayController.secretEvent)
+	}
+
+	return gatewayController
+}
+
+// namespaceEvent handles a namespace add/update. Gateway's can select routes by label, so we need to handle
+// when the labels change.
+// Note: we don't handle delete as a delete would also clean up any relevant gateway-api types which will
+// trigger its own event.
+func (c *Controller) namespaceEvent(oldNs, newNs *corev1.Namespace) {
+	// First, find all the label keys on the old/new namespace. We include NamespaceNameLabel
+	// since we have special logic to always allow this on namespace.
+
+	touchedNamespaceLabels := sets.New(NamespaceNameLabel)
+	touchedNamespaceLabels.InsertAll(getLabelKeys(oldNs)...)
+	touchedNamespaceLabels.InsertAll(getLabelKeys(newNs)...)
+
+	// Next, we find all keys our Gateways actually reference.
+	c.stateMu.RLock()
+	intersection := touchedNamespaceLabels.IntersectInPlace(c.state.ReferencedNamespaceKeys)
+	c.stateMu.RUnlock()
+
+	// If there was any overlap, then a relevant namespace label may have changed, and we trigger a
+	// push. A more exact check could actually determine if the label selection result actually changed.
+	// However, this is a much simpler approach that is likely to scale well enough for now.
+	if !intersection.IsEmpty() && c.namespaceHandler != nil {
+		log.Debugf("namespace labels changed, triggering namespace handler: %v", intersection.UnsortedList())
+		c.namespaceHandler(config.Config{}, config.Config{}, model.EventUpdate)
+	}
+}
+
+func (c *Controller) RegisterEventHandler(typ config.GroupVersionKind, handler model.EventHandler) {
+	switch typ {
+	case gvk.Namespace:
+		c.namespaceHandler = handler
+	case gvk.Secret:
+		c.secretHandler = handler
+	}
+	// For all other types, do nothing as c.cache has been registered
+}
+
+func (c *Controller) secretEvent(name, namespace string) {
+	var impactedConfigs []model.ConfigKey
+	c.stateMu.RLock()
+	impactedConfigs = c.state.ResourceReferences[model.ConfigKey{
+		Kind:      kind.Secret,
+		Namespace: namespace,
+		Name:      name,
+	}]
+	c.stateMu.RUnlock()
+	if len(impactedConfigs) > 0 {
+		log.Debugf("secret %s/%s changed, triggering secret handler", namespace, name)
+		for _, cfg := range impactedConfigs {
+			gw := config.Config{
+				Meta: config.Meta{
+					GroupVersionKind: gvk.KubernetesGateway,
+					Namespace:        cfg.Namespace,
+					Name:             cfg.Name,
+				},
+			}
+			c.secretHandler(gw, gw, model.EventUpdate)
+		}
+	}
 }

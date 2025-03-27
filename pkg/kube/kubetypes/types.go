@@ -54,8 +54,7 @@ const (
 type DynamicObjectFilter interface {
 	// Filter returns true if the input object or namespace string resides in a namespace selected for discovery
 	Filter(obj any) bool
-	// AddHandler registers a handler on namespace, which will be triggered when namespace selected or deselected.
-	AddHandler(func(selected, deselected sets.String))
+	FilterAddHandler(func(selected, deselected sets.String))
 }
 
 type staticFilter struct {
@@ -66,13 +65,13 @@ func (s staticFilter) Filter(obj any) bool {
 	return s.f(obj)
 }
 
-func (s staticFilter) AddHandler(func(selected, deselected sets.String)) {
+func (s staticFilter) FilterAddHandler(func(selected, deselected sets.String)) {
 	// Do nothing
 }
 
 var _ DynamicObjectFilter = staticFilter{}
 
-// NewStaticObjectFilter returns a DynamicObjectFilter that does not ever change (so does not need an AddHandler)
+// NewStaticObjectFilter returns a DynamicObjectFilter that does not ever change (so does not need an FilterAddHandler)
 func NewStaticObjectFilter(f func(obj any) bool) DynamicObjectFilter {
 	return staticFilter{f}
 }

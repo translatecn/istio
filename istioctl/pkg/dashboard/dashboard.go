@@ -504,6 +504,7 @@ func portForward(podName, namespace, flavor, urlFormat, localAddress string, rem
 	// port preference:
 	// - If --listenPort is specified, use it
 	// - without --listenPort, prefer the remotePort but fall back to a random port
+
 	var portPrefs []int
 	if listenPort != 0 {
 		portPrefs = []int{listenPort}

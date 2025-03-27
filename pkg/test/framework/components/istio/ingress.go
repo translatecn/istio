@@ -150,10 +150,11 @@ func (c *ingressImpl) AddressesForPort(port int) ([]string, []int) {
 }
 
 func (c *ingressImpl) Cluster() cluster.Cluster {
+	// HTTPAddresses returns the externally reachable HTTP hosts and port (80) of the component.
+
 	return c.cluster
 }
 
-// HTTPAddresses returns the externally reachable HTTP hosts and port (80) of the component.
 func (c *ingressImpl) HTTPAddresses() ([]string, []int) {
 	return c.AddressesForPort(80)
 }

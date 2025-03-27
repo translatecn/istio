@@ -27,8 +27,8 @@ import (
 	gatewayv1 "sigs.k8s.io/gateway-api/apis/v1"
 	"sigs.k8s.io/gateway-api/apis/v1beta1"
 
-	"istio.io/api/annotation"
-	"istio.io/api/label"
+	"istio.io/istio/istio.io/api/annotation"
+	"istio.io/istio/istio.io/api/label"
 	"istio.io/istio/pilot/pkg/model"
 	"istio.io/istio/pkg/config/constants"
 	"istio.io/istio/pkg/kube/krt"
@@ -95,6 +95,7 @@ func fetchWaypointForTarget(
 	o metav1.ObjectMeta,
 ) (*Waypoint, *model.StatusMessage) {
 	// namespace to be used when the annotation doesn't include a namespace
+
 	fallbackNamespace := o.Namespace
 	// try fetching the waypoint defined on the object itself
 	wp, isNone := getUseWaypoint(o, fallbackNamespace)
@@ -144,6 +145,7 @@ func fetchWaypointForService(ctx krt.HandlerContext, Waypoints krt.Collection[Wa
 	Namespaces krt.Collection[*v1.Namespace], o metav1.ObjectMeta,
 ) (*Waypoint, *model.StatusMessage) {
 	// This is a waypoint, so it cannot have a waypoint
+
 	if o.Labels[label.GatewayManaged.Name] == constants.ManagedGatewayMeshControllerLabel {
 		return nil, nil
 	}
@@ -289,6 +291,7 @@ func makeInboundBinding(gateway *v1beta1.Gateway, gatewayClass *v1beta1.GatewayC
 
 func getGatewayOrGatewayClassAnnotation(gateway *v1beta1.Gateway, class *v1beta1.GatewayClass) (string, bool) {
 	// Gateway > GatewayClass
+
 	an, ok := gateway.Annotations[annotation.AmbientWaypointInboundBinding.Name]
 	if ok {
 		return an, true

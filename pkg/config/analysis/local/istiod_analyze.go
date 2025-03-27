@@ -28,8 +28,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
 
-	"istio.io/api/annotation"
-	"istio.io/api/mesh/v1alpha1"
+	"istio.io/istio/istio.io/api/annotation"
+	"istio.io/istio/istio.io/api/mesh/v1alpha1"
 	"istio.io/istio/pilot/pkg/config/aggregate"
 	"istio.io/istio/pilot/pkg/config/file"
 	"istio.io/istio/pilot/pkg/config/kube/crdclient"
@@ -166,9 +166,7 @@ func (sa *IstiodAnalyzer) internalAnalyze(a analysis.CombinedAnalyzer, cancel <-
 	if sa.namespace != "" {
 		namespaces.Insert(sa.namespace)
 	}
-	for _, analyzerName := range result.ExecutedAnalyzers {
-
-		// TODO: analysis is run for all namespaces, even if they are requested to be filtered.
+	for _, analyzerName := range result.ExecutedAnalyzers { // TODO: analysis is run for all namespaces, even if they are requested to be filtered.
 		msgs := filterMessages(ctx.(*istiodContext).GetMessages(analyzerName), namespaces, sa.suppressions)
 		result.MappedMessages[analyzerName] = msgs.SortedDedupedCopy()
 	}
@@ -251,16 +249,16 @@ func (d dfCache) RegisterEventHandler(kind config.GroupVersionKind, handler mode
 }
 
 // Run intentionally left empty
-func (d dfCache) Run(_ <-chan struct{}) {
-}
+func (d dfCache) Run(_ <-chan struct{}) {}
 
 func (d dfCache) HasSynced() bool {
+	// SetSuppressions will set the list of suppressions for the analyzer. Any
+	// resource that matches the provided suppression will not be included in the
+	// final message output.
+
 	return true
 }
 
-// SetSuppressions will set the list of suppressions for the analyzer. Any
-// resource that matches the provided suppression will not be included in the
-// final message output.
 func (sa *IstiodAnalyzer) SetSuppressions(suppressions []AnalysisSuppression) {
 	sa.suppressions = suppressions
 }
@@ -287,11 +285,10 @@ func (sa *IstiodAnalyzer) addReaderKubeSourceInternal(readers []ReaderSource, in
 		} else {
 			readerResources = sa.kubeResources.Remove(kuberesource.DefaultExcludedSchemas().All()...)
 		}
-		src = file.NewKubeSource(readerResources)
+		src = file.NewKubeSourceInMemory(readerResources)
 		sa.fileSource = src
 	}
 	src.SetDefaultNamespace(sa.namespace)
-
 	src.SetNamespacesFilter(func(obj interface{}) bool {
 		cfg, ok := obj.(config.Config)
 		if !ok {

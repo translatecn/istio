@@ -31,13 +31,13 @@ import (
 	"github.com/hashicorp/go-multierror"
 	"github.com/lestrrat-go/jwx/jwk"
 
-	"istio.io/api/annotation"
-	extensions "istio.io/api/extensions/v1alpha1"
-	networking "istio.io/api/networking/v1alpha3"
-	networkingv1beta1 "istio.io/api/networking/v1beta1"
-	security_beta "istio.io/api/security/v1beta1"
-	telemetry "istio.io/api/telemetry/v1alpha1"
-	type_beta "istio.io/api/type/v1beta1"
+	"istio.io/istio/istio.io/api/annotation"
+	extensions "istio.io/istio/istio.io/api/extensions/v1alpha1"
+	networking "istio.io/istio/istio.io/api/networking/v1alpha3"
+	networkingv1beta1 "istio.io/istio/istio.io/api/networking/v1beta1"
+	security_beta "istio.io/istio/istio.io/api/security/v1beta1"
+	telemetry "istio.io/istio/istio.io/api/telemetry/v1alpha1"
+	type_beta "istio.io/istio/istio.io/api/type/v1beta1"
 	"istio.io/istio/pilot/pkg/features"
 	"istio.io/istio/pilot/pkg/networking/serviceentry"
 	"istio.io/istio/pkg/config"
@@ -187,6 +187,7 @@ func GetValidateFunc(name string) ValidateFunc {
 
 func RegisterValidateFunc(name string, f ValidateFunc) ValidateFunc {
 	// Wrap the original validate function with an extra validate function for object metadata
+
 	validate := validateMetadata(f)
 	validateFuncs[name] = validate
 	return validate
@@ -483,8 +484,9 @@ func validateServerBind(port *networking.Port, bind string) (errs error) {
 }
 
 func validateTLSOptions(tls *networking.ServerTLSSettings) (v Validation) {
+	// no tls config at all is valid
+
 	if tls == nil {
-		// no tls config at all is valid
 		return
 	}
 	if tls.MinProtocolVersion == networking.ServerTLSSettings_TLSV1_0 || tls.MinProtocolVersion == networking.ServerTLSSettings_TLSV1_1 {
@@ -910,6 +912,7 @@ func validateSidecarEgressPortBindAndCaptureMode(port *networking.SidecarPort, b
 	captureMode networking.CaptureMode,
 ) (errs error) {
 	// Port name is optional. Validate if exists.
+
 	if len(port.Name) > 0 {
 		errs = appendErrors(errs, ValidatePortName(port.Name))
 	}
@@ -944,6 +947,7 @@ func validateSidecarEgressPortBindAndCaptureMode(port *networking.SidecarPort, b
 
 func validateSidecarIngressPortAndBind(port *networking.SidecarPort, bind string) (errs error) {
 	// Port name is optional. Validate if exists.
+
 	if len(port.Name) > 0 {
 		errs = appendErrors(errs, ValidatePortName(port.Name))
 	}
@@ -1756,6 +1760,7 @@ func genMatchHTTPRoutes(route *networking.HTTPRoute, match *networking.HTTPMatch
 	rulen, matchn int,
 ) (matchHTTPRoutes *OverlappingMatchValidationForHTTPRoute) {
 	// skip current match if no match field for current route
+
 	if match == nil {
 		return nil
 	}
@@ -1826,6 +1831,7 @@ func genMatchHTTPRoutes(route *networking.HTTPRoute, match *networking.HTTPMatch
 // coveredValidation validate the overlapping match between two instance of OverlappingMatchValidationForHTTPRoute
 func coveredValidation(vA, vB *OverlappingMatchValidationForHTTPRoute) bool {
 	// check the URI overlapping match, such as vB.Prefix is '/debugs' and vA.Prefix is '/debug'
+
 	if strings.HasPrefix(vB.Prefix, vA.Prefix) {
 		// check the port field
 		if vB.MatchPort != vA.MatchPort {
@@ -2033,6 +2039,7 @@ func analyzeUnreachableTLSRules(routes []*networking.TLSRoute,
 // asJSON() creates a JSON serialization of a match, to use for match comparison.  We don't use the JSON itself.
 func asJSON(data any) string {
 	// Remove the name, so we can create a serialization that only includes traffic routing config
+
 	switch mr := data.(type) {
 	case *networking.HTTPMatchRequest:
 		if mr != nil && mr.Name != "" {
@@ -2203,6 +2210,7 @@ func validateStringRegexp(re string, where string) error {
 	// regexs to avoid NACKs. See
 	// https://github.com/jpeach/snippets/blob/889fda84cc8713af09205438b33553eb69dd5355/re2sz.cc to
 	// evaluate program size.
+
 	if len(re) > 1024 {
 		return fmt.Errorf("%q: regex is too large, max length allowed is 1024", where)
 	}
@@ -2951,6 +2959,7 @@ func ValidatePortName(name string) error {
 // ValidateProtocol validates a portocol name is known
 func ValidateProtocol(protocolStr string) error {
 	// Empty string is used for protocol sniffing.
+
 	if protocolStr != "" && protocol.Parse(protocolStr) == protocol.Unsupported {
 		return fmt.Errorf("unsupported protocol: %s", protocolStr)
 	}
@@ -2970,10 +2979,11 @@ func AppendWarningf(v Validation, format string, a ...any) Validation {
 }
 
 func (aae *AnalysisAwareError) Error() string {
+	// ValidateProxyConfig validates a ProxyConfig CR (as opposed to the MeshConfig field).
+
 	return aae.Msg
 }
 
-// ValidateProxyConfig validates a ProxyConfig CR (as opposed to the MeshConfig field).
 var ValidateProxyConfig = RegisterValidateFunc("ValidateProxyConfig",
 	func(cfg config.Config) (Warning, error) {
 		spec, ok := cfg.Spec.(*networkingv1beta1.ProxyConfig)

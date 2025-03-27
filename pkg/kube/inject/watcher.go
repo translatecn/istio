@@ -129,30 +129,6 @@ func (w *fileWatcher) SetHandler(handler func(*Config, string) error) {
 	w.handler = handler
 }
 
-// NewConfigMapWatcher creates a new Watcher for changes to the given ConfigMap.
-func NewConfigMapWatcher(client kube.Client, namespace, name, configKey, valuesKey string) Watcher {
-	w := &configMapWatcher{
-		client:    client,
-		namespace: namespace,
-		name:      name,
-		configKey: configKey,
-		valuesKey: valuesKey,
-	}
-	w.c = configmapwatcher.NewController(client, namespace, name, func(cm *v1.ConfigMap) {
-		sidecarConfig, valuesConfig, err := readConfigMap(cm, configKey, valuesKey)
-		if err != nil {
-			log.Warnf("failed to read injection config from ConfigMap: %v", err)
-			return
-		}
-		if w.handler != nil {
-			if err := w.handler(sidecarConfig, valuesConfig); err != nil {
-				log.Errorf("update error: %v", err)
-			}
-		}
-	})
-	return w
-}
-
 func (w *configMapWatcher) Run(stop <-chan struct{}) {
 	w.c.Run(stop)
 }
@@ -168,6 +144,44 @@ func (w *configMapWatcher) Get() (*Config, string, error) {
 
 func (w *configMapWatcher) SetHandler(handler func(*Config, string) error) {
 	w.handler = handler
+}
+
+// WatcherMulticast allows multiple event handlers to register for the same watcher,
+// simplifying injector based controllers.
+type WatcherMulticast struct {
+	handlers []func(*Config, string) error
+	impl     Watcher
+	Get      func() WebhookConfig
+}
+
+// SetHandler sets the handler that is run when the config changes.
+// Must call this before Run.
+func (wm *WatcherMulticast) AddHandler(handler func(*Config, string) error) {
+	wm.handlers = append(wm.handlers, handler)
+}
+
+// NewConfigMapWatcher creates a new Watcher for changes to the given ConfigMap.
+func NewConfigMapWatcher(client kube.Client, namespace, name, configKey, valuesKey string) Watcher {
+	w := &configMapWatcher{
+		client:    client,
+		namespace: namespace,
+		name:      name,
+		configKey: configKey,
+		valuesKey: valuesKey,
+	}
+	w.c = configmapwatcher.NewConfigmapController(client, namespace, name, func(cm *v1.ConfigMap) {
+		sidecarConfig, valuesConfig, err := readConfigMap(cm, configKey, valuesKey)
+		if err != nil {
+			log.Warnf("failed to read injection config from ConfigMap: %v", err)
+			return
+		}
+		if w.handler != nil {
+			if err := w.handler(sidecarConfig, valuesConfig); err != nil {
+				log.Errorf("update error: %v", err)
+			}
+		}
+	})
+	return w
 }
 
 func readConfigMap(cm *v1.ConfigMap, configKey, valuesKey string) (*Config, string, error) {
@@ -191,14 +205,6 @@ func readConfigMap(cm *v1.ConfigMap, configKey, valuesKey string) (*Config, stri
 	return c, valuesConfig, nil
 }
 
-// WatcherMulticast allows multiple event handlers to register for the same watcher,
-// simplifying injector based controllers.
-type WatcherMulticast struct {
-	handlers []func(*Config, string) error
-	impl     Watcher
-	Get      func() WebhookConfig
-}
-
 func NewMulticast(impl Watcher, getter func() WebhookConfig) *WatcherMulticast {
 	res := &WatcherMulticast{
 		impl: impl,
@@ -212,10 +218,4 @@ func NewMulticast(impl Watcher, getter func() WebhookConfig) *WatcherMulticast {
 		return err.ErrorOrNil()
 	})
 	return res
-}
-
-// SetHandler sets the handler that is run when the config changes.
-// Must call this before Run.
-func (wm *WatcherMulticast) AddHandler(handler func(*Config, string) error) {
-	wm.handlers = append(wm.handlers, handler)
 }

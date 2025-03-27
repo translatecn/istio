@@ -223,6 +223,7 @@ func (r *Runner) printRunningTasks() {
 
 func (r *Runner) addRunningTask(task string) {
 	// Limit the concurrency of running tasks.
+
 	r.taskSem <- struct{}{}
 
 	r.runningTasksMu.Lock()
@@ -232,8 +233,9 @@ func (r *Runner) addRunningTask(task string) {
 }
 
 func (r *Runner) removeRunningTask(task string) {
+	// Free up a slot for another running task.
+
 	defer func() {
-		// Free up a slot for another running task.
 		<-r.taskSem
 	}()
 

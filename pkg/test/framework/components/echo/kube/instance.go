@@ -220,6 +220,7 @@ func (c *instance) Cluster() cluster.Cluster {
 
 func (c *instance) Call(opts echo.CallOptions) (echo.CallResult, error) {
 	// Setup default check. This is done here rather than in echo core package to avoid import loops
+
 	if opts.Check == nil {
 		opts.Check = check.OK()
 	}
@@ -286,6 +287,7 @@ func (c *instance) UpdateWorkloadLabel(add map[string]string, remove []string) e
 
 func (c *instance) Restart() error {
 	// Wait for all current workloads to become ready and preserve the original count.
+
 	origWorkloads, err := c.workloadMgr.WaitForReadyWorkloads()
 	if err != nil {
 		return fmt.Errorf("restart failed to get initial workloads: %v", err)
@@ -318,6 +320,7 @@ func (c *instance) Restart() error {
 // aggregateResponses forwards an echo request from all workloads belonging to this echo instance and aggregates the results.
 func (c *instance) aggregateResponses(opts echo.CallOptions) (echo.CallResult, error) {
 	// TODO put this somewhere else, or require users explicitly set the protocol - quite hacky
+
 	if c.Config().IsProxylessGRPC() && (opts.Scheme == scheme.GRPC || opts.Port.Name == "grpc" || opts.Port.Protocol == protocol.GRPC) {
 		// for gRPC calls, use XDS resolver
 		opts.Scheme = scheme.XDS

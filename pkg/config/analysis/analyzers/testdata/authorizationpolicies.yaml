@@ -4,7 +4,7 @@ metadata:
   name: httpbin
   labels:
     istio-injection: "enabled"
-spec: {}
+spec: { }
 ---
 apiVersion: v1
 kind: Service
@@ -15,9 +15,9 @@ metadata:
     app: httpbin
 spec:
   ports:
-  - name: http
-    port: 8000
-    targetPort: 80
+    - name: http
+      port: 8000
+      targetPort: 80
   selector:
     app: httpbin
 ---
@@ -39,11 +39,11 @@ spec:
         version: v1
     spec:
       containers:
-      - image: docker.io/mccutchen/go-httpbin:v2.15.0
-        imagePullPolicy: IfNotPresent
-        name: httpbin
-        ports:
-        - containerPort: 80
+        - image: registry.cn-hangzhou.aliyuncs.com/acejilam/go-httpbin:v2.15.0
+          imagePullPolicy: IfNotPresent
+          name: httpbin
+          ports:
+            - containerPort: 80
 ---
 apiVersion: networking.istio.io/v1
 kind: ServiceEntry
@@ -52,13 +52,13 @@ metadata:
   namespace: httpbin
 spec:
   hosts:
-  - subsystem.istio.io
-  - "*.kiali.io"
+    - subsystem.istio.io
+    - "*.kiali.io"
   location: MESH_EXTERNAL
   ports:
-  - number: 80
-    name: http
-    protocol: HTTP
+    - number: 80
+      name: http
+      protocol: HTTP
   resolution: DNS
 ---
 apiVersion: security.istio.io/v1
@@ -74,19 +74,19 @@ spec:
   rules:
     - from:
         - source:
-            principals: ["cluster.local/ns/default/sa/sleep"]
+            principals: [ "cluster.local/ns/default/sa/sleep" ]
         - source:
-            namespaces: ["httpbin"] # Namespace exists
+            namespaces: [ "httpbin" ] # Namespace exists
       to:
         - operation:
-            methods: ["GET"]
-            paths: ["/info*"]
+            methods: [ "GET" ]
+            paths: [ "/info*" ]
         - operation:
-            methods: ["POST"]
-            paths: ["/data"]
+            methods: [ "POST" ]
+            paths: [ "/data" ]
       when:
         - key: request.auth.claims[iss]
-          values: ["https://accounts.google.com"]
+          values: [ "https://accounts.google.com" ]
 ---
 apiVersion: security.istio.io/v1
 kind: AuthorizationPolicy
@@ -94,7 +94,7 @@ metadata:
   name: meshwide-httpbin
   namespace: istio-system # valid: it applies to whole mesh
 spec:
-  {}
+  { }
 ---
 apiVersion: security.istio.io/v1
 kind: AuthorizationPolicy
@@ -115,19 +115,19 @@ spec:
   rules:
     - from:
         - source:
-            principals: ["cluster.local/ns/default/sa/sleep"]
+            principals: [ "cluster.local/ns/default/sa/sleep" ]
         - source:
-            namespaces: ["httpbin"]
+            namespaces: [ "httpbin" ]
       to:
         - operation:
-            methods: ["GET"]
-            paths: ["/info*"]
+            methods: [ "GET" ]
+            paths: [ "/info*" ]
         - operation:
-            methods: ["POST"]
-            paths: ["/data"]
+            methods: [ "POST" ]
+            paths: [ "/data" ]
       when:
         - key: request.auth.claims[iss]
-          values: ["https://accounts.google.com"]
+          values: [ "https://accounts.google.com" ]
 ---
 apiVersion: security.istio.io/v1
 kind: AuthorizationPolicy
@@ -138,19 +138,19 @@ spec:
   rules:
     - from:
         - source:
-            principals: ["cluster.local/ns/default/sa/sleep"]
+            principals: [ "cluster.local/ns/default/sa/sleep" ]
         - source:
-            namespaces: ["httpbin"]
+            namespaces: [ "httpbin" ]
       to:
         - operation:
-            methods: ["GET"]
-            paths: ["/info*"]
+            methods: [ "GET" ]
+            paths: [ "/info*" ]
         - operation:
-            methods: ["POST"]
-            paths: ["/data"]
+            methods: [ "POST" ]
+            paths: [ "/data" ]
       when:
         - key: request.auth.claims[iss]
-          values: ["https://accounts.google.com"]
+          values: [ "https://accounts.google.com" ]
 ---
 apiVersion: security.istio.io/v1
 kind: AuthorizationPolicy
@@ -165,19 +165,19 @@ spec:
   rules:
     - from:
         - source:
-            principals: ["cluster.local/ns/default/sa/sleep"]
+            principals: [ "cluster.local/ns/default/sa/sleep" ]
         - source:
-            namespaces: ["httpbin"]
+            namespaces: [ "httpbin" ]
       to:
         - operation:
-            methods: ["GET"]
-            paths: ["/info*"]
+            methods: [ "GET" ]
+            paths: [ "/info*" ]
         - operation:
-            methods: ["POST"]
-            paths: ["/data"]
+            methods: [ "POST" ]
+            paths: [ "/data" ]
       when:
         - key: request.auth.claims[iss]
-          values: ["https://accounts.google.com"]
+          values: [ "https://accounts.google.com" ]
 ---
 apiVersion: v1
 kind: Namespace
@@ -185,7 +185,7 @@ metadata:
   name: prod-httpbin
   labels:
     istio-injection: "enabled"
-spec: {}
+spec: { }
 ---
 apiVersion: v1
 kind: Namespace
@@ -193,7 +193,7 @@ metadata:
   name: httpbin-test
   labels:
     istio-injection: "enabled"
-spec: {}
+spec: { }
 ---
 apiVersion: security.istio.io/v1
 kind: AuthorizationPolicy
@@ -208,7 +208,7 @@ spec:
   rules:
     - from:
         - source:
-            principals: ["cluster.local/ns/default/sa/sleep"]
+            principals: [ "cluster.local/ns/default/sa/sleep" ]
         - source:
             notNamespaces:
               - "prod-*"
@@ -219,14 +219,14 @@ spec:
               - "httpbin"
       to:
         - operation:
-            methods: ["GET"]
-            paths: ["/info*"]
+            methods: [ "GET" ]
+            paths: [ "/info*" ]
         - operation:
-            methods: ["POST"]
-            paths: ["/data"]
+            methods: [ "POST" ]
+            paths: [ "/data" ]
       when:
         - key: request.auth.claims[iss]
-          values: ["https://accounts.google.com"]
+          values: [ "https://accounts.google.com" ]
 ---
 apiVersion: security.istio.io/v1
 kind: AuthorizationPolicy
@@ -241,7 +241,7 @@ spec:
   rules:
     - from:
         - source:
-            principals: ["cluster.local/ns/default/sa/sleep"]
+            principals: [ "cluster.local/ns/default/sa/sleep" ]
         - source:
             namespaces:
               - "prod-*"
@@ -252,14 +252,14 @@ spec:
               - "httpbin"
       to:
         - operation:
-            methods: ["GET"]
-            paths: ["/info*"]
+            methods: [ "GET" ]
+            paths: [ "/info*" ]
         - operation:
-            methods: ["POST"]
-            paths: ["/data"]
+            methods: [ "POST" ]
+            paths: [ "/data" ]
       when:
         - key: request.auth.claims[iss]
-          values: ["https://accounts.google.com"]
+          values: [ "https://accounts.google.com" ]
 ---
 apiVersion: v1
 kind: Pod
@@ -285,21 +285,21 @@ spec:
       app: httpbin
       version: v1
   rules:
-  - from:
-      - source:
-          principals: [ "cluster.local/ns/default/sa/sleep" ]
-      - source:
-          namespaces: [ "httpbin" ] # Namespace exists
-    to:
-      - operation:
-          methods: [ "GET" ]
-          paths: [ "/info*" ]
-      - operation:
-          methods: [ "POST" ]
-          paths: [ "/data" ]
-    when:
-      - key: request.auth.claims[iss]
-        values: [ "https://accounts.google.com" ]
+    - from:
+        - source:
+            principals: [ "cluster.local/ns/default/sa/sleep" ]
+        - source:
+            namespaces: [ "httpbin" ] # Namespace exists
+      to:
+        - operation:
+            methods: [ "GET" ]
+            paths: [ "/info*" ]
+        - operation:
+            methods: [ "POST" ]
+            paths: [ "/data" ]
+      when:
+        - key: request.auth.claims[iss]
+          values: [ "https://accounts.google.com" ]
 ---
 apiVersion: security.istio.io/v1
 kind: AuthorizationPolicy
@@ -312,21 +312,21 @@ spec:
       app: sleep
       version: v1
   rules:
-  - from:
-      - source:
-          principals: [ "cluster.local/ns/default/sa/sleep" ]
-      - source:
-          namespaces: [ "httpbin" ] # Namespace exists
-    to:
-      - operation:
-          methods: [ "GET" ]
-          paths: [ "/info*" ]
-      - operation:
-          methods: [ "POST" ]
-          paths: [ "/data" ]
-    when:
-      - key: request.auth.claims[iss]
-        values: [ "https://accounts.google.com" ]
+    - from:
+        - source:
+            principals: [ "cluster.local/ns/default/sa/sleep" ]
+        - source:
+            namespaces: [ "httpbin" ] # Namespace exists
+      to:
+        - operation:
+            methods: [ "GET" ]
+            paths: [ "/info*" ]
+        - operation:
+            methods: [ "POST" ]
+            paths: [ "/data" ]
+      when:
+        - key: request.auth.claims[iss]
+          values: [ "https://accounts.google.com" ]
 ---
 apiVersion: v1
 kind: Pod

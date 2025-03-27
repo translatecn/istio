@@ -67,6 +67,7 @@ func (t *clusterCache) Type() string {
 func (t *clusterCache) Key() any {
 	// nolint: gosec
 	// Not security sensitive code
+
 	h := hash.New()
 	h.WriteString(t.clusterName)
 	h.Write(Separator)
@@ -155,10 +156,11 @@ func (t *clusterCache) DependentConfigs() []model.ConfigHash {
 }
 
 func (t *clusterCache) Cacheable() bool {
+	// cacheStats keeps track of cache usage stats.
+
 	return true
 }
 
-// cacheStats keeps track of cache usage stats.
 type cacheStats struct {
 	hits, miss int
 }

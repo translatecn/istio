@@ -85,6 +85,7 @@ func matchesKubeCaptureConfig(config *config.BugReportConfig, cluster *cluster2.
 // matchesSelectionSpec reports whether the given container path is selected by any SelectionSpec.
 func matchesSelectionSpec(sp *config.SelectionSpec, cluster *cluster2.Resources, namespace, deployment, pod, container string) bool {
 	// For inclusion, match all if nothing is set.
+
 	if !match.MatchesGlobs(namespace, sp.Namespaces) {
 		return false
 	}

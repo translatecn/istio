@@ -1,0 +1,9 @@
+#peer-strict-ns.yaml
+apiVersion: security.istio.io/v1beta1
+kind: PeerAuthentication
+metadata:
+  name: default
+  namespace: foo # 命名空间级别
+spec:
+  mtls:
+    mode: STRICT

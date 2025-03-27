@@ -137,6 +137,7 @@ func PathKV(pe string) (k, v string, err error) {
 // It returns an error if pe is not a value path element.
 func PathV(pe string) (string, error) {
 	// For :val, return the value only
+
 	if IsVPathElement(pe) {
 		v, _ := RemoveBrackets(pe)
 		return v[1:], nil

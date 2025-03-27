@@ -17,7 +17,6 @@ package tmpl
 import (
 	"fmt"
 
-	"istio.io/istio/pkg/test"
 	"istio.io/istio/pkg/test/util/file"
 )
 
@@ -40,35 +39,10 @@ func EvaluateFile(filePath string, data any) (string, error) {
 }
 
 // EvaluateOrFail calls Evaluate and fails tests if it returns error.
-func EvaluateOrFail(t test.Failer, tpl string, data any) string {
-	t.Helper()
-	s, err := Evaluate(tpl, data)
-	if err != nil {
-		t.Fatalf("tmpl.EvaluateOrFail: %v", err)
-	}
-	return s
-}
-
-func EvaluateFileOrFail(t test.Failer, filePath string, data any) string {
-	t.Helper()
-	s, err := EvaluateFile(filePath, data)
-	if err != nil {
-		t.Fatalf("tmpl.EvaluateFileOrFail: %v", err)
-	}
-	return s
-}
 
 // MustEvaluate calls Evaluate and panics if there is an error.
 func MustEvaluate(tpl string, data any) string {
 	s, err := Evaluate(tpl, data)
-	if err != nil {
-		panic(fmt.Sprintf("tmpl.MustEvaluate: %v", err))
-	}
-	return s
-}
-
-func MustEvaluateFile(filePath string, data any) string {
-	s, err := EvaluateFile(filePath, data)
 	if err != nil {
 		panic(fmt.Sprintf("tmpl.MustEvaluate: %v", err))
 	}
@@ -105,20 +79,3 @@ func MustEvaluateAll(data any, templates ...string) []string {
 }
 
 // EvaluateAllOrFail calls Evaluate and fails t if an error occurs.
-func EvaluateAllOrFail(t test.Failer, data any, templates ...string) []string {
-	t.Helper()
-	out, err := EvaluateAll(data, templates...)
-	if err != nil {
-		t.Fatal(err)
-	}
-	return out
-}
-
-func EvaluateAllFilesOrFail(t test.Failer, data any, filePaths ...string) []string {
-	t.Helper()
-	out, err := EvaluateAllFiles(data, filePaths...)
-	if err != nil {
-		t.Fatal(err)
-	}
-	return out
-}

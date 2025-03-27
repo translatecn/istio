@@ -338,8 +338,9 @@ func (p *XdsProxy) sendDeltaHealthRequest(req *discovery.DeltaDiscoveryRequest) 
 }
 
 func (p *XdsProxy) forwardDeltaToTap(resp *discovery.DeltaDiscoveryResponse) {
-	select {
 	// Convert back to a SotW response
+
+	select {
 	case p.tapResponseChannel <- &discovery.DiscoveryResponse{
 		VersionInfo:  resp.SystemVersionInfo,
 		Resources:    slices.Map(resp.Resources, (*discovery.Resource).GetResource),

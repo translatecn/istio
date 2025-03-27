@@ -31,17 +31,6 @@ type Multicluster struct {
 
 var _ credentials.MulticlusterController = &Multicluster{}
 
-func NewMulticluster(configCluster cluster.ID, controller multicluster.ComponentBuilder) *Multicluster {
-	m := &Multicluster{
-		configCluster: configCluster,
-	}
-
-	m.component = multicluster.BuildMultiClusterComponent(controller, func(cluster *multicluster.Cluster) *CredentialsController {
-		return NewCredentialsController(cluster.Client, m.secretHandlers)
-	})
-	return m
-}
-
 func (m *Multicluster) ForCluster(clusterID cluster.ID) (credentials.Controller, error) {
 	cc := m.component.ForCluster(clusterID)
 	if cc == nil {
@@ -78,6 +67,7 @@ var _ credentials.Controller = &AggregateController{}
 
 func (a *AggregateController) GetCertInfo(name, namespace string) (certInfo *credentials.CertInfo, err error) {
 	// Search through all clusters, find first non-empty result
+
 	var firstError error
 	for _, c := range a.controllers {
 		certInfo, err := c.GetCertInfo(name, namespace)
@@ -94,6 +84,7 @@ func (a *AggregateController) GetCertInfo(name, namespace string) (certInfo *cre
 
 func (a *AggregateController) GetCaCert(name, namespace string) (certInfo *credentials.CertInfo, err error) {
 	// Search through all clusters, find first non-empty result
+
 	var firstError error
 	for _, c := range a.controllers {
 		k, err := c.GetCaCert(name, namespace)
@@ -118,6 +109,7 @@ func (a *AggregateController) AddEventHandler(f func(name string, namespace stri
 
 func (a *AggregateController) GetDockerCredential(name, namespace string) ([]byte, error) {
 	// Search through all clusters, find first non-empty result
+
 	var firstError error
 	for _, c := range a.controllers {
 		k, err := c.GetDockerCredential(name, namespace)
@@ -130,4 +122,16 @@ func (a *AggregateController) GetDockerCredential(name, namespace string) ([]byt
 		}
 	}
 	return nil, firstError
+}
+
+func NewMulticluster(configCluster cluster.ID, secretController multicluster.ComponentBuilder) *Multicluster {
+	m := &Multicluster{
+		configCluster: configCluster,
+	}
+
+	m.component = multicluster.BuildMultiClusterComponent(secretController, // ✅
+		func(cluster *multicluster.Cluster) *CredentialsController {
+			return NewCredentialsController(cluster.Client, m.secretHandlers)
+		})
+	return m
 }

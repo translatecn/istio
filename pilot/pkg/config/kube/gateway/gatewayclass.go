@@ -47,15 +47,18 @@ func NewClassController(kc kube.Client) *ClassController {
 		controllers.WithMaxAttempts(25))
 
 	gc.classes = kclient.New[*gateway.GatewayClass](kc)
-	gc.classes.AddEventHandler(controllers.FilteredObjectHandler(gc.queue.AddObject, func(o controllers.Object) bool {
-		_, f := builtinClasses[gateway.ObjectName(o.GetName())]
-		return f
-	}))
+	gc.classes.AddEventHandler(
+		controllers.FilteredObjectHandler(gc.queue.AddObject, func(o controllers.Object) bool {
+			_, f := builtinClasses[gateway.ObjectName(o.GetName())]
+			return f
+		}),
+	)
 	return gc
 }
 
 func (c *ClassController) Run(stop <-chan struct{}) {
 	// Ensure we initially reconcile the current state
+
 	c.queue.Add(types.NamespacedName{})
 	c.queue.Run(stop)
 }

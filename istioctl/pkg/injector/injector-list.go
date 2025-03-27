@@ -29,8 +29,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	api_pkg_labels "k8s.io/apimachinery/pkg/labels"
 
-	"istio.io/api/annotation"
-	"istio.io/api/label"
+	"istio.io/istio/istio.io/api/annotation"
+	"istio.io/istio/istio.io/api/label"
 	"istio.io/istio/istioctl/pkg/cli"
 	"istio.io/istio/istioctl/pkg/clioptions"
 	"istio.io/istio/istioctl/pkg/describe"
@@ -214,6 +214,7 @@ func printHooks(writer io.Writer, namespaces []corev1.Namespace, hooks []admitv1
 
 func getInjector(namespace *corev1.Namespace, hooks []admitv1.MutatingWebhookConfiguration) *admitv1.MutatingWebhookConfiguration {
 	// find matching hook
+
 	for _, hook := range hooks {
 		for _, webhook := range hook.Webhooks {
 			nsSelector, err := metav1.LabelSelectorAsSelector(webhook.NamespaceSelector)

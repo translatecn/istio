@@ -57,21 +57,6 @@ type patchTable struct {
 	addWatcherPath func(*fsnotify.Watcher, string) error
 }
 
-// NewWatcher return with a FileWatcher instance that implemented with fsnotify.
-func NewWatcher() FileWatcher {
-	return &fileWatcher{
-		workers: map[string]*workerState{},
-
-		// replaceable functions for tests
-		funcs: &patchTable{
-			newWatcher: fsnotify.NewWatcher,
-			addWatcherPath: func(watcher *fsnotify.Watcher, path string) error {
-				return watcher.Add(path)
-			},
-		},
-	}
-}
-
 // Close releases all resources associated with the watcher
 func (fw *fileWatcher) Close() error {
 	fw.mu.Lock()
@@ -172,6 +157,21 @@ func (fw *fileWatcher) getWorker(path string) (*workerState, string, string, err
 	}
 
 	return ws, cleanedPath, parentPath, nil
+}
+
+// NewWatcher return with a FileWatcher instance that implemented with fsnotify.
+func NewWatcher() FileWatcher {
+	return &fileWatcher{
+		workers: map[string]*workerState{},
+
+		// replaceable functions for tests
+		funcs: &patchTable{
+			newWatcher: fsnotify.NewWatcher,
+			addWatcherPath: func(watcher *fsnotify.Watcher, path string) error {
+				return watcher.Add(path)
+			},
+		},
+	}
 }
 
 func (fw *fileWatcher) findWorker(path string) (*workerState, string, error) {

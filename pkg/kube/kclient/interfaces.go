@@ -38,20 +38,13 @@ type Informer[T controllers.Object] interface {
 	Reader[T]
 	// ListUnfiltered is like List but ignores any *client side* filters previously configured.
 	ListUnfiltered(namespace string, selector klabels.Selector) []T
-	// AddEventHandler inserts a handler. The handler will be called for all Create/Update/Removals.
-	// When ShutdownHandlers is called, the handler is removed.
+
 	AddEventHandler(h cache.ResourceEventHandler) cache.ResourceEventHandlerRegistration
-	// HasSynced returns true when the informer is initially populated and that all handlers added
-	// via AddEventHandler have been called with the initial state.
-	// note: this differs from a standard informer HasSynced, which does not check handlers have been called.
+
 	HasSynced() bool
-	// HasSyncedIgnoringHandlers returns true when the underlying informer has synced.
-	// Warning: this ignores whether handlers are ready! HasSynced, which takes handlers into account, is recommended.
-	// When using this, the ResourceEventHandlerRegistration from AddEventHandler can be used to check individual handlers
+
 	HasSyncedIgnoringHandlers() bool
-	// ShutdownHandlers terminates all handlers added by AddEventHandler.
-	// Warning: this only applies to handlers called via AddEventHandler; any handlers directly added
-	// to the underlying informer are not touched
+
 	ShutdownHandlers()
 	// Start starts just this informer. Typically, this is not used. Instead, the `kube.Client.Run()` is
 	// used to start all informers at once.

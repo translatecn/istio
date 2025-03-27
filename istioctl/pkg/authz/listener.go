@@ -119,6 +119,7 @@ func parse(listeners []*listener.Listener) []*parsedListener {
 
 func extractName(name string) (string, string) {
 	// parts[1] is the namespace, parts[2] is the policy name, parts[3] is the rule index.
+
 	parts := re.FindStringSubmatch(name)
 	if len(parts) != 4 {
 		log.Errorf("failed to parse policy name: %s", name)

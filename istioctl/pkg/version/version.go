@@ -34,7 +34,7 @@ import (
 	"istio.io/istio/pilot/pkg/model"
 	"istio.io/istio/pilot/pkg/xds"
 	"istio.io/istio/pkg/proxy"
-	istioVersion "istio.io/istio/pkg/version"
+	istioVersion "istio.io/istio/pkg/version_over"
 )
 
 func NewVersionCommand(ctx cli.Context) *cobra.Command {

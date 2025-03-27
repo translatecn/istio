@@ -1,0 +1,9 @@
+#peer-strict-global.yaml
+apiVersion: security.istio.io/v1beta1
+kind: PeerAuthentication # 对等认证策略
+metadata:
+  name: default
+  namespace: istio-system
+spec:
+  mtls:
+    mode: STRICT # STRICT 模式表示只允许 mTLS

@@ -4,6 +4,7 @@ kind: IstioOperator
 metadata:
   name: default-gateways
 spec:
+  hub: registry.cn-hangzhou.aliyuncs.com/acejilam
   profile: empty
   components:
     ingressGateways:
@@ -57,3 +58,4 @@ spec:
       istio-egressgateway:
         injectionTemplate: gateway
         autoscaleEnabled: false
+

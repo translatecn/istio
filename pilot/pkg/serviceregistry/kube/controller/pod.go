@@ -20,7 +20,7 @@ import (
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 
-	"istio.io/api/annotation"
+	"istio.io/istio/istio.io/api/annotation"
 	"istio.io/istio/pilot/pkg/features"
 	"istio.io/istio/pilot/pkg/model"
 	"istio.io/istio/pkg/config"
@@ -73,6 +73,7 @@ func shouldPodBeInEndpoints(pod *v1.Pod) bool {
 	// "Terminal" describes when a Pod is complete (in a succeeded or failed phase).
 	// This is distinct from the "Terminating" condition which represents when a Pod
 	// is being terminated (metadata.deletionTimestamp is non nil).
+
 	if isPodPhaseTerminal(pod.Status.Phase) {
 		return false
 	}
@@ -91,10 +92,6 @@ func shouldPodBeInEndpoints(pod *v1.Pod) bool {
 // isPodPhaseTerminal returns true if the pod's phase is terminal.
 func isPodPhaseTerminal(phase v1.PodPhase) bool {
 	return phase == v1.PodFailed || phase == v1.PodSucceeded
-}
-
-func IsPodRunning(pod *v1.Pod) bool {
-	return pod.Status.Phase == v1.PodRunning
 }
 
 // IsPodReady is copied from kubernetes/pkg/api/v1/pod/utils.go
@@ -143,12 +140,10 @@ func (pc *PodCache) labelFilter(old, cur *v1.Pod) bool {
 	if cur.Status.PodIP != "" && changed {
 		pc.proxyUpdates(cur, true)
 	}
-
 	// always continue calling pc.onEvent
 	return false
 }
 
-// onEvent updates the IP-based index (pc.podsByIP).
 func (pc *PodCache) onEvent(_, pod *v1.Pod, ev model.Event) error {
 	ip := pod.Status.PodIP
 	// PodIP will be empty when pod is just created, but before the IP is assigned
@@ -188,7 +183,6 @@ func (pc *PodCache) onEvent(_, pod *v1.Pod, ev model.Event) error {
 	return nil
 }
 
-// notifyWorkloadHandlers fire workloadInstance handlers for pod
 func (pc *PodCache) notifyWorkloadHandlers(pod *v1.Pod, ev model.Event) {
 	// if no workload handler registered, skip building WorkloadInstance
 	if len(pc.c.handlers.GetWorkloadHandlers()) == 0 {
@@ -240,47 +234,12 @@ func (pc *PodCache) deleteIP(ip string, podKey types.NamespacedName) bool {
 	return false
 }
 
-func (pc *PodCache) addPod(pod *v1.Pod, ip string, key types.NamespacedName) {
-	pc.Lock()
-	// if the pod has been cached, return
-	if pc.podsByIP[ip].Contains(key) {
-		pc.Unlock()
-		return
-	}
-	if current, f := pc.IPByPods[key]; f {
-		// The pod already exists, but with another IP Address. We need to clean up that
-		sets.DeleteCleanupLast(pc.podsByIP, current, key)
-	}
-	sets.InsertOrNew(pc.podsByIP, ip, key)
-	pc.IPByPods[key] = ip
-
-	if endpointsToUpdate, f := pc.needResync[ip]; f {
-		delete(pc.needResync, ip)
-		for epKey := range endpointsToUpdate {
-			pc.queueEndpointEvent(epKey)
-		}
-		endpointsPendingPodUpdate.Record(float64(len(pc.needResync)))
-	}
-	pc.Unlock()
-
-	const isPodUpdate = false
-	pc.proxyUpdates(pod, isPodUpdate)
-}
-
 // queueEndpointEventOnPodArrival registers this endpoint and queues endpoint event
 // when the corresponding pod arrives.
 func (pc *PodCache) queueEndpointEventOnPodArrival(key types.NamespacedName, ip string) {
 	pc.Lock()
 	defer pc.Unlock()
 	sets.InsertOrNew(pc.needResync, ip, key)
-	endpointsPendingPodUpdate.Record(float64(len(pc.needResync)))
-}
-
-// endpointDeleted cleans up endpoint from resync endpoint list.
-func (pc *PodCache) endpointDeleted(key types.NamespacedName, ip string) {
-	pc.Lock()
-	defer pc.Unlock()
-	sets.DeleteCleanupLast(pc.needResync, ip, key)
 	endpointsPendingPodUpdate.Record(float64(len(pc.needResync)))
 }
 
@@ -361,4 +320,36 @@ func (pc *PodCache) getPodByProxy(proxy *model.Proxy) *v1.Pod {
 		}
 		return nil
 	}
+}
+
+func (pc *PodCache) addPod(pod *v1.Pod, ip string, key types.NamespacedName) { // if the pod has been cached, return
+	pc.Lock()
+	if pc.podsByIP[ip].Contains(key) {
+		pc.Unlock()
+		return
+	}
+	if current, f := pc.IPByPods[key]; f {
+		// The pod already exists, but with another IP Address. We need to clean up that
+		sets.DeleteCleanupLast(pc.podsByIP, current, key)
+	}
+	sets.InsertOrNew(pc.podsByIP, ip, key)
+	pc.IPByPods[key] = ip
+
+	if endpointsToUpdate, f := pc.needResync[ip]; f {
+		delete(pc.needResync, ip)
+		for epKey := range endpointsToUpdate {
+			pc.queueEndpointEvent(epKey)
+		}
+		endpointsPendingPodUpdate.Record(float64(len(pc.needResync)))
+	}
+	pc.Unlock()
+	pc.proxyUpdates(pod, false)
+}
+
+// endpointDeleted cleans up endpoint from resync endpoint list.
+func (pc *PodCache) endpointDeleted(key types.NamespacedName, ip string) {
+	pc.Lock()
+	defer pc.Unlock()
+	sets.DeleteCleanupLast(pc.needResync, ip, key) // EndpointSlice
+	endpointsPendingPodUpdate.Record(float64(len(pc.needResync)))
 }

@@ -195,6 +195,7 @@ func (s *Instance) Close() (err error) {
 func (s *Instance) getListenerIPs(port *common.Port) ([]string, error) {
 	// Not configured on this port, set to empty which will lead to wildcard bind
 	// Not 0.0.0.0 in case we want IPv6
+
 	if port == nil {
 		return nil, nil
 	}

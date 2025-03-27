@@ -33,8 +33,8 @@ metadata:
     service: mysqldb
 spec:
   ports:
-  - port: 3306
-    name: tcp
+    - port: 3306
+      name: tcp
   selector:
     app: mysqldb
 ---
@@ -58,22 +58,22 @@ spec:
         version: v1
     spec:
       containers:
-      - name: mysqldb
-        image: docker.io/istio/examples-bookinfo-mysqldb:1.20.2
-        imagePullPolicy: IfNotPresent
-        ports:
-        - containerPort: 3306
-        env:
-          - name: MYSQL_ROOT_PASSWORD
-            valueFrom:
-              secretKeyRef:
-                name: mysql-credentials
-                key: rootpasswd
-        args: ["--default-authentication-plugin","mysql_native_password"]
-        volumeMounts:
-        - name: var-lib-mysql
-          mountPath: /var/lib/mysql
+        - name: mysqldb
+          image: registry.cn-hangzhou.aliyuncs.com/acejilam/examples-bookinfo-mysqldb:1.20.2
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3306
+          env:
+            - name: MYSQL_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mysql-credentials
+                  key: rootpasswd
+          args: [ "--default-authentication-plugin","mysql_native_password" ]
+          volumeMounts:
+            - name: var-lib-mysql
+              mountPath: /var/lib/mysql
       volumes:
-      - name: var-lib-mysql
-        emptyDir: {}
+        - name: var-lib-mysql
+          emptyDir: { }
 ---

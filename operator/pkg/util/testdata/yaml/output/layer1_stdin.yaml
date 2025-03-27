@@ -1,6 +1,7 @@
 apiVersion: install.istio.io/v1alpha1
 kind: IstioOperator
 spec:
+  hub: registry.cn-hangzhou.aliyuncs.com/acejilam
   components:
     base:
       enabled: false
@@ -17,3 +18,4 @@ spec:
             externalTrafficPolicy: Local
           serviceAnnotations:
             manifest-generate: "testserviceAnnotation"
+

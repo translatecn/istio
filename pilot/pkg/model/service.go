@@ -35,7 +35,7 @@ import (
 	"google.golang.org/protobuf/proto"
 	"k8s.io/apimachinery/pkg/types"
 
-	"istio.io/api/label"
+	"istio.io/istio/istio.io/api/label"
 	"istio.io/istio/pilot/pkg/features"
 	"istio.io/istio/pilot/pkg/serviceregistry/provider"
 	"istio.io/istio/pkg/cluster"
@@ -138,11 +138,6 @@ var serviceCmpOpts = []cmp.Option{cmpopts.IgnoreFields(AddressMap{}, "mutex")}
 
 func (s *Service) CmpOpts() []cmp.Option {
 	return serviceCmpOpts
-}
-
-func (s *Service) SupportsDrainingEndpoints() bool {
-	return (features.PersistentSessionLabel != "" && s.Attributes.Labels[features.PersistentSessionLabel] != "") ||
-		(features.PersistentSessionHeaderLabel != "" && s.Attributes.Labels[features.PersistentSessionHeaderLabel] != "")
 }
 
 // Resolution indicates how the service instances need to be resolved before routing traffic.
@@ -325,16 +320,6 @@ type (
 		TargetPort uint32
 	}
 )
-
-func ServiceInstanceToTarget(e *ServiceInstance) ServiceTarget {
-	return ServiceTarget{
-		Service: e.Service,
-		Port: ServiceInstancePort{
-			ServicePort: e.ServicePort,
-			TargetPort:  e.Endpoint.EndpointPort,
-		},
-	}
-}
 
 // DeepCopy creates a copy of ServiceInstance.
 func (instance *ServiceInstance) DeepCopy() *ServiceInstance {
@@ -640,7 +625,6 @@ type EndpointMetadata struct {
 type EndpointDiscoverabilityPolicy interface {
 	// IsDiscoverableFromProxy indicates whether an endpoint is discoverable from the given Proxy.
 	IsDiscoverableFromProxy(*IstioEndpoint, *Proxy) bool
-
 	// String returns name of this policy.
 	String() string
 }
@@ -664,23 +648,6 @@ var endpointDiscoverabilityPolicyImplCmpOpt = cmp.Comparer(func(x, y endpointDis
 
 func (p *endpointDiscoverabilityPolicyImpl) CmpOpts() []cmp.Option {
 	return []cmp.Option{endpointDiscoverabilityPolicyImplCmpOpt}
-}
-
-// AlwaysDiscoverable is an EndpointDiscoverabilityPolicy that allows an endpoint to be discoverable throughout the mesh.
-var AlwaysDiscoverable EndpointDiscoverabilityPolicy = &endpointDiscoverabilityPolicyImpl{
-	name: "AlwaysDiscoverable",
-	f: func(*IstioEndpoint, *Proxy) bool {
-		return true
-	},
-}
-
-// DiscoverableFromSameCluster is an EndpointDiscoverabilityPolicy that only allows an endpoint to be discoverable
-// from proxies within the same cluster.
-var DiscoverableFromSameCluster EndpointDiscoverabilityPolicy = &endpointDiscoverabilityPolicyImpl{
-	name: "DiscoverableFromSameCluster",
-	f: func(ep *IstioEndpoint, p *Proxy) bool {
-		return p.InCluster(ep.Locality.ClusterID)
-	},
 }
 
 // ServiceAttributes represents a group of custom attributes of the service.
@@ -756,6 +723,7 @@ type K8sAttributes struct {
 func (s *ServiceAttributes) DeepCopy() ServiceAttributes {
 	// AddressMap contains a mutex, which is safe to copy in this case.
 	// nolint: govet
+
 	out := *s
 
 	out.Labels = maps.Clone(s.Labels)
@@ -840,23 +808,18 @@ type ServiceDiscovery interface {
 	// GetService retrieves a service by host name if it exists
 	GetService(hostname host.Name) *Service
 
-	// GetProxyServiceTargets returns the service targets that co-located with a given Proxy
+	// GetProxyServiceTargets 返回与给定代理共存的服务目标
 	//
-	// Co-located generally means running in the same network namespace and security context.
+	//共同定位通常意味着在相同的网络命名空间和安全上下文中运行。
 	//
-	// A Proxy operating as a Sidecar will return a non-empty slice.  A stand-alone Proxy
-	// will return an empty slice.
+	//作为Sidecar操作的代理将返回一个非空片。独立代理将返回一个空片。
 	//
-	// There are two reasons why this returns multiple ServiceTargets instead of one:
-	// - A ServiceTargets has a single Port.  But a Service
-	//   may have many ports.  So a workload implementing such a Service would need
-	//   multiple ServiceTargets, one for each port.
-	// - A single workload may implement multiple logical Services.
+	//返回多个servicetarget而不是一个有两个原因：
+	// - ServiceTargets只有一个端口。但是一个服务可能有很多端口。因此，实现这样一个服务的工作负载将需要多个servicetarget，每个端口一个。
+	// -一个工作负载可以实现多个逻辑服务。
 	//
-	// In the second case, multiple services may be implemented by the same physical port number,
-	// though with a different ServicePort and IstioEndpoint for each.  If any of these overlapping
-	// services are not HTTP or H2-based, behavior is undefined, since the listener may not be able to
-	// determine the intended destination of a connection without a Host header on the request.
+	//在第二种情况下，多个服务可以通过相同的物理端口号实现，尽管每个服务使用不同的ServicePort和IstioEndpoint。
+	//如果这些重叠的服务中的任何一个不是基于HTTP或h2的，则行为是未定义的，因为侦听器可能无法确定请求上没有Host标头的连接的预期目的地。
 	GetProxyServiceTargets(*Proxy) []ServiceTarget
 	GetProxyWorkloadLabels(*Proxy) labels.Instance
 
@@ -1434,10 +1397,12 @@ func ParseSubsetKeyHostname(s string) (hostname string) {
 
 // ParseSubsetKey is the inverse of the BuildSubsetKey method
 func ParseSubsetKey(s string) (direction TrafficDirection, subsetName string, hostname host.Name, port int) {
-	sep := "|"
 	// This could be the DNS srv form of the cluster that uses outbound_.port_.subset_.hostname
 	// Since we do not want every callsite to implement the logic to differentiate between the two forms
 	// we add an alternate parser here.
+
+	sep := "|"
+
 	if strings.HasPrefix(s, trafficDirectionOutboundSrvPrefix) ||
 		strings.HasPrefix(s, trafficDirectionInboundSrvPrefix) {
 		sep = "_."
@@ -1627,6 +1592,7 @@ func GetTLSModeFromEndpointLabels(labels map[string]string) string {
 // DeepCopy creates a clone of Service.
 func (s *Service) DeepCopy() *Service {
 	// nolint: govet
+
 	out := *s
 	out.Attributes = s.Attributes.DeepCopy()
 	if s.Ports != nil {
@@ -1753,4 +1719,35 @@ func (ep *IstioEndpoint) Equals(other *IstioEndpoint) bool {
 	}
 
 	return true
+}
+
+var AlwaysDiscoverable EndpointDiscoverabilityPolicy = &endpointDiscoverabilityPolicyImpl{
+	name: "AlwaysDiscoverable",
+	f: func(*IstioEndpoint, *Proxy) bool {
+		return true
+	},
+}
+
+// DiscoverableFromSameCluster is an EndpointDiscoverabilityPolicy that only allows an endpoint to be discoverable
+// from proxies within the same cluster.
+var DiscoverableFromSameCluster EndpointDiscoverabilityPolicy = &endpointDiscoverabilityPolicyImpl{
+	name: "DiscoverableFromSameCluster",
+	f: func(ep *IstioEndpoint, p *Proxy) bool {
+		return p.InCluster(ep.Locality.ClusterID)
+	},
+}
+
+func ServiceInstanceToTarget(e *ServiceInstance) ServiceTarget {
+	return ServiceTarget{
+		Service: e.Service,
+		Port: ServiceInstancePort{
+			ServicePort: e.ServicePort,
+			TargetPort:  e.Endpoint.EndpointPort,
+		},
+	}
+}
+
+func (s *Service) SupportsDrainingEndpoints() bool {
+	return (features.PersistentSessionLabel != "" && s.Attributes.Labels[features.PersistentSessionLabel] != "") ||
+		(features.PersistentSessionHeaderLabel != "" && s.Attributes.Labels[features.PersistentSessionHeaderLabel] != "")
 }

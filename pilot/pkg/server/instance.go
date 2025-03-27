@@ -51,14 +51,6 @@ type Instance interface {
 
 var _ Instance = &instance{}
 
-// New creates a new server Instance.
-func New() Instance {
-	return &instance{
-		done:       make(chan struct{}),
-		components: make(chan task, 1000), // should be enough?
-	}
-}
-
 type instance struct {
 	components chan task
 	done       chan struct{}
@@ -67,6 +59,62 @@ type instance struct {
 	// if they are not stopped. This allows important cleanup tasks to be completed.
 	// Note: this is still best effort; a process can die at any time.
 	requiredTerminations sync.WaitGroup
+}
+
+type task struct {
+	name string
+	task Component
+}
+
+func (i *instance) RunComponentAsync(name string, task Component) {
+	i.RunComponent(name, func(stop <-chan struct{}) error {
+		go func() {
+			err := task(stop)
+			if err != nil {
+				logComponentError(name, err)
+			}
+		}()
+		return nil
+	})
+}
+
+func (i *instance) RunComponentAsyncAndWait(name string, task Component) {
+	i.RunComponent(name, func(stop <-chan struct{}) error {
+		i.requiredTerminations.Add(1)
+		go func() {
+			err := task(stop)
+			if err != nil {
+				logComponentError(name, err)
+			}
+			i.requiredTerminations.Done()
+		}()
+		return nil
+	})
+}
+
+func (i *instance) Wait() {
+	<-i.done
+}
+
+func logComponentError(name string, err error) {
+	log.Errorf("failure in server component %q: %v", name, err)
+}
+
+// New creates a new server Instance.
+func New() Instance {
+	return &instance{
+		done:       make(chan struct{}),
+		components: make(chan task, 1000), // should be enough?
+	}
+}
+
+func (i *instance) RunComponent(name string, t Component) {
+	select {
+	case <-i.done:
+		log.Warnf("attempting to run a new component %q after the server was shutdown", name)
+	default:
+		i.components <- task{name, t}
+	}
 }
 
 func (i *instance) Start(stop <-chan struct{}) error {
@@ -124,52 +172,4 @@ func (i *instance) Start(stop <-chan struct{}) error {
 	}()
 
 	return nil
-}
-
-type task struct {
-	name string
-	task Component
-}
-
-func (i *instance) RunComponent(name string, t Component) {
-	select {
-	case <-i.done:
-		log.Warnf("attempting to run a new component %q after the server was shutdown", name)
-	default:
-		i.components <- task{name, t}
-	}
-}
-
-func (i *instance) RunComponentAsync(name string, task Component) {
-	i.RunComponent(name, func(stop <-chan struct{}) error {
-		go func() {
-			err := task(stop)
-			if err != nil {
-				logComponentError(name, err)
-			}
-		}()
-		return nil
-	})
-}
-
-func (i *instance) RunComponentAsyncAndWait(name string, task Component) {
-	i.RunComponent(name, func(stop <-chan struct{}) error {
-		i.requiredTerminations.Add(1)
-		go func() {
-			err := task(stop)
-			if err != nil {
-				logComponentError(name, err)
-			}
-			i.requiredTerminations.Done()
-		}()
-		return nil
-	})
-}
-
-func (i *instance) Wait() {
-	<-i.done
-}
-
-func logComponentError(name string, err error) {
-	log.Errorf("failure in server component %q: %v", name, err)
 }

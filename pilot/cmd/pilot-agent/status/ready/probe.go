@@ -18,7 +18,7 @@ import (
 	"context"
 	"fmt"
 
-	"istio.io/istio/pilot/cmd/pilot-agent/metrics"
+	"istio.io/istio/pilot/cmd/pilot-agent/metrics_over"
 	"istio.io/istio/pilot/cmd/pilot-agent/status/util"
 )
 
@@ -44,6 +44,7 @@ var _ Prober = &Probe{}
 // Check executes the probe and returns an error if the probe fails.
 func (p *Probe) Check() error {
 	// First, check that Envoy has received a configuration update from Pilot.
+
 	if err := p.checkConfigStatus(); err != nil {
 		return err
 	}
@@ -52,8 +53,9 @@ func (p *Probe) Check() error {
 
 // checkConfigStatus checks to make sure initial configs have been received from Pilot.
 func (p *Probe) checkConfigStatus() error {
+	// TODO some way to verify XDS proxy -> control plane works
+
 	if p.NoEnvoy {
-		// TODO some way to verify XDS proxy -> control plane works
 		return nil
 	}
 	if p.receivedFirstUpdate {
@@ -103,13 +105,14 @@ func (p *Probe) checkEnvoyReadiness() error {
 	// does not use both of them, it is safe to cache this value. Since the
 	// actual readiness probe goes via Envoy, it ensures that Envoy is actively
 	// serving traffic and we can rely on that.
+
 	if p.atleastOnceReady {
 		return nil
 	}
 
 	err := checkEnvoyStats(p.LocalHostAddr, p.AdminPort)
 	if err == nil {
-		metrics.RecordStartupTime()
+		metrics_over.RecordStartupTime()
 		p.atleastOnceReady = true
 	}
 	return err

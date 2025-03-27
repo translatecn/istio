@@ -17,13 +17,16 @@
 # Generates certificates used for testing
 # We generate a cert for a workload (ns=default, sa=default) and control plane
 WD=$(dirname "$0")
-WD=$(cd "$WD"; pwd)
+WD=$(
+	cd "$WD"
+	pwd
+)
 
 set -ex
 
 touch "${WD}/index.txt"
 
-cat > "${WD}/client.conf" <<EOF
+cat >"${WD}/client.conf" <<EOF
 [req]
 req_extensions = v3_req
 distinguished_name = req_distinguished_name
@@ -37,7 +40,7 @@ subjectAltName = @alt_names
 URI = spiffe://cluster.local/ns/default/sa/default
 EOF
 
-cat > "${WD}/dns-client.conf" <<EOF
+cat >"${WD}/dns-client.conf" <<EOF
 [req]
 req_extensions = v3_req
 distinguished_name = req_distinguished_name
@@ -51,7 +54,7 @@ subjectAltName = @alt_names
 DNS = server.default.svc
 EOF
 
-cat > "${WD}/server.conf" <<EOF
+cat >"${WD}/server.conf" <<EOF
 [req]
 req_extensions = v3_req
 distinguished_name = req_distinguished_name
@@ -70,8 +73,7 @@ DNS.4 = istio-pilot.istio-system.svc
 DNS.5 = localhost
 EOF
 
-
-cat > "${WD}/mountedcerts-server.conf" <<EOF
+cat >"${WD}/mountedcerts-server.conf" <<EOF
 [req]
 req_extensions = v3_req
 distinguished_name = req_distinguished_name
@@ -86,7 +88,7 @@ URI = spiffe://cluster.local/ns/mounted-certs/sa/server
 DNS = server.mounted-certs.svc
 EOF
 
-cat > "${WD}/mountedcerts-client.conf" <<EOF
+cat >"${WD}/mountedcerts-client.conf" <<EOF
 [req]
 req_extensions = v3_req
 distinguished_name = req_distinguished_name
@@ -101,7 +103,7 @@ URI = spiffe://cluster.local/ns/mounted-certs/sa/client
 DNS = client.mounted-certs.svc
 EOF
 
-cat > "${WD}/crl.conf" <<EOF
+cat >"${WD}/crl.conf" <<EOF
 [ ca ]
 default_ca      = CA_default            # The default ca section
 
@@ -146,7 +148,7 @@ cp "${WD}/pilot/root-cert.pem" "${WD}/mountedcerts-client/root-cert.pem"
 # Create a server certificate
 openssl genrsa -out "${WD}/pilot/key.pem" 2048
 openssl req -new -sha256 -key "${WD}/pilot/key.pem" -out "${WD}/server.csr" -subj "/CN=istiod.istio-system.svc.cluster.local" -config "${WD}/server.conf"
-openssl x509 -req -in "${WD}/server.csr" -CA "${WD}/pilot/root-cert.pem" -CAkey "${WD}/pilot/ca-key.pem" -CAcreateserial -out "${WD}/pilot/cert-chain.pem"  -days 100000 -extensions v3_req -extfile "${WD}/server.conf"
+openssl x509 -req -in "${WD}/server.csr" -CA "${WD}/pilot/root-cert.pem" -CAkey "${WD}/pilot/ca-key.pem" -CAcreateserial -out "${WD}/pilot/cert-chain.pem" -days 100000 -extensions v3_req -extfile "${WD}/server.conf"
 
 # Create a client certificate
 openssl genrsa -out "${WD}/default/key.pem" 2048
@@ -174,9 +176,9 @@ openssl ca -gencrl -out "${WD}/ca.crl" -config "${WD}/crl.conf"
 
 # remove the database entry for the previous revoked certificate, so that we can generate a new dummy CRL entry for an unused server cert,
 # to be used for integration tests
-cat /dev/null > "${WD}/index.txt"
+cat /dev/null >"${WD}/index.txt"
 
-openssl x509 -req -in "${WD}/server.csr" -CA "${WD}/pilot/root-cert.pem" -CAkey "${WD}/pilot/ca-key.pem" -CAcreateserial -out "${WD}/dns/cert-chain-unused.pem"  -days 100000 -extensions v3_req -extfile "${WD}/server.conf"
+openssl x509 -req -in "${WD}/server.csr" -CA "${WD}/pilot/root-cert.pem" -CAkey "${WD}/pilot/ca-key.pem" -CAcreateserial -out "${WD}/dns/cert-chain-unused.pem" -days 100000 -extensions v3_req -extfile "${WD}/server.conf"
 
 openssl ca -config "${WD}/crl.conf" -revoke "${WD}/dns/cert-chain-unused.pem"
 openssl ca -gencrl -out "${WD}/dummy.crl" -config "${WD}/crl.conf"

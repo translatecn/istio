@@ -4,14 +4,14 @@ metadata:
   name: reviews
 spec:
   parentRefs:
-  - group: ""
-    kind: Service
-    name: reviews
+    - group: ""
+      kind: Service
+      name: reviews
   rules:
-  - backendRefs:
-    - name: reviews-v1
-      port: 9080
-      weight: 90
-    - name: reviews-v2
-      port: 9080
-      weight: 10
+    - backendRefs:
+        - name: reviews-v1
+          port: 9080
+          weight: 90
+        - name: reviews-v2
+          port: 9080
+          weight: 10

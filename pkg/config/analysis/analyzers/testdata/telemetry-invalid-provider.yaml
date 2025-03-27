@@ -6,6 +6,6 @@ metadata:
 spec:
   accessLogging:
     - providers:
-      - name: envoy
+        - name: envoy
     - filter:
         expression: "response.code >= 400"

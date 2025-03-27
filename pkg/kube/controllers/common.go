@@ -73,20 +73,6 @@ func UnstructuredToGVR(u unstructured.Unstructured) (schema.GroupVersionResource
 
 // ObjectToGVR extracts the GVR of an unstructured resource. This is useful when using dynamic
 // clients.
-func ObjectToGVR(u Object) (schema.GroupVersionResource, error) {
-	g := u.GetObjectKind().GroupVersionKind()
-
-	gk := config.GroupVersionKind{
-		Group:   g.Group,
-		Version: g.Version,
-		Kind:    g.Kind,
-	}
-	found, ok := gvk.ToGVR(gk)
-	if !ok {
-		return schema.GroupVersionResource{}, fmt.Errorf("unknown gvk: %v", gk)
-	}
-	return found, nil
-}
 
 // EnqueueForParentHandler returns a handler that will enqueue the parent (by ownerRef) resource
 func EnqueueForParentHandler(q Queue, kind config.GroupVersionKind) func(obj Object) {
@@ -192,25 +178,6 @@ func FromEventHandler(handler func(o Event)) cache.ResourceEventHandler {
 	}
 }
 
-// ObjectHandler returns a handler that will act on the latest version of an object
-// This means Add/Update/Delete are all handled the same and are just used to trigger reconciling.
-func ObjectHandler(handler func(o Object)) cache.ResourceEventHandler {
-	h := func(obj any) {
-		o := ExtractObject(obj)
-		if o == nil {
-			return
-		}
-		handler(o)
-	}
-	return cache.ResourceEventHandlerFuncs{
-		AddFunc: h,
-		UpdateFunc: func(oldObj, newObj any) {
-			h(newObj)
-		},
-		DeleteFunc: h,
-	}
-}
-
 // FilteredObjectHandler returns a handler that will act on the latest version of an object
 // This means Add/Update/Delete are all handled the same and are just used to trigger reconciling.
 // If filters are set, returning 'false' will exclude the event. For Add and Deletes, the filter will be based
@@ -300,7 +267,6 @@ func IgnoreNotFound(err error) error {
 	return err
 }
 
-// EventHandler mirrors ResourceEventHandlerFuncs, but takes typed T objects instead of any.
 type EventHandler[T Object] struct {
 	AddFunc         func(obj T)
 	AddExtendedFunc func(obj T, initialSync bool)
@@ -309,10 +275,11 @@ type EventHandler[T Object] struct {
 }
 
 func (e EventHandler[T]) OnAdd(obj interface{}, initialSync bool) {
+	x := Extract[T](obj)
 	if e.AddExtendedFunc != nil {
-		e.AddExtendedFunc(Extract[T](obj), initialSync)
+		e.AddExtendedFunc(x, initialSync)
 	} else if e.AddFunc != nil {
-		e.AddFunc(Extract[T](obj))
+		e.AddFunc(x) // registerHandlers 8
 	}
 }
 
@@ -338,5 +305,24 @@ type Shutdowner interface {
 func ShutdownAll(s ...Shutdowner) {
 	for _, h := range s {
 		h.ShutdownHandlers()
+	}
+}
+
+// ObjectHandler returns a handler that will act on the latest version of an object
+// This means Add/Update/Delete are all handled the same and are just used to trigger reconciling.
+func ObjectHandler(handler func(o Object)) cache.ResourceEventHandler {
+	h := func(obj any) {
+		o := ExtractObject(obj)
+		if o == nil {
+			return
+		}
+		handler(o)
+	}
+	return cache.ResourceEventHandlerFuncs{
+		AddFunc: h,
+		UpdateFunc: func(oldObj, newObj any) {
+			h(newObj)
+		},
+		DeleteFunc: h,
 	}
 }

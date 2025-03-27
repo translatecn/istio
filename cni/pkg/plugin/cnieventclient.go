@@ -27,7 +27,7 @@ import (
 	"github.com/containernetworking/cni/pkg/skel"
 	cniv1 "github.com/containernetworking/cni/pkg/types/100"
 
-	"istio.io/istio/cni/pkg/nodeagent"
+	"istio.io/istio/cni/pkg/nodeagent_over"
 )
 
 // newCNIClient is a unit test override variable for mocking.
@@ -60,12 +60,12 @@ func PushCNIEvent(cniClient CNIEventClient, event *skel.CmdArgs, prevResIps []*c
 		return fmt.Errorf("unable to push CNI event, CmdArgs event was nil")
 	}
 
-	var ncconfigs []nodeagent.IPConfig
+	var ncconfigs []nodeagent_over.IPConfig
 	for _, ipc := range prevResIps {
-		ncconfigs = append(ncconfigs, nodeagent.IPConfig{Interface: ipc.Interface, Address: ipc.Address, Gateway: ipc.Gateway})
+		ncconfigs = append(ncconfigs, nodeagent_over.IPConfig{Interface: ipc.Interface, Address: ipc.Address, Gateway: ipc.Gateway})
 	}
 	// Currently we only use the netns from the original CNI event
-	addEvent := nodeagent.CNIPluginAddEvent{Netns: event.Netns, PodName: podName, PodNamespace: podNamespace, IPs: ncconfigs}
+	addEvent := nodeagent_over.CNIPluginAddEvent{Netns: event.Netns, PodName: podName, PodNamespace: podNamespace, IPs: ncconfigs}
 	eventData, err := json.Marshal(addEvent)
 	if err != nil {
 		return err

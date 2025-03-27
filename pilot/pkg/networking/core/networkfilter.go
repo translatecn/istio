@@ -25,8 +25,8 @@ import (
 	hashpolicy "github.com/envoyproxy/go-control-plane/envoy/type/v3"
 	"google.golang.org/protobuf/types/known/durationpb"
 
-	extensions "istio.io/api/extensions/v1alpha1"
-	networking "istio.io/api/networking/v1alpha3"
+	extensions "istio.io/istio/istio.io/api/extensions/v1alpha1"
+	networking "istio.io/istio/istio.io/api/networking/v1alpha3"
 	"istio.io/istio/pilot/pkg/features"
 	"istio.io/istio/pilot/pkg/model"
 	istionetworking "istio.io/istio/pilot/pkg/networking"
@@ -284,6 +284,7 @@ func buildMongoFilter(statPrefix string) *listener.Filter {
 	// TODO: add a watcher for /var/lib/istio/mongo/certs
 	// if certs are found use, TLS or mTLS clusters for talking to MongoDB.
 	// User is responsible for mounting those certs in the pod.
+
 	mongoProxy := &mongo.MongoProxy{
 		StatPrefix: statPrefix, // mongo stats are prefixed with mongo.<statPrefix> by Envoy
 		// TODO enable faults in mongo

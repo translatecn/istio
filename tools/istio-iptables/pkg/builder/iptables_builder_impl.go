@@ -46,20 +46,6 @@ type IptablesRuleBuilder struct {
 	cfg   *config.Config
 }
 
-// NewIptablesBuilders creates a new IptablesRuleBuilder
-func NewIptablesRuleBuilder(cfg *config.Config) *IptablesRuleBuilder {
-	if cfg == nil {
-		cfg = &config.Config{}
-	}
-	return &IptablesRuleBuilder{
-		rules: Rules{
-			rulesv4: []Rule{},
-			rulesv6: []Rule{},
-		},
-		cfg: cfg,
-	}
-}
-
 func (rb *IptablesRuleBuilder) InsertRule(command iptableslog.Command, chain string, table string, position int, params ...string) *IptablesRuleBuilder {
 	rb.InsertRuleV4(command, chain, table, position, params...)
 	rb.InsertRuleV6(command, chain, table, position, params...)
@@ -230,52 +216,6 @@ func undoRules(rules []Rule) []Rule {
 	return output
 }
 
-// checkRules generates a set of iptables rules that are used to verify the existence of the input rules.
-// The function transforms -A/--append and -I/--insert flags into -C/--check flags while preserving the
-// structure of other parameters.
-// The transformation allows for checking whether the corresponding rules are already present in the iptables configuration.
-func checkRules(rules []Rule) []Rule {
-	output := make([]Rule, 0)
-	for _, r := range rules {
-		var modifiedParams []string
-		insertIndex := -1
-		for i, element := range r.params {
-			// insert index of a previous -I flag must be skipped
-			if insertIndex >= 0 && i == insertIndex+2 {
-				continue
-			}
-			if element == "-A" || element == "--append" {
-				// -A/--append is transformed to -D
-				modifiedParams = append(modifiedParams, "-C")
-			} else if element == "-I" || element == "--insert" {
-				// -I/--insert is transformed to -D, insert index at i+2 must be skipped
-				insertIndex = i
-				modifiedParams = append(modifiedParams, "-C")
-			} else {
-				// Every other flag/value is kept as it is
-				modifiedParams = append(modifiedParams, element)
-			}
-		}
-		output = append(output, Rule{
-			chain:  r.chain,
-			table:  r.table,
-			params: modifiedParams,
-		})
-	}
-	log.Debugf("Generated check-rules: %+v", output)
-	return output
-}
-
-func (rb *IptablesRuleBuilder) buildCheckRules(rules []Rule) [][]string {
-	output := make([][]string, 0)
-	checkRules := checkRules(rules)
-	for _, r := range checkRules {
-		cmd := append([]string{"-t", r.table}, r.params...)
-		output = append(output, cmd)
-	}
-	return output
-}
-
 func (rb *IptablesRuleBuilder) buildCleanupRules(rules []Rule) [][]string {
 	newRules := make([]Rule, len(rules))
 	for i := len(rules) - 1; i >= 0; i-- {
@@ -333,14 +273,6 @@ func (rb *IptablesRuleBuilder) BuildCleanupV6() [][]string {
 	return rb.buildCleanupRules(rb.rules.rulesv6)
 }
 
-func (rb *IptablesRuleBuilder) BuildCheckV4() [][]string {
-	return rb.buildCheckRules(rb.rules.rulesv4)
-}
-
-func (rb *IptablesRuleBuilder) BuildCheckV6() [][]string {
-	return rb.buildCheckRules(rb.rules.rulesv6)
-}
-
 func (rb *IptablesRuleBuilder) BuildGuardrails() [][]string {
 	rules := rb.buildGuardrails()
 	output := make([][]string, 0)
@@ -361,19 +293,45 @@ func (rb *IptablesRuleBuilder) BuildCleanupGuardrails() [][]string {
 	return output
 }
 
-func (rb *IptablesRuleBuilder) constructIptablesRestoreContents(tableRulesMap map[string][]string) string {
-	var b strings.Builder
-	for _, table := range slices.Sort(maps.Keys(tableRulesMap)) {
-		rules := tableRulesMap[table]
-		if len(rules) > 0 {
-			_, _ = fmt.Fprintln(&b, "*", table)
-			for _, r := range rules {
-				_, _ = fmt.Fprintln(&b, r)
-			}
-			_, _ = fmt.Fprintln(&b, "COMMIT")
+func (rb *IptablesRuleBuilder) BuildV6Restore() string {
+	return rb.buildRestore(rb.rules.rulesv6)
+}
+
+// AppendVersionedRule is a wrapper around AppendRule that substitutes an ipv4/ipv6 specific value
+// in place in the params. This allows appending a dual-stack rule that has an IP value in it.
+func (rb *IptablesRuleBuilder) AppendVersionedRule(ipv4 string, ipv6 string, command iptableslog.Command, chain string, table string, params ...string) {
+	rb.AppendRuleV4(command, chain, table, replaceVersionSpecific(ipv4, params...)...)
+	rb.AppendRuleV6(command, chain, table, replaceVersionSpecific(ipv6, params...)...)
+}
+
+func replaceVersionSpecific(contents string, inputs ...string) []string {
+	res := make([]string, 0, len(inputs))
+	for _, i := range inputs {
+		if i == constants.IPVersionSpecific {
+			res = append(res, contents)
+		} else {
+			res = append(res, i)
 		}
 	}
-	return b.String()
+	return res
+}
+
+// NewIptablesRuleBuilder creates a new IptablesRuleBuilder
+func NewIptablesRuleBuilder(cfg *config.Config) *IptablesRuleBuilder {
+	if cfg == nil {
+		cfg = &config.Config{}
+	}
+	return &IptablesRuleBuilder{
+		rules: Rules{
+			rulesv4: []Rule{},
+			rulesv6: []Rule{},
+		},
+		cfg: cfg,
+	}
+}
+
+func (rb *IptablesRuleBuilder) BuildV4Restore() string {
+	return rb.buildRestore(rb.rules.rulesv4)
 }
 
 func (rb *IptablesRuleBuilder) buildRestore(rules []Rule) string {
@@ -381,6 +339,7 @@ func (rb *IptablesRuleBuilder) buildRestore(rules []Rule) string {
 		constants.FILTER: {},
 		constants.NAT:    {},
 		constants.MANGLE: {},
+		constants.RAW:    {},
 	}
 
 	chainTableLookupMap := sets.New[string]()
@@ -415,12 +374,72 @@ func (rb *IptablesRuleBuilder) buildRestore(rules []Rule) string {
 	return rb.constructIptablesRestoreContents(tableRulesMap)
 }
 
-func (rb *IptablesRuleBuilder) BuildV4Restore() string {
-	return rb.buildRestore(rb.rules.rulesv4)
+func (rb *IptablesRuleBuilder) constructIptablesRestoreContents(tableRulesMap map[string][]string) string {
+	var b strings.Builder
+	for _, table := range slices.Sort(maps.Keys(tableRulesMap)) {
+		rules := tableRulesMap[table]
+		if len(rules) > 0 {
+			_, _ = fmt.Fprintln(&b, "*", table)
+			for _, r := range rules {
+				_, _ = fmt.Fprintln(&b, r)
+			}
+			_, _ = fmt.Fprintln(&b, "COMMIT")
+		}
+	}
+	return b.String()
 }
 
-func (rb *IptablesRuleBuilder) BuildV6Restore() string {
-	return rb.buildRestore(rb.rules.rulesv6)
+// checkRules 生成一组 iptables 规则，用于验证输入规则是否已存在。
+// 该函数将 -A/--append 和 -I/--insert 标志转换为 -C/--check 标志，同时保留其他参数的结构。
+// 这种转换允许检查对应的规则是否已经存在于 iptables 配置中。
+func checkRules(rules []Rule) []Rule {
+	output := make([]Rule, 0)
+	for _, r := range rules {
+		var modifiedParams []string
+		insertIndex := -1
+		for i, element := range r.params {
+			// insert index of a previous -I flag must be skipped
+			if insertIndex >= 0 && i == insertIndex+2 {
+				continue
+			}
+			if element == "-A" || element == "--append" {
+				// -A/--append is transformed to -D
+				modifiedParams = append(modifiedParams, "-C")
+			} else if element == "-I" || element == "--insert" {
+				// -I/--insert is transformed to -D, insert index at i+2 must be skipped
+				insertIndex = i
+				modifiedParams = append(modifiedParams, "-C")
+			} else {
+				// Every other flag/value is kept as it is
+				modifiedParams = append(modifiedParams, element)
+			}
+		}
+		output = append(output, Rule{
+			chain:  r.chain,
+			table:  r.table,
+			params: modifiedParams,
+		})
+	}
+	log.Debugf("Generated check-rules: %+v", output)
+	return output
+}
+
+func (rb *IptablesRuleBuilder) buildCheckRules(rules []Rule) [][]string {
+	output := make([][]string, 0)
+	checkRules := checkRules(rules)
+	for _, r := range checkRules {
+		cmd := append([]string{"-t", r.table}, r.params...)
+		output = append(output, cmd)
+	}
+	return output
+}
+
+func (rb *IptablesRuleBuilder) BuildCheckV4() [][]string {
+	return rb.buildCheckRules(rb.rules.rulesv4)
+}
+
+func (rb *IptablesRuleBuilder) BuildCheckV6() [][]string {
+	return rb.buildCheckRules(rb.rules.rulesv6)
 }
 
 // getStateFromSave function takes a string in iptables-restore format and returns a map of the tables, chains, and rules.
@@ -483,23 +502,4 @@ func (rb *IptablesRuleBuilder) GetStateFromSave(data string) map[string]map[stri
 		result[table][ruleChain] = append(result[table][ruleChain], line)
 	}
 	return result
-}
-
-// AppendVersionedRule is a wrapper around AppendRule that substitutes an ipv4/ipv6 specific value
-// in place in the params. This allows appending a dual-stack rule that has an IP value in it.
-func (rb *IptablesRuleBuilder) AppendVersionedRule(ipv4 string, ipv6 string, command iptableslog.Command, chain string, table string, params ...string) {
-	rb.AppendRuleV4(command, chain, table, replaceVersionSpecific(ipv4, params...)...)
-	rb.AppendRuleV6(command, chain, table, replaceVersionSpecific(ipv6, params...)...)
-}
-
-func replaceVersionSpecific(contents string, inputs ...string) []string {
-	res := make([]string, 0, len(inputs))
-	for _, i := range inputs {
-		if i == constants.IPVersionSpecific {
-			res = append(res, contents)
-		} else {
-			res = append(res, i)
-		}
-	}
-	return res
 }

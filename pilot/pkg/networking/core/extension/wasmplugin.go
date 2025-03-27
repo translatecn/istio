@@ -21,7 +21,7 @@ import (
 	wasmextensions "github.com/envoyproxy/go-control-plane/envoy/extensions/wasm/v3"
 	"google.golang.org/protobuf/types/known/durationpb"
 
-	extensions "istio.io/api/extensions/v1alpha1"
+	extensions "istio.io/istio/istio.io/api/extensions/v1alpha1"
 	"istio.io/istio/pilot/pkg/model"
 	"istio.io/istio/pilot/pkg/util/protoconv"
 	"istio.io/istio/pkg/config/xds"
@@ -146,6 +146,7 @@ func updatePluginConfig(pluginConfig *wasmextensions.PluginConfig, pullSecrets m
 	// secret, and replace the env variable value with it. When ECDS config update reaches the proxy,
 	// agent will extract out the secret from env variable, use it for image pulling, and strip the
 	// env variable from VM config before forwarding it to envoy.
+
 	envs := pluginConfig.GetVmConfig().GetEnvironmentVariables().GetKeyValues()
 	secretName := envs[model.WasmSecretEnv]
 	if secretName != "" {

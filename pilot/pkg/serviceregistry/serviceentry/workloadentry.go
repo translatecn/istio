@@ -15,7 +15,7 @@
 package serviceentry
 
 import (
-	networking "istio.io/api/networking/v1alpha3"
+	networking "istio.io/istio/istio.io/api/networking/v1alpha3"
 	"istio.io/istio/pkg/network"
 )
 

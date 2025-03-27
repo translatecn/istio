@@ -6,9 +6,9 @@ metadata:
 spec:
   action: DENY
   rules:
-  - from:
-    - source:
-        principals: ["deny"]
+    - from:
+        - source:
+            principals: [ "deny" ]
 ---
 apiVersion: security.istio.io/v1
 kind: AuthorizationPolicy
@@ -18,6 +18,6 @@ metadata:
 spec:
   action: ALLOW
   rules:
-  - from:
-    - source:
-        principals: ["allow"]
+    - from:
+        - source:
+            principals: [ "allow" ]

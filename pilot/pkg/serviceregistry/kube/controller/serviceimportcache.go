@@ -76,8 +76,8 @@ func newServiceImportCache(c *Controller) serviceImportCache {
 			Controller: c,
 		}
 
-		sic.serviceImports = kclient.NewDelayedInformer[controllers.Object](sic.client, mcs.ServiceImportGVR, kubetypes.DynamicInformer, kclient.Filter{
-			ObjectFilter: sic.client.ObjectFilter(),
+		sic.serviceImports = kclient.NewDelayedInformer[controllers.Object](sic.subClusterKubeClient, mcs.ServiceImportGVR, kubetypes.DynamicInformer, kclient.Filter{
+			ObjectFilter: sic.subClusterKubeClient.ObjectFilter(),
 		})
 		// Register callbacks for events.
 		registerHandlers(sic.Controller, sic.serviceImports, "ServiceImports", sic.onServiceImportEvent, nil)
@@ -288,8 +288,7 @@ func (ic *serviceImportCacheImpl) ImportedServices() []importedService {
 	return out
 }
 
-func (ic *serviceImportCacheImpl) Run(stop <-chan struct{}) {
-}
+func (ic *serviceImportCacheImpl) Run(stop <-chan struct{}) {}
 
 func (ic *serviceImportCacheImpl) HasSynced() bool {
 	return ic.serviceImports.HasSynced()
@@ -307,6 +306,7 @@ func (c disabledServiceImportCache) HasSynced() bool {
 
 func (c disabledServiceImportCache) ImportedServices() []importedService {
 	// MCS is disabled - returning `nil`, which is semantically different here than an empty list.
+
 	return nil
 }
 

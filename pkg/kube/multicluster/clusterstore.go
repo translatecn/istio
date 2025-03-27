@@ -25,8 +25,7 @@ import (
 // ClusterStore is a collection of clusters
 type ClusterStore struct {
 	sync.RWMutex
-	// keyed by secret key(ns/name)->clusterID
-	remoteClusters map[string]map[cluster.ID]*Cluster
+	remoteClusters map[string]map[cluster.ID]*Cluster // secret key(ns/name)->clusterID
 	clusters       sets.String
 }
 
@@ -73,18 +72,6 @@ func (c *ClusterStore) Contains(clusterID cluster.ID) bool {
 	return c.clusters.Contains(string(clusterID))
 }
 
-func (c *ClusterStore) GetByID(clusterID cluster.ID) *Cluster {
-	c.RLock()
-	defer c.RUnlock()
-	for _, clusters := range c.remoteClusters {
-		c, ok := clusters[clusterID]
-		if ok {
-			return c
-		}
-	}
-	return nil
-}
-
 // All returns a copy of the current remote clusters.
 func (c *ClusterStore) All() map[string]map[cluster.ID]*Cluster {
 	if c == nil {
@@ -99,17 +86,6 @@ func (c *ClusterStore) All() map[string]map[cluster.ID]*Cluster {
 			outCluster := *c
 			out[secret][cid] = &outCluster
 		}
-	}
-	return out
-}
-
-// GetExistingClustersFor return existing clusters registered for the given secret
-func (c *ClusterStore) GetExistingClustersFor(secretKey string) []*Cluster {
-	c.RLock()
-	defer c.RUnlock()
-	out := make([]*Cluster, 0, len(c.remoteClusters[secretKey]))
-	for _, cluster := range c.remoteClusters[secretKey] {
-		out = append(out, cluster)
 	}
 	return out
 }
@@ -137,4 +113,26 @@ func (c *ClusterStore) HasSynced() bool {
 	}
 
 	return true
+}
+
+func (c *ClusterStore) GetByID(clusterID cluster.ID) *Cluster {
+	c.RLock()
+	defer c.RUnlock()
+	for _, clusters := range c.remoteClusters {
+		c, ok := clusters[clusterID]
+		if ok {
+			return c
+		}
+	}
+	return nil
+}
+
+func (c *ClusterStore) GetExistingClustersFor(secretKey string) []*Cluster {
+	c.RLock()
+	defer c.RUnlock()
+	out := make([]*Cluster, 0, len(c.remoteClusters[secretKey]))
+	for _, cluster := range c.remoteClusters[secretKey] {
+		out = append(out, cluster)
+	}
+	return out
 }

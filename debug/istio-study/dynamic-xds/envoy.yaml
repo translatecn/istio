@@ -1,0 +1,67 @@
+# envoy.yaml
+node:
+  id: envoy_eds_id
+  cluster: youdianzhishi_cluster
+admin:
+  access_log_path: /tmp/admin_access.log
+  address:
+    socket_address:
+      address: 0.0.0.0
+      port_value: 9901
+static_resources:
+  listeners:
+    - name: listener_0 # 监听器的名称
+      address:
+        socket_address:
+          address: 0.0.0.0 # 监听器的地址
+          port_value: 10000 # 监听器的端口
+      filter_chains:
+        - filters:
+            - name: envoy.filters.network.http_connection_manager
+              typed_config:
+                "@type": type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager
+                stat_prefix: ingress_http
+                access_log:
+                  - name: envoy.access_loggers.stdout
+                    typed_config:
+                      "@type": type.googleapis.com/envoy.extensions.access_loggers.stream.v3.StdoutAccessLog
+                http_filters: # 定义http过滤器链
+                  - name: envoy.filters.http.router # 调用7层的路由过滤器
+                    typed_config:
+                      "@type": type.googleapis.com/envoy.extensions.filters.http.router.v3.Router
+                route_config:
+                  name: local_route
+                  virtual_hosts:
+                    - name: backend
+                      domains: ["*"]
+                      routes:
+                        - match:
+                            prefix: "/"
+                          route:
+                            cluster: targetCluster
+
+  clusters:
+    - name: targetCluster
+      type: EDS
+      connect_timeout: 0.25s
+      eds_cluster_config:
+        service_name: localservices
+        eds_config:
+          resource_api_version: V3 # xDS资源的API版本，支持 AUTO、V2、V3，如果未指定，默认为 v2。
+          api_config_source: # api_config_source的数据来自于 xDS API Server，即 Management Server。
+            api_type: REST
+            cluster_names: [xds_cluster] # 该字段只用于REST，cluster_names 的集群必须是静态定义的，其类型不能是EDS。
+            transport_api_version: V3
+            refresh_delay: 5s
+    - name: xds_cluster
+      type: STATIC
+      connect_timeout: 0.25s
+      load_assignment:
+        cluster_name: xds_cluster
+        endpoints:
+          - lb_endpoints:
+              - endpoint:
+                  address:
+                    socket_address:
+                      address: 172.29.9.65 #这个是本机的一个服务，这个服务是暂时不存在的，需要去监听/v3/discovery:endpoints, DiscoveryRequest, DiscoveryResponse
+                      port_value: 8080

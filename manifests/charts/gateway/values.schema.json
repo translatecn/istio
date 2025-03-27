@@ -64,10 +64,16 @@
           "type": "object"
         },
         "minReadySeconds": {
-          "type": [ "null", "integer" ]
+          "type": [
+            "null",
+            "integer"
+          ]
         },
         "readinessProbe": {
-          "type": [ "null", "object" ]
+          "type": [
+            "null",
+            "object"
+          ]
         },
         "labels": {
           "type": "object"
@@ -108,10 +114,16 @@
               "type": "object",
               "properties": {
                 "cpu": {
-                  "type": ["string", "null"]
+                  "type": [
+                    "string",
+                    "null"
+                  ]
                 },
                 "memory": {
-                  "type": ["string", "null"]
+                  "type": [
+                    "string",
+                    "null"
+                  ]
                 }
               }
             },
@@ -119,10 +131,16 @@
               "type": "object",
               "properties": {
                 "cpu": {
-                  "type": ["string", "null"]
+                  "type": [
+                    "string",
+                    "null"
+                  ]
                 },
                 "memory": {
-                  "type": ["string", "null"]
+                  "type": [
+                    "string",
+                    "null"
+                  ]
                 }
               }
             }

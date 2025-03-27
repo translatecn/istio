@@ -24,15 +24,11 @@ import (
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/types/known/structpb"
 
-	pb "istio.io/api/security/v1alpha1"
+	pb "istio.io/istio/istio.io/api/security/v1alpha1"
 	istiogrpc "istio.io/istio/pilot/pkg/grpc"
 	"istio.io/istio/pkg/log"
 	"istio.io/istio/pkg/security"
 	"istio.io/istio/security/pkg/nodeagent/caclient"
-)
-
-const (
-	bearerTokenPrefix = "Bearer "
 )
 
 var citadelClientLog = log.RegisterScope("citadelclient", "citadel client debugging")

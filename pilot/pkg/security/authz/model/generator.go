@@ -80,6 +80,7 @@ type envoyFilterGenerator struct{}
 
 func (efg envoyFilterGenerator) permission(key, value string, _ bool) (*rbacpb.Permission, error) {
 	// Split key of format "experimental.envoy.filters.a.b[c]" to "envoy.filters.a.b" and "c".
+
 	parts := strings.SplitN(strings.TrimSuffix(strings.TrimPrefix(key, "experimental."), "]"), "[", 2)
 
 	if len(parts) != 2 {
@@ -98,6 +99,7 @@ func (efg envoyFilterGenerator) permission(key, value string, _ bool) (*rbacpb.P
 
 func (efg envoyFilterGenerator) extendedPermission(key string, values []string, _ bool) (*rbacpb.Permission, error) {
 	// Split key of format "experimental.envoy.filters.a.b[c]" to "envoy.filters.a.b" and "c".
+
 	parts := strings.SplitN(strings.TrimSuffix(strings.TrimPrefix(key, "experimental."), "]"), "[", 2)
 
 	if len(parts) != 2 {

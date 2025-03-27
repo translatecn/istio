@@ -6,15 +6,15 @@ metadata:
 spec:
   action: ALLOW
   rules:
-  - from:
-    - source:
-        requestPrincipals: ["id-1"]
-    to:
-    - operation:
-        methods: ["GET"]
-  - from:
-    - source:
-        namespaces: ["ns-1"]
-    to:
-    - operation:
-        hosts: ["example.com"]
+    - from:
+        - source:
+            requestPrincipals: [ "id-1" ]
+      to:
+        - operation:
+            methods: [ "GET" ]
+    - from:
+        - source:
+            namespaces: [ "ns-1" ]
+      to:
+        - operation:
+            hosts: [ "example.com" ]

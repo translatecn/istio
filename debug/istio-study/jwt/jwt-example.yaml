@@ -1,0 +1,25 @@
+#jwt-examplt.yaml
+apiVersion: "security.istio.io/v1"
+kind: RequestAuthentication
+metadata:
+  name: jwt-example
+  namespace: istio-system
+spec:
+  selector:
+    matchLabels:
+      istio: ingressgateway #匹配我们的入口网关
+  jwtRules:
+    - issuer: "testing@secure.istio.io" # 签发者，需要和 JWT payload 中的 iss 属性完全一致。
+      forwardOriginalToken: true # 后端程序也能拿到auth header
+      jwks: |
+        {
+            "keys": [
+                {
+                  "e": "AQAB",
+                  "kid": "youdianzhishi-key",
+                  "kty": "RSA",
+                  "n": "oqAYmaGpxvcx9PhnBJ-xdE8P1EAeK7zhYuAtOFaW8qbb2XjqUH-DZpJjBVb2Eu468i0RmZmg8m6bM6oGfxcJ6SQjp_P4dIc_L2hfXoq_NwfmJb05ZbEQH2g6zQSPdBSVIyu_6l8OAfp7qyhfBi1-qJjbz_JJ9Blbag_zpJWJ-PJIZCNoZC1HSCkhmOVI6hG1ZySxDGILqFcpR6PBd41jgfqFChXN9kgVkb5uNjzLFtbC3jMO664sxWDyTJNUHqylMnGPB1BwUZzCgVQ3oeLsyA4DLo0Mx8btITiFrm0er2dAbfnmp1JxJp9u6O1SWUy0BrcmZSNnaegzVANl1ODV1JNvSKwhD27lcHZ30QhPccaRY3fzr7tnxaodKOilbsRQKj9uPelzf_u4lxLKMw2SMrSuQ_Bgemdv2iS-AjmPTdkWQLnPAiVG6-GWL5EeUu2KP_4KYdOTpsJCZqVCzoxMb0T7dg05pb5J3MElR3WqcTr5MiRCpyyvI_3_TOBfiTYTBNingk_IKHzlE4iE0LxFKtu0gKrleZXfRATCzsjNaWT78xenbUDqTJcUA6_2u_68zVCEsAsqpdfMZ1E6WKXVN5vGt-fvl7eahZi7DPVF-IAOr8NY08i9MeqOrxN6O4PXcRIP2xngyZuFIjTTJWlFF7YHi--3lrP4qvS3jSgyt20"
+                }
+            ]
+        }
+# 返回401

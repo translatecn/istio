@@ -289,6 +289,7 @@ func (h *httpHandler) echo(w http.ResponseWriter, r *http.Request, id uuid.UUID)
 func (h *httpHandler) webSocketEcho(w http.ResponseWriter, r *http.Request) {
 	// adapted from https://github.com/gorilla/websocket/blob/master/examples/echo/server.go
 	// First send upgrade headers
+
 	c, err := webSocketUpgrader.Upgrade(w, r, nil)
 	if err != nil {
 		epLog.Warn("websocket-echo upgrade failed: " + err.Error())

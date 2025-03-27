@@ -14,7 +14,9 @@
 
 package cluster
 
-import "istio.io/istio/pkg/util/identifier"
+import (
+	"istio.io/istio/pkg/util/identifier"
+)
 
 // ID is the unique identifier for a k8s cluster.
 type ID string

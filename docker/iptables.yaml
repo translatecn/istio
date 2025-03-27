@@ -17,9 +17,9 @@ archs:
   - x86_64
   - aarch64
 paths:
-- path: /run
-  type: directory
-  permissions: 0o755
+  - path: /run
+    type: directory
+    permissions: 0o755
 accounts:
   users:
     - username: nonroot

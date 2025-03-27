@@ -25,7 +25,7 @@ import (
 
 	"istio.io/istio/cni/pkg/plugin"
 	"istio.io/istio/pkg/log"
-	istioversion "istio.io/istio/pkg/version"
+	istioversion "istio.io/istio/pkg/version_over"
 )
 
 func main() {
@@ -37,6 +37,7 @@ func main() {
 func runPlugin() error {
 	// Setup initial logging now. We will override it with proper logging over UDS later, but at this point we don't have the config
 	// read yet and do not want to be completely blind to logs.
+
 	if err := log.Configure(plugin.GetLoggingOptions(nil)); err != nil {
 		return err
 	}

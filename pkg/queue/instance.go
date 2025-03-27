@@ -100,12 +100,12 @@ func (q *queueImpl) Push(item Task) {
 	q.cond.Signal()
 }
 
-func (q *queueImpl) Closed() <-chan struct{} {
+func (q *queueImpl) Closed() <-chan struct{} { // get blocks until it can return a task to be processed. If shutdown = true,
+	// the processing go routine should stop.
+
 	return q.closed
 }
 
-// get blocks until it can return a task to be processed. If shutdown = true,
-// the processing go routine should stop.
 func (q *queueImpl) get() (task *queueTask, shutdown bool) {
 	q.cond.L.Lock()
 	defer q.cond.L.Unlock()
@@ -132,6 +132,7 @@ func (q *queueImpl) get() (task *queueTask, shutdown bool) {
 
 func (q *queueImpl) processNextItem() bool {
 	// Wait until there is a new item in the queue
+
 	task, shuttingdown := q.get()
 	if shuttingdown {
 		return false

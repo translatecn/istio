@@ -61,7 +61,7 @@ data:
       volume_enabled: true
     memberlist:
       join_members:
-      - loki-memberlist
+        - loki-memberlist
     pattern_ingester:
       enabled: false
     query_range:
@@ -73,13 +73,13 @@ data:
       file: /etc/loki/runtime-config/runtime-config.yaml
     schema_config:
       configs:
-      - from: "2024-04-01"
-        index:
-          period: 24h
-          prefix: index_
-        object_store: 'filesystem'
-        schema: v13
-        store: tsdb
+        - from: "2024-04-01"
+          index:
+            period: 24h
+            prefix: index_
+          object_store: 'filesystem'
+          schema: v13
+          store: tsdb
     server:
       grpc_listen_port: 9095
       http_listen_port: 3100
@@ -115,7 +115,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
 data:
   runtime-config.yaml: |
-    {}
+    { }
 ---
 # Source: loki/templates/backend/clusterrole.yaml
 kind: ClusterRole
@@ -129,9 +129,9 @@ metadata:
     app.kubernetes.io/managed-by: Helm
   name: loki-clusterrole
 rules:
-- apiGroups: [""] # "" indicates the core API group
-  resources: ["configmaps", "secrets"]
-  verbs: ["get", "watch", "list"]
+  - apiGroups: [ "" ] # "" indicates the core API group
+    resources: [ "configmaps", "secrets" ]
+    verbs: [ "get", "watch", "list" ]
 ---
 # Source: loki/templates/backend/clusterrolebinding.yaml
 kind: ClusterRoleBinding
@@ -287,7 +287,7 @@ spec:
       terminationGracePeriodSeconds: 30
       containers:
         - name: loki-sc-rules
-          image: "kiwigrid/k8s-sidecar:1.27.5"
+          image: "registry.cn-hangzhou.aliyuncs.com/acejilam/k8s-sidecar:1.27.5"
           imagePullPolicy: IfNotPresent
           env:
             - name: METHOD
@@ -308,7 +308,7 @@ spec:
             - name: sc-rules-volume
               mountPath: "/rules"
         - name: loki
-          image: docker.io/grafana/loki:3.2.0
+          image: registry.cn-hangzhou.aliyuncs.com/acejilam/loki:3.2.0
           imagePullPolicy: IfNotPresent
           args:
             - -config.file=/etc/loki/config/config.yaml
@@ -327,7 +327,7 @@ spec:
             allowPrivilegeEscalation: false
             capabilities:
               drop:
-              - ALL
+                - ALL
             readOnlyRootFilesystem: true
           readinessProbe:
             httpGet:
@@ -347,17 +347,17 @@ spec:
             - name: sc-rules-volume
               mountPath: "/rules"
           resources:
-            {}
+            { }
       affinity:
         podAntiAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
-          - labelSelector:
-              matchLabels:
-                app.kubernetes.io/component: single-binary
-            topologyKey: kubernetes.io/hostname
+            - labelSelector:
+                matchLabels:
+                  app.kubernetes.io/component: single-binary
+              topologyKey: kubernetes.io/hostname
       volumes:
         - name: tmp
-          emptyDir: {}
+          emptyDir: { }
         - name: config
           configMap:
             name: loki
@@ -368,15 +368,7 @@ spec:
           configMap:
             name: loki-runtime
         - name: sc-rules-volume
-          emptyDir: {}
-  volumeClaimTemplates:
-    - apiVersion: v1
-      kind: PersistentVolumeClaim
-      metadata:
-        name: storage
-      spec:
-        accessModes:
-          - ReadWriteOnce
-        resources:
-          requests:
-            storage: "10Gi"
+          emptyDir: { }
+        - name: storage
+          emptyDir: { }
+          

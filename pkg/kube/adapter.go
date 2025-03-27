@@ -31,10 +31,8 @@ const (
 	admissionAPIV1beta1 = "admission.k8s.io/v1beta1"
 
 	// Operation constants
-	Create  string = "CREATE"
-	Update  string = "UPDATE"
-	Delete  string = "DELETE"
-	Connect string = "CONNECT"
+	Create string = "CREATE"
+	Update string = "UPDATE"
 )
 
 // AdmissionReview describes an admission review request/response.

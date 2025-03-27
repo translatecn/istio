@@ -1,0 +1,18 @@
+#peer-strict-pod-port.yaml
+apiVersion: security.istio.io/v1beta1
+kind: PeerAuthentication
+metadata:
+  name: "httpbin"
+  namespace: "bar"
+spec:
+  selector:
+    matchLabels:
+      app: httpbin
+  mtls:
+    mode: STRICT
+  portLevelMtls:
+    80:
+      mode: DISABLE
+# 80 端口的对等认证策略为 DISABLE，即禁用双向 TLS，
+# 其他端口的对等认证策略为 STRICT，即启用双向 TLS，
+# 也就是说我们只允许 httpbin 应用的 80 端口接收明文流量，其他端口都必须使用双向 TLS。

@@ -9,12 +9,12 @@ metadata:
   name: make-aptget-work
 spec:
   hosts:
-  - deb.debian.org
-  - cdn-fastly.deb.debian.org
-  - security.debian.org
-  - archive.ubuntu.com
-  - security.ubuntu.com
+    - deb.debian.org
+    - cdn-fastly.deb.debian.org
+    - security.debian.org
+    - archive.ubuntu.com
+    - security.ubuntu.com
   ports:
-  - number: 80
-    name: http
-    protocol: HTTP
+    - number: 80
+      name: http
+      protocol: HTTP

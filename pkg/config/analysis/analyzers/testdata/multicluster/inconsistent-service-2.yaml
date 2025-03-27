@@ -8,10 +8,10 @@ spec:
   selector:
     app: my-service
   ports:
-  - name: tcp-foo
-    protocol: TCP
-    port: 8080
-    targetPort: 8080
+    - name: tcp-foo
+      protocol: TCP
+      port: 8080
+      targetPort: 8080
 ---
 # Service with extra port in cluster2, should generate warning.
 apiVersion: v1
@@ -23,14 +23,14 @@ spec:
   selector:
     app: my-service
   ports:
-  - name: tcp-foo
-    protocol: TCP
-    port: 8080
-    targetPort: 8080
-  - name: tcp-bar
-    protocol: TCP
-    port: 8081
-    targetPort: 8081
+    - name: tcp-foo
+      protocol: TCP
+      port: 8080
+      targetPort: 8080
+    - name: tcp-bar
+      protocol: TCP
+      port: 8081
+      targetPort: 8081
 ---
 # Service with inconsistent port name, should generate warning.
 apiVersion: v1
@@ -42,10 +42,10 @@ spec:
   selector:
     app: my-service
   ports:
-  - name: tcp-fake
-    protocol: TCP
-    port: 8080
-    targetPort: 8080
+    - name: tcp-fake
+      protocol: TCP
+      port: 8080
+      targetPort: 8080
 ---
 # Service is mixed type, should generate warning.
 apiVersion: v1
@@ -58,10 +58,10 @@ spec:
   selector:
     app: my-service
   ports:
-  - name: tcp-foo
-    protocol: TCP
-    port: 8080
-    targetPort: 8080
+    - name: tcp-foo
+      protocol: TCP
+      port: 8080
+      targetPort: 8080
 ---
 # Service is mixed mode(clusterIP and headless), should generate warning.
 apiVersion: v1
@@ -74,10 +74,10 @@ spec:
   selector:
     app: my-service
   ports:
-  - name: tcp-foo
-    protocol: TCP
-    port: 8080
-    targetPort: 8080
+    - name: tcp-foo
+      protocol: TCP
+      port: 8080
+      targetPort: 8080
 ---
 # Service is mixed with port protocols, should generate warning.
 apiVersion: v1
@@ -90,7 +90,7 @@ spec:
   selector:
     app: my-service
   ports:
-  - name: http
-    protocol: TCP
-    port: 8080
-    targetPort: 8080
+    - name: http
+      protocol: TCP
+      port: 8080
+      targetPort: 8080

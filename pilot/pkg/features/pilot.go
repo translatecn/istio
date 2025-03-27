@@ -57,47 +57,13 @@ var (
 		"Custom host name of istiod that istiod signs the server cert. "+
 			"Multiple custom host names are supported, and multiple values are separated by commas.").Get()
 
-	PilotCertProvider = env.Register("PILOT_CERT_PROVIDER", constants.CertProviderIstiod,
-		"The provider of Pilot DNS certificate. K8S RA will be used for k8s.io/NAME. 'istiod' value will sign"+
-			" using Istio build in CA. Other values will not not generate TLS certs, but still "+
-			" distribute ./etc/certs/root-cert.pem. Only used if custom certificates are not mounted.").Get()
-
-	ClusterName = env.Register("CLUSTER_ID", constants.DefaultClusterName,
-		"Defines the cluster and service registry that this Istiod instance belongs to").Get()
-
-	ExternalIstiod = env.Register("EXTERNAL_ISTIOD", false,
-		"If this is set to true, one Istiod will control remote clusters including CA.").Get()
-
-	EnableCAServer = env.Register("ENABLE_CA_SERVER", true,
-		"If this is set to false, will not create CA server in istiod.").Get()
-
-	EnableDebugOnHTTP = env.Register("ENABLE_DEBUG_ON_HTTP", true,
-		"If this is set to false, the debug interface will not be enabled, recommended for production").Get()
-
-	EnableUnsafeAdminEndpoints = env.Register("UNSAFE_ENABLE_ADMIN_ENDPOINTS", false,
-		"If this is set to true, dangerous admin endpoints will be exposed on the debug interface. Not recommended for production.").Get()
-
 	EnableServiceEntrySelectPods = env.Register("PILOT_ENABLE_SERVICEENTRY_SELECT_PODS", true,
 		"If enabled, service entries with selectors will select pods from the cluster. "+
 			"It is safe to disable it if you are quite sure you don't need this feature").Get()
 
-	EnableK8SServiceSelectWorkloadEntries = env.RegisterBoolVar("PILOT_ENABLE_K8S_SELECT_WORKLOAD_ENTRIES", true,
-		"If enabled, Kubernetes services with selectors will select workload entries with matching labels. "+
-			"It is safe to disable it if you are quite sure you don't need this feature").Get()
-
-	InjectionWebhookConfigName = env.Register("INJECTION_WEBHOOK_CONFIG_NAME", "istio-sidecar-injector",
-		"Name of the mutatingwebhookconfiguration to patch, if istioctl is not used.").Get()
-
 	ValidationWebhookConfigName = env.Register("VALIDATION_WEBHOOK_CONFIG_NAME", "istio-istio-system",
 		"If not empty, the controller will automatically patch validatingwebhookconfiguration when the CA certificate changes. "+
 			"Only works in kubernetes environment.").Get()
-
-	RemoteClusterTimeout = env.Register(
-		"PILOT_REMOTE_CLUSTER_TIMEOUT",
-		30*time.Second,
-		"After this timeout expires, pilot can become ready without syncing data from clusters added via remote-secrets. "+
-			"Setting the timeout to 0 disables this behavior.",
-	).Get()
 
 	DisableMxALPN = env.Register("PILOT_DISABLE_MX_ALPN", false,
 		"If true, pilot will not put istio-peer-exchange ALPN into TLS handshake configuration.",
@@ -117,8 +83,7 @@ var (
 	WorkloadEntryHealthChecks = env.Register("PILOT_ENABLE_WORKLOAD_ENTRY_HEALTHCHECKS", true,
 		"Enables automatic health checks of WorkloadEntries based on the config provided in the associated WorkloadGroup").Get()
 
-	WorkloadEntryCrossCluster = env.Register("PILOT_ENABLE_CROSS_CLUSTER_WORKLOAD_ENTRY", true,
-		"If enabled, pilot will read WorkloadEntry from other clusters, selectable by Services in that cluster.").Get()
+	WorkloadEntryCrossCluster = env.Register("PILOT_ENABLE_CROSS_CLUSTER_WORKLOAD_ENTRY", true, "If enabled, pilot will read WorkloadEntry from other clusters, selectable by Services in that cluster.").Get()
 
 	WasmRemoteLoadConversion = env.Register("ISTIO_AGENT_ENABLE_WASM_REMOTE_LOAD_CONVERSION", true,
 		"If enabled, Istio agent will intercept ECDS resource update, downloads Wasm module, "+
@@ -130,40 +95,11 @@ var (
 		"The interval for istiod to fetch the jwks_uri for the jwks public key.",
 	).Get()
 
-	EnableNodeUntaintControllers = env.Register(
-		"PILOT_ENABLE_NODE_UNTAINT_CONTROLLERS",
-		false,
-		"If enabled, controller that untaints nodes with cni pods ready will run. This should be enabled if you disabled ambient init containers.").Get()
-
-	EnableIPAutoallocate = env.Register(
-		"PILOT_ENABLE_IP_AUTOALLOCATE",
-		false,
-		"If enabled, pilot will start a controller that assigns IP addresses to ServiceEntry which do not have a user-supplied IP. "+
-			"This, when combined with DNS capture allows for tcp routing of traffic sent to the ServiceEntry.").Get()
-
 	// EnableUnsafeAssertions enables runtime checks to test assertions in our code. This should never be enabled in
 	// production; when assertions fail Istio will panic.
-	EnableUnsafeAssertions = env.Register(
-		"UNSAFE_PILOT_ENABLE_RUNTIME_ASSERTIONS",
-		false,
-		"If enabled, addition runtime asserts will be performed. "+
-			"These checks are both expensive and panic on failure. As a result, this should be used only for testing.",
-	).Get()
 
 	// EnableUnsafeDeltaTest enables runtime checks to test Delta XDS efficiency. This should never be enabled in
 	// production.
-	EnableUnsafeDeltaTest = env.Register(
-		"UNSAFE_PILOT_ENABLE_DELTA_TEST",
-		false,
-		"If enabled, addition runtime tests for Delta XDS efficiency are added. "+
-			"These checks are extremely expensive, so this should be used only for testing, not production.",
-	).Get()
-
-	SharedMeshConfig = env.Register("SHARED_MESH_CONFIG", "",
-		"Additional config map to load for shared MeshConfig settings. The standard mesh config will take precedence.").Get()
-
-	MultiRootMesh = env.Register("ISTIO_MULTIROOT_MESH", false,
-		"If enabled, mesh will support certificates signed by more than one trustAnchor for ISTIO_MUTUAL mTLS").Get()
 
 	EnableEnvoyFilterMetrics = env.Register("PILOT_ENVOY_FILTER_STATS", false,
 		"If true, Pilot will collect metrics for envoy filter operations.").Get()
@@ -173,12 +109,6 @@ var (
 
 	MulticlusterHeadlessEnabled = env.Register("ENABLE_MULTICLUSTER_HEADLESS", true,
 		"If true, the DNS name table for a headless service will resolve to same-network endpoints in any cluster.").Get()
-
-	ResolveHostnameGateways = env.Register("RESOLVE_HOSTNAME_GATEWAYS", true,
-		"If true, hostnames in the LoadBalancer addresses of a Service will be resolved at the control plane for use in cross-network gateways.").Get()
-
-	MultiNetworkGatewayAPI = env.Register("PILOT_MULTI_NETWORK_DISCOVER_GATEWAY_API", true,
-		"If true, Pilot will discover labeled Kubernetes gateway objects as multi-network gateways.").Get()
 
 	InsecureKubeConfigOptions = func() sets.String {
 		v := env.Register(
@@ -194,21 +124,9 @@ var (
 		"If enabled, metadata representing canonical services for ServiceEntry resources with a location of mesh_external will be populated"+
 			"in the cluster metadata for those endpoints.").Get()
 
-	LocalClusterSecretWatcher = env.Register("LOCAL_CLUSTER_SECRET_WATCHER", false,
-		"If enabled, the cluster secret watcher will watch the namespace of the external cluster instead of config cluster").Get()
-
-	InformerWatchNamespace = env.Register("ISTIO_WATCH_NAMESPACE", "",
-		"If set, limit Kubernetes watches to a single namespace. "+
-			"Warning: only a single namespace can be set.").Get()
-
 	// This is a feature flag, can be removed if protobuf proves universally better.
 	KubernetesClientContentType = env.Register("ISTIO_KUBE_CLIENT_CONTENT_TYPE", "protobuf",
 		"The content type to use for Kubernetes clients. Defaults to protobuf. Valid options: [protobuf, json]").Get()
-
-	ValidateWorkloadEntryIdentity = env.Register("ISTIO_WORKLOAD_ENTRY_VALIDATE_IDENTITY", true,
-		"If enabled, will validate the identity of a workload matches the identity of the "+
-			"WorkloadEntry it is associating with for health checks and auto registration. "+
-			"This flag is added for backwards compatibility only and will be removed in future releases").Get()
 
 	JwksResolverInsecureSkipVerify = env.Register("JWKS_RESOLVER_INSECURE_SKIP_VERIFY", false,
 		"If enabled, istiod will skip verifying the certificate of the JWKS server.").Get()
@@ -242,9 +160,34 @@ var (
 
 	PreferDestinationRulesTLSForExternalServices = env.Register("PREFER_DESTINATIONRULE_TLS_FOR_EXTERNAL_SERVICES", true,
 		"If true, external services will prefer the TLS settings from DestinationRules over the metadata TLS settings.").Get()
+	EnableDebugOnHTTP         = env.Register("ENABLE_DEBUG_ON_HTTP", true, "If this is set to false, the debug interface will not be enabled, recommended for production").Get()
+	SharedMeshConfig          = env.Register("SHARED_MESH_CONFIG", "", "为共享的MeshConfig设置加载额外的配置映射。标准网格配置将优先考虑。").Get()
+	EnableCAServer            = env.Register("ENABLE_CA_SERVER", true, "If this is set to false, will not create CA server in istiod.").Get()
+	PilotCertProvider         = env.Register("PILOT_CERT_PROVIDER", constants.CertProviderIstiod, "The provider of Pilot DNS certificate. K8S RA will be used for k8s.io/NAME. 'istiod' value will sign using Istio build in CA. Other values will not not generate TLS certs, but still distribute .ca. Only used if custom certificates are not mounted.").Get()
+	LocalClusterSecretWatcher = env.Register("LOCAL_CLUSTER_SECRET_WATCHER", false, "如果启用，集群秘密监视程序将监视外部集群的命名空间，而不是配置集群").Get()
+	ExternalIstiod            = env.Register("EXTERNAL_ISTIOD", false, "如果设置为true，一个Istiod将控制包括CA在内的远程集群。").Get()
+
+	EnableNodeUntaintControllers = env.Register("PILOT_ENABLE_NODE_UNTAINT_CONTROLLERS", false, "如果启用，将运行带有cni pod的控制器。如果您禁用了环境初始化容器，则应该启用此选项。").Get()
+	EnableIPAutoallocate         = env.Register("PILOT_ENABLE_IP_AUTOALLOCATE", false, "如果启用，pilot将启动一个控制器，该控制器为没有用户提供IP的ServiceEntry分配IP地址。当与DNS捕获结合使用时，它允许发送到ServiceEntry的流量的tcp路由。").Get()
+	MultiRootMesh                = env.Register("ISTIO_MULTIROOT_MESH", false, "如果启用，mesh将支持由多个ISTIO_MUTUAL mTLS的trustchor签名的证书").Get()
+
+	InjectionWebhookConfigName = env.Register("INJECTION_WEBHOOK_CONFIG_NAME", "istio-sidecar-injector", "Name of the mutatingwebhookconfiguration to patch, if istioctl is not used.").Get()
+	EnableUnsafeAdminEndpoints = env.Register("UNSAFE_ENABLE_ADMIN_ENDPOINTS", false, "如果将此设置为true，则将在调试界面上暴露危险的管理端点。不建议用于生产。").Get()
+	EnableUnsafeAssertions     = env.Register("UNSAFE_PILOT_ENABLE_RUNTIME_ASSERTIONS", false, "如果启用，将执行附加运行时断言。这些检查既昂贵又失败。因此，这应该只用于测试。").Get()
+	EnableUnsafeDeltaTest      = env.Register("UNSAFE_PILOT_ENABLE_DELTA_TEST", false, "如果启用，则会添加Delta XDS效率的附加运行时测试。这些检查非常昂贵，因此应该只用于测试，而不是用于生产。").Get()
+
+	ResolveHostnameGateways = env.Register("RESOLVE_HOSTNAME_GATEWAYS", true, "如果为true，则服务的LoadBalancer地址中的主机名将在控制平面解析，以便在跨网络网关中使用。").Get()
+	ClusterName             = env.Register("CLUSTER_ID", constants.DefaultClusterName, "Defines the cluster and service registry that this Istiod instance belongs to").Get()
+
+	EnableK8SServiceSelectWorkloadEntries = env.RegisterBoolVar("PILOT_ENABLE_K8S_SELECT_WORKLOAD_ENTRIES", true, "如果启用，带选择器的Kubernetes服务将选择具有匹配标签的工作负载条目。如果您非常确定不需要此功能，则禁用它是安全的").Get()
+
+	RemoteClusterTimeout   = env.Register("PILOT_REMOTE_CLUSTER_TIMEOUT", 30*time.Second, "After this timeout expires, pilot can become ready without syncing data from clusters added via remote-secrets. Setting the timeout to 0 disables this behavior.").Get()
+	MultiNetworkGatewayAPI = env.Register("PILOT_MULTI_NETWORK_DISCOVER_GATEWAY_API", true, "If true, Pilot will discover labeled Kubernetes gateway objects as multi-network gateways.").Get()
+
+	InformerWatchNamespace        = env.Register("ISTIO_WATCH_NAMESPACE", "", "If set, limit Kubernetes watches to a single namespace. Warning: only a single namespace can be set.").Get()
+	ValidateWorkloadEntryIdentity = env.Register("ISTIO_WORKLOAD_ENTRY_VALIDATE_IDENTITY", true, "如果启用，将验证工作负载的标识是否与它所关联的WorkloadEntry的标识匹配，以便进行运行状况检查和自动注册。此标志仅为向后兼容性而添加，并将在将来的版本中删除").Get()
 )
 
-// UnsafeFeaturesEnabled returns true if any unsafe features are enabled.
 func UnsafeFeaturesEnabled() bool {
 	return EnableUnsafeAdminEndpoints || EnableUnsafeAssertions || EnableUnsafeDeltaTest
 }

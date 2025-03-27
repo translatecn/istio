@@ -17,9 +17,9 @@ package util
 import (
 	"strings"
 
-	"istio.io/api/annotation"
-	meshconfig "istio.io/api/mesh/v1alpha1"
-	"istio.io/api/networking/v1beta1"
+	"istio.io/istio/istio.io/api/annotation"
+	meshconfig "istio.io/istio/istio.io/api/mesh/v1alpha1"
+	"istio.io/istio/istio.io/api/networking/v1beta1"
 	"istio.io/istio/pkg/config/analysis"
 	"istio.io/istio/pkg/config/resource"
 	"istio.io/istio/pkg/config/schema/gvk"

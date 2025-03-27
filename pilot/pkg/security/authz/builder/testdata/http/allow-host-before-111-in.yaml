@@ -11,5 +11,5 @@ spec:
   rules:
     - to:
         - operation:
-            hosts: ["example.com", "prefix.example.*", "*.example.com", "*"]
-            notHosts: ["not-example.com", "prefix.not-example.*", "*.not-example.com", "*"]
+            hosts: [ "example.com", "prefix.example.*", "*.example.com", "*" ]
+            notHosts: [ "not-example.com", "prefix.not-example.*", "*.not-example.com", "*" ]

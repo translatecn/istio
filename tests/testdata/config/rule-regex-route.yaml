@@ -4,14 +4,14 @@ metadata:
   name: regex-extsvc
   namespace: testns
 spec:
-   hosts:
-   - regex.extsvc.com
-   ports:
-   - number: 9003
-     name: http
-     protocol: HTTP
-   resolution: STATIC
-   endpoints:
+  hosts:
+    - regex.extsvc.com
+  ports:
+    - number: 9003
+      name: http
+      protocol: HTTP
+  resolution: STATIC
+  endpoints:
     - address: 127.0.0.2
       ports:
         http: 8080
@@ -48,18 +48,18 @@ spec:
     - regex.extsvc.com
   http:
     - match:
-      - headers:
-          foo:
-            regex: "b.*"
-        sourceLabels:
-          version: v1
+        - headers:
+            foo:
+              regex: "b.*"
+          sourceLabels:
+            version: v1
       route:
-      - destination:
-          host: regex.extsvc.com
-          subset: v2
-        weight: 100
+        - destination:
+            host: regex.extsvc.com
+            subset: v2
+          weight: 100
     - route:
-      - destination:
-          host: regex.extsvc.com
-          subset: v1
-        weight: 100
+        - destination:
+            host: regex.extsvc.com
+            subset: v1
+          weight: 100

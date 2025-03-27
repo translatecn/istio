@@ -24,9 +24,9 @@ import (
 )
 
 const (
-	DefaultScopeName       = "default"
-	OverrideScopeName      = "all"
-	defaultOutputLevel     = InfoLevel
+	DefaultScopeName  = "default"
+	OverrideScopeName = "all"
+
 	defaultStackTraceLevel = NoneLevel
 	defaultOutputPath      = "stdout"
 	defaultErrorOutputPath = "stderr"

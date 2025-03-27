@@ -25,8 +25,8 @@ import (
 	metadata "github.com/envoyproxy/go-control-plane/envoy/type/metadata/v3"
 	"google.golang.org/protobuf/types/known/structpb"
 
-	"istio.io/api/mesh/v1alpha1"
-	networking "istio.io/api/networking/v1alpha3"
+	"istio.io/istio/istio.io/api/mesh/v1alpha1"
+	networking "istio.io/istio/istio.io/api/networking/v1alpha3"
 	"istio.io/istio/pilot/pkg/features"
 	"istio.io/istio/pilot/pkg/model"
 	"istio.io/istio/pilot/pkg/networking/util"

@@ -14,7 +14,9 @@
 
 package namespace
 
-import "strings"
+import (
+	"strings"
+)
 
 var (
 	chck Static

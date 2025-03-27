@@ -27,19 +27,7 @@ import (
 	"istio.io/istio/pkg/spiffe"
 )
 
-// authenticate authenticates the ADS request using the configured authenticators.
-// Returns the validated principals or an error.
-// If no authenticators are configured, or if the request is on a non-secure
-// stream ( 15010 ) - returns an empty list of principals and no errors.
-func (s *DiscoveryServer) authenticate(ctx context.Context) ([]string, error) {
-	c, err := security.Authenticate(ctx, s.Authenticators)
-	if c != nil {
-		return c.Identities, nil
-	}
-	return nil, err
-}
-
-func (s *DiscoveryServer) authorize(con *Connection, identities []string) error {
+func (s *DiscoveryServer) authorize(con *ConnectionServer, identities []string) error {
 	if con == nil || con.proxy == nil {
 		return nil
 	}
@@ -71,4 +59,16 @@ func checkConnectionIdentity(proxy *model.Proxy, identities []string) (*spiffe.I
 		return &spiffeID, nil
 	}
 	return nil, fmt.Errorf("no identities (%v) matched %v/%v", identities, proxy.ConfigNamespace, proxy.Metadata.ServiceAccount)
+}
+
+// authenticate authenticates the ADS request using the configured authenticators.
+// Returns the validated principals or an error.
+// If no authenticators are configured, or if the request is on a non-secure
+// stream ( 15010 ) - returns an empty list of principals and no errors.
+func (s *DiscoveryServer) authenticate(ctx context.Context) ([]string, error) {
+	c, err := security.Authenticate(ctx, s.Authenticators)
+	if c != nil {
+		return c.Identities, nil
+	}
+	return nil, err
 }

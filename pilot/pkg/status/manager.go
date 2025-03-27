@@ -106,6 +106,7 @@ type Controller struct {
 // will be called with target and context as input.
 func (c *Controller) EnqueueStatusUpdateResource(context any, target Resource) {
 	// TODO: buffer this with channel
+
 	c.workers.Push(target, c, context)
 }
 

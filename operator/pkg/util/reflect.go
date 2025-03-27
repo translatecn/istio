@@ -46,6 +46,7 @@ func IsSlice(value any) bool {
 // IsSliceInterfacePtr reports whether v is a slice ptr type.
 func IsSliceInterfacePtr(v any) bool {
 	// Must use ValueOf because Elem().Elem() type resolves dynamically.
+
 	vv := reflect.ValueOf(v)
 	return vv.Kind() == reflect.Ptr && vv.Elem().Kind() == reflect.Interface && vv.Elem().Elem().Kind() == reflect.Slice
 }

@@ -10,22 +10,22 @@ _internal_defaults_do_not_set:
         app: istio-ingressgateway
         istio: ingressgateway
       ports:
-      ## You can add custom gateway ports in user values overrides, but it must include those ports since helm replaces.
-      # Note that AWS ELB will by default perform health checks on the first port
-      # on this list. Setting this to the health check port will ensure that health
-      # checks always work. https://github.com/istio/istio/issues/12503
-      - port: 15021
-        targetPort: 15021
-        name: status-port
-        protocol: TCP
-      - port: 80
-        targetPort: 8080
-        name: http2
-        protocol: TCP
-      - port: 443
-        targetPort: 8443
-        name: https
-        protocol: TCP
+        ## You can add custom gateway ports in user values overrides, but it must include those ports since helm replaces.
+        # Note that AWS ELB will by default perform health checks on the first port
+        # on this list. Setting this to the health check port will ensure that health
+        # checks always work. https://github.com/istio/istio/issues/12503
+        - port: 15021
+          targetPort: 15021
+          name: status-port
+          protocol: TCP
+        - port: 80
+          targetPort: 8080
+          name: http2
+          protocol: TCP
+        - port: 443
+          targetPort: 8443
+          name: https
+          protocol: TCP
 
       # Scalability tuning
       # replicaCount: 1
@@ -37,8 +37,8 @@ _internal_defaults_do_not_set:
 
       cpu:
         targetAverageUtilization: 80
-      memory: {}
-        # targetAverageUtilization: 80
+      memory: { }
+      # targetAverageUtilization: 80
 
       resources:
         requests:
@@ -49,45 +49,45 @@ _internal_defaults_do_not_set:
           memory: 1024Mi
 
       loadBalancerIP: ""
-      loadBalancerSourceRanges: []
-      serviceAnnotations: {}
+      loadBalancerSourceRanges: [ ]
+      serviceAnnotations: { }
 
       # Setup how istiod Service is configured. See https://kubernetes.io/docs/concepts/services-networking/dual-stack/#services
       ipFamilyPolicy: ""
-      ipFamilies: []
+      ipFamilies: [ ]
 
       # To generate an internal load balancer:
       # --set serviceAnnotations.cloud.google.com/load-balancer-type=internal
       #serviceAnnotations:
       #    cloud.google.com/load-balancer-type: "internal"
 
-      podAnnotations: {}
+      podAnnotations: { }
       type: LoadBalancer #change to NodePort, ClusterIP or LoadBalancer if need be
 
       ##############
       secretVolumes:
-      - name: ingressgateway-certs
-        secretName: istio-ingressgateway-certs
-        mountPath: /etc/istio/ingressgateway-certs
-      - name: ingressgateway-ca-certs
-        secretName: istio-ingressgateway-ca-certs
-        mountPath: /etc/istio/ingressgateway-ca-certs
+        - name: ingressgateway-certs
+          secretName: istio-ingressgateway-certs
+          mountPath: /etc/istio/ingressgateway-certs
+        - name: ingressgateway-ca-certs
+          secretName: istio-ingressgateway-ca-certs
+          mountPath: /etc/istio/ingressgateway-ca-certs
 
       customService: false
       externalTrafficPolicy: ""
 
-      ingressPorts: []
-      additionalContainers: []
-      configVolumes: []
+      ingressPorts: [ ]
+      additionalContainers: [ ]
+      configVolumes: [ ]
 
       serviceAccount:
         # Annotations to add to the service account
-        annotations: {}
+        annotations: { }
 
       ### Advanced options ############
-      env: {}
-      nodeSelector: {}
-      tolerations: []
+      env: { }
+      nodeSelector: { }
+      tolerations: [ ]
 
       # Specify the pod anti-affinity that allows you to constrain which nodes
       # your pod is eligible to be scheduled based on labels on pods that are
@@ -107,8 +107,8 @@ _internal_defaults_do_not_set:
       # This pod anti-affinity rule says that the pod requires not to be scheduled
       # onto a node if that node is already running a pod with label having key
       # "security" and value "S1".
-      podAntiAffinityLabelSelector: []
-      podAntiAffinityTermLabelSelector: []
+      podAntiAffinityLabelSelector: [ ]
+      podAntiAffinityTermLabelSelector: [ ]
 
       # whether to run the gateway in a privileged container
       runAsRoot: false
@@ -127,7 +127,7 @@ _internal_defaults_do_not_set:
     # constrained to run a particular nodes. Each component can overwrite these default
     # values by adding its node selector block in the relevant section below and setting
     # the desired values.
-    defaultNodeSelector: {}
+    defaultNodeSelector: { }
 
     # enable pod disruption budget for the control plane, which is used to
     # ensure Istio control plane components are gradually upgraded or recovered.
@@ -152,12 +152,12 @@ _internal_defaults_do_not_set:
     # and setting the desired values.
     # Configure this field in case that all pods of Istio control plane are expected to
     # be scheduled to particular nodes with specified taints.
-    defaultTolerations: []
+    defaultTolerations: [ ]
 
     # Default hub for Istio images.
     # Releases are published to docker hub under 'istio' project.
     # Dev builds from prow are on gcr.io
-    hub: gcr.io/istio-testing
+    hub: registry.cn-hangzhou.aliyuncs.com/acejilam
 
     # Default tag for Istio images.
     tag: latest
@@ -175,7 +175,7 @@ _internal_defaults_do_not_set:
     # For components that don't use ServiceAccounts (i.e. grafana, servicegraph, tracing)
     # ImagePullSecrets will be added to the corresponding Deployment(StatefulSet) objects.
     # Must be set for any cluster configured with private docker registry.
-    imagePullSecrets: []
+    imagePullSecrets: [ ]
     # - private-registry-key
 
     # To output all istio components logs in json format by adding --log_as_json argument to each container argument
@@ -186,7 +186,7 @@ _internal_defaults_do_not_set:
     #   1 - Least preferred
     #   2 - No preference
     #   3 - Most preferred
-    arch: {}
+    arch: { }
 
     # Comma-separated minimum per-scope logging level of messages to output, in the form of <scope>:<level>,<scope>:<level>
     # The control plane has different scopes depending on component, but can configure default log level across all components
@@ -298,7 +298,7 @@ _internal_defaults_do_not_set:
     trustDomain: "cluster.local"
 
     defaultConfig:
-      proxyMetadata: {}
+      proxyMetadata: { }
       tracing:
       #      tlsSettings:
       #        mode: DISABLE # DISABLE, SIMPLE, MUTUAL, ISTIO_MUTUAL

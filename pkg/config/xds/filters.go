@@ -25,7 +25,6 @@ const (
 	WasmNetworkFilterType = pm.WasmNetworkFilterType
 	RBACHTTPFilterType    = resource.APITypePrefix + "envoy.extensions.filters.http.rbac.v3.RBAC"
 	RBACNetworkFilterType = resource.APITypePrefix + "envoy.extensions.filters.network.rbac.v3.RBAC"
-	TypedStructType       = pm.TypedStructType
 
 	StatsFilterName = "istio.stats"
 )

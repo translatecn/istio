@@ -60,6 +60,7 @@ type ProxyConfig struct {
 // NewProxy creates an instance of the proxy control commands
 func NewProxy(cfg ProxyConfig) Proxy {
 	// inject tracing flag for higher levels
+
 	var args []string
 	logLevel, componentLogs := splitComponentLog(cfg.LogLevel)
 	if logLevel != "" {
@@ -182,6 +183,7 @@ var (
 
 func (e *envoy) Run(abort <-chan error) error {
 	// spin up a new Envoy process
+
 	args := e.args(e.ConfigPath, istioBootstrapOverrideVar.Get())
 	log.Infof("Envoy command: %v", args)
 

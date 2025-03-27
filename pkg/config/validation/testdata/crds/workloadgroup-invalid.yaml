@@ -28,4 +28,4 @@ spec:
       httpHeaders:
         - name: "**"
       port: 80
-  template: {}
+  template: { }

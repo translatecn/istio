@@ -39,13 +39,6 @@ type Instance struct {
 	networkQ *timer.Queue
 }
 
-func New(s Settings) *Instance {
-	return &Instance{
-		s:        s,
-		networkQ: timer.NewQueue(),
-	}
-}
-
 func (m *Instance) Nodes() Nodes {
 	return m.nodes
 }
@@ -56,6 +49,7 @@ func (m *Instance) Clients() []*Client {
 
 func (m *Instance) NewConnection(src *Client, dest *Node) network.Connection {
 	// Lookup the route between the source and destination
+
 	networkLatency := m.s.NetworkLatencies[RouteKey{
 		Src:  src.Locality(),
 		Dest: dest.Locality(),

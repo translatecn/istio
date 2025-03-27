@@ -211,9 +211,6 @@ func hasTaint(n *v1.Node) bool {
 }
 
 // IsPodReady is copied from kubernetes/pkg/api/v1/pod/utils.go
-func IsPodReady(pod *v1.Pod) bool {
-	return IsPodReadyConditionTrue(pod.Status)
-}
 
 // IsPodReadyConditionTrue returns true if a pod is ready; false otherwise.
 func IsPodReadyConditionTrue(status v1.PodStatus) bool {

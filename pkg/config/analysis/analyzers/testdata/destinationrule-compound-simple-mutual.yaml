@@ -11,11 +11,11 @@ spec:
       clientCertificate: /etc/certs/myclientcert.pem
       privateKey: /etc/certs/client_private_key.pem
     portLevelSettings:
-    - port:
-        number: 443
-      tls:
-        mode: SIMPLE
-        clientCertificate: /etc/certs/myclientcert.pem
-        privateKey: /etc/certs/client_private_key.pem
-        sni: my-nginx.mesh-external.svc.cluster.local
+      - port:
+          number: 443
+        tls:
+          mode: SIMPLE
+          clientCertificate: /etc/certs/myclientcert.pem
+          privateKey: /etc/certs/client_private_key.pem
+          sni: my-nginx.mesh-external.svc.cluster.local
 

@@ -20,18 +20,18 @@ set -e
 umask 022
 
 if ! getent passwd istio-proxy >/dev/null; then
-    if command -v useradd >/dev/null; then
-        groupadd --system istio-proxy
-        useradd --system --gid istio-proxy --home-dir /var/lib/istio istio-proxy
-    else
-        addgroup --system istio-proxy
-        adduser --system --group --home /var/lib/istio istio-proxy
-    fi
+	if command -v useradd >/dev/null; then
+		groupadd --system istio-proxy
+		useradd --system --gid istio-proxy --home-dir /var/lib/istio istio-proxy
+	else
+		addgroup --system istio-proxy
+		adduser --system --group --home /var/lib/istio istio-proxy
+	fi
 fi
 
 if [ ! -e /etc/istio ]; then
-   # Backward compat.
-   ln -s /var/lib/istio /etc/istio
+	# Backward compat.
+	ln -s /var/lib/istio /etc/istio
 fi
 
 mkdir -p /var/lib/istio/envoy

@@ -171,6 +171,7 @@ type IstioVersions []IstioVersion
 // NewIstioVersion creates an IstioVersion with validation.
 func NewIstioVersion(s string) (IstioVersion, error) {
 	// empty version string sentinel value for latest
+
 	if s == "" {
 		return "", nil
 	}

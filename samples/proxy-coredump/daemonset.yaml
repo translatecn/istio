@@ -25,7 +25,7 @@ spec:
             - sysctl -w kernel.core_pattern=/var/lib/istio/data/core.proxy && ulimit -c unlimited
           image: alpine
           imagePullPolicy: IfNotPresent
-          resources: {}
+          resources: { }
           securityContext:
             privileged: true
           volumeMounts:
@@ -37,8 +37,8 @@ spec:
             requests:
               cpu: 1m
           image: alpine
-          command: ["tail"]
-          args: ["-f", "/dev/null"]
+          command: [ "tail" ]
+          args: [ "-f", "/dev/null" ]
       volumes:
         - name: sys
           hostPath:

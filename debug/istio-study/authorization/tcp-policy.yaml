@@ -1,0 +1,16 @@
+#tcp-policy.yaml
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: tcp-policy
+  namespace: foo
+spec:
+  selector:
+    matchLabels:
+      app: tcp-echo
+  action: ALLOW
+  rules:
+    - to:
+        - operation: # 仅允许请求到 9000 和 9001 端口
+            ports: ["9000", "9001"]
+#            methods: ["GET"]

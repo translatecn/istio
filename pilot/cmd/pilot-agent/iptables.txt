@@ -1,0 +1,36 @@
+http-debug: 8080/TCP
+grpc-xds: 15010/TCP
+tls-xds: 15012/TCP
+https-webhooks: 15017/TCP
+http-monitoring: 15014/TCP
+
+15053
+15008：用于透传 mTLS 加密流量（不解密）。
+0.0.0.0:15001   13/envoy
+0.0.0.0:15006   13/envoy    用于接收所有入站流量（标准处理）。
+0.0.0.0:15021   13/envoy
+0.0.0.0:15090   13/envoy    Envoy 的监控端口（Prometheus 可采集）。
+0.0.0.0:15020   1/pilot-agent
+127.0.0.1:15004 1/pilot-agent
+127.0.0.1:15000 13/envoy
+
+-A ISTIO_INBOUND -p tcp --dport 15008 -j RETURN
+-A ISTIO_INBOUND -p tcp --dport 15090 -j RETURN
+-A ISTIO_INBOUND -p tcp --dport 15021 -j RETURN
+-A ISTIO_INBOUND -p tcp --dport 15020 -j RETURN
+
+https://ipset.netfilter.org/iptables-extensions.man.html
+
+raw表: 确定是否对该数据包进行状态跟踪。包含两个规则链，OUTPUT、 PREROUTING
+mangle表: 修改数据包内容，用来做流量整形的，给数据包设置标记。包含五个规则链，INPUT、 OUTPUT、FORWARD、 PREROUTING、 POSTROUTING
+nat表: 负责网络地址转换，用来修改数据包中的源、目标IP地址或端口。包含三个规则链，OUTPUT、PREROUTING、 POSTROUTING
+filter表: 负责过滤数据包，确定是否放行该数据包(过滤)。包含三个规则链，INPUT、 FORWARD、0UTPUT
+在iptables 的四个规则表中，mangle 表和raw表的应用相对较少
+
+数据包到达防火墙时，规则表之间的优先顺序：
+raw > mangle > nat > filter
+
+# test1
+iptables -t nat -A PREROUTING -p tcp --dport 15090 -j REDIRECT --to-ports 15006
+
+

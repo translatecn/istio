@@ -5,14 +5,14 @@ metadata:
   name: byon
   namespace: testns
 spec:
-   hosts:
-   - byon.test.istio.io
-   ports:
-   - number: 80
-     name: http
-     protocol: HTTP
-   resolution: STATIC
-   endpoints:
+  hosts:
+    - byon.test.istio.io
+  ports:
+    - number: 80
+      name: http
+      protocol: HTTP
+  resolution: STATIC
+  endpoints:
     - address: 127.0.0.2
       ports:
         http: 7072
@@ -27,8 +27,8 @@ spec:
     - mybyon.test.istio.io
   http:
     - route:
-      - destination:
-          host: byon.test.istio.io
+        - destination:
+            host: byon.test.istio.io
 
 ---
 ## VM running docker ( see deb/run/docker )
@@ -38,14 +38,14 @@ metadata:
   name: byon-docker
   namespace: testns
 spec:
-   hosts:
-   - byon-docker.test.istio.io
-   ports:
-   - number: 7072
-     name: http
-     protocol: HTTP
-   resolution: STATIC
-   endpoints:
+  hosts:
+    - byon-docker.test.istio.io
+  ports:
+    - number: 7072
+      name: http
+      protocol: HTTP
+  resolution: STATIC
+  endpoints:
     - address: 172.18.0.3
       ports:
         http: 7072
@@ -57,7 +57,7 @@ metadata:
   namespace: testns
 spec:
   hosts:
-  - www.wikipedia.org
+    - www.wikipedia.org
   addresses:
     - 91.198.174.192/27
     - 103.102.166.224/27

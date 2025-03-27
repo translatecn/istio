@@ -10,8 +10,8 @@ metadata:
   namespace: exampleegressgw
 spec:
   egress:
-  - hosts:
-      - exampleegressgw/*
+    - hosts:
+        - exampleegressgw/*
 ---
 # Test workload entry
 apiVersion: networking.istio.io/v1
@@ -21,20 +21,20 @@ metadata:
   namespace: exampleegressgw
 spec:
   hosts:
-  - test.exampleegressgw
+    - test.exampleegressgw
 
   ports:
-  - number: 1300
-    name: tcplocal
-    protocol: TCP
+    - number: 1300
+      name: tcplocal
+      protocol: TCP
 
   location: MESH_INTERNAL
   resolution: STATIC
 
   endpoints:
-  - address: 10.13.0.1
-    ports:
-      tcplocal: 31200
+    - address: 10.13.0.1
+      ports:
+        tcplocal: 31200
 ---
 
 apiVersion: networking.istio.io/v1
@@ -44,30 +44,30 @@ metadata:
   namespace: exampleegressgw
 spec:
   hosts:
-  - httpbin.org
+    - httpbin.org
   location: MESH_EXTERNAL
   ports:
-  - number: 80
-    name: http
-    protocol: HTTP
+    - number: 80
+      name: http
+      protocol: HTTP
   resolution: DNS
 
 ---
 apiVersion: networking.istio.io/v1
 kind: Gateway
 metadata:
- name: istio-egressgateway
- namespace: exampleegressgw
+  name: istio-egressgateway
+  namespace: exampleegressgw
 spec:
- selector:
-   istio: egressgateway
- servers:
- - port:
-     number: 80
-     name: http
-     protocol: HTTP
-   hosts:
-   - "*"
+  selector:
+    istio: egressgateway
+  servers:
+    - port:
+        number: 80
+        name: http
+        protocol: HTTP
+      hosts:
+        - "*"
 ---
 #And the associated VirtualService to route from the sidecar to the
 #gateway service (istio-egressgateway.istio-system.svc.cluster.local), as
@@ -79,23 +79,23 @@ metadata:
   namespace: exampleegressgw
 spec:
   hosts:
-  - httpbin.com
+    - httpbin.com
   gateways:
-  - mesh
-  - istio-egressgateway
+    - mesh
+    - istio-egressgateway
   http:
-  - match:
-    - port: 80
-      gateways:
-      - mesh
-    route:
-    - destination:
-        host: istio-egressgateway.istio-system.svc.cluster.local
-  - match:
-    - port: 80
-      gateways:
-      - istio-egressgateway
-    route:
-    - destination:
-        host: httpbin.com
+    - match:
+        - port: 80
+          gateways:
+            - mesh
+      route:
+        - destination:
+            host: istio-egressgateway.istio-system.svc.cluster.local
+    - match:
+        - port: 80
+          gateways:
+            - istio-egressgateway
+      route:
+        - destination:
+            host: httpbin.com
 ---

@@ -4,10 +4,10 @@ metadata:
   namespace: bar
 spec:
   metadata:
-    annotations: {}
-    labels: {}
+    annotations: { }
+    labels: { }
   template:
-    ports: {}
+    ports: { }
     serviceAccount: vm-serviceaccount
   probe:
     httpGet:

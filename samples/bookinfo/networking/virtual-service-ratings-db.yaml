@@ -4,12 +4,12 @@ metadata:
   name: reviews
 spec:
   hosts:
-  - reviews
+    - reviews
   http:
-  - route:
-    - destination:
-        host: reviews
-        subset: v3
+    - route:
+        - destination:
+            host: reviews
+            subset: v3
 ---
 apiVersion: networking.istio.io/v1
 kind: VirtualService
@@ -17,10 +17,10 @@ metadata:
   name: ratings
 spec:
   hosts:
-  - ratings
+    - ratings
   http:
-  - route:
-    - destination:
-        host: ratings
-        subset: v2
+    - route:
+        - destination:
+            host: ratings
+            subset: v2
 ---

@@ -322,8 +322,8 @@ import (
 	_ "github.com/envoyproxy/go-control-plane/ratelimit/service/ratelimit/v3"
 
 	// Istio-specific Envoy filters
-	_ "istio.io/api/envoy/config/filter/http/alpn/v2alpha1"
-	_ "istio.io/api/envoy/config/filter/http/authn/v2alpha1"
-	_ "istio.io/api/envoy/config/filter/http/jwt_auth/v2alpha1"
-	_ "istio.io/api/envoy/config/filter/network/tcp_cluster_rewrite/v2alpha1"
+	_ "istio.io/istio/istio.io/api/envoy/config/filter/http/alpn/v2alpha1"
+	_ "istio.io/istio/istio.io/api/envoy/config/filter/http/authn/v2alpha1"
+	_ "istio.io/istio/istio.io/api/envoy/config/filter/http/jwt_auth/v2alpha1"
+	_ "istio.io/istio/istio.io/api/envoy/config/filter/network/tcp_cluster_rewrite/v2alpha1"
 )

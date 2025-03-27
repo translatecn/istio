@@ -46,7 +46,7 @@ func NewRepairController(client kube.Client, cfg config.RepairConfig) (*Controll
 		events:       kclient.NewEventRecorder(client, "cni-repair"),
 		repairedPods: map[types.NamespacedName]types.UID{},
 	}
-	fieldSelectors := []string{}
+	var fieldSelectors []string
 	if cfg.FieldSelectors != "" {
 		fieldSelectors = append(fieldSelectors, cfg.FieldSelectors)
 	}
@@ -59,7 +59,9 @@ func NewRepairController(client kube.Client, cfg config.RepairConfig) (*Controll
 	c.queue = controllers.NewQueue("repair pods",
 		controllers.WithReconciler(c.Reconcile),
 		controllers.WithMaxAttempts(5))
-	c.pods.AddEventHandler(controllers.ObjectHandler(c.queue.AddObject))
+	c.pods.AddEventHandler(controllers.ObjectHandler(func(o controllers.Object) {
+		c.queue.AddObject(o)
+	}))
 
 	return c, nil
 }
@@ -186,6 +188,7 @@ func (c *Controller) deleteBrokenPod(pod *corev1.Pod) error {
 
 func (c *Controller) labelBrokenPod(pod *corev1.Pod) error {
 	// Added for safety, to make sure no healthy pods get labeled.
+
 	m := podsRepaired.With(typeLabel.Value(labelType))
 	repairLog.Infof("Pod detected as broken, adding label: %s/%s", pod.Namespace, pod.Name)
 
@@ -216,6 +219,7 @@ func (c *Controller) labelBrokenPod(pod *corev1.Pod) error {
 // MatchesFilter returns true if the pod matches the repair filter criteria
 func (c *Controller) matchesFilter(pod *corev1.Pod) bool {
 	// Helper function; checks that a container's termination message matches filter
+
 	matchTerminationMessage := func(state *corev1.ContainerStateTerminated) bool {
 		// If we are filtering on init container termination message and the termination message of 'state' does not match, exit
 		trimmedTerminationMessage := strings.TrimSpace(c.cfg.InitTerminationMsg)

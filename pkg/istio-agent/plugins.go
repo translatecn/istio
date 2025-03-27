@@ -35,6 +35,7 @@ var providers = make(map[string]func(*security.Options, RootCertProvider) (secur
 
 func createCitadel(opts *security.Options, a RootCertProvider) (security.Client, error) {
 	// Using citadel CA
+
 	var tlsOpts *citadel.TLSOptions
 	var err error
 	// Special case: if Istiod runs on a secure network, on the default port, don't use TLS

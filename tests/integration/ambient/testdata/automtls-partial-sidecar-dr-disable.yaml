@@ -16,21 +16,21 @@ metadata:
     test-suite: "automtls-partial-dr-disable"
 spec:
   hosts:
-  - "multiversion"
+    - "multiversion"
   http:
-  - name: "vistio-route"
-    match:
-    - uri:
-        prefix: "/vistio"
-    route:
-    - destination:
-        host: "multiversion"
-        subset: "vistio"
-  - name: "legacy-by-default"
-    route:
-    - destination:
-        host: "multiversion"
-        subset: "vlegacy"
+    - name: "vistio-route"
+      match:
+        - uri:
+            prefix: "/vistio"
+      route:
+        - destination:
+            host: "multiversion"
+            subset: "vistio"
+    - name: "legacy-by-default"
+      route:
+        - destination:
+            host: "multiversion"
+            subset: "vlegacy"
 ---
 apiVersion: networking.istio.io/v1
 kind: DestinationRule
@@ -41,18 +41,18 @@ metadata:
 spec:
   host: "multiversion"
   subsets:
-  - name: "vistio"
-    labels:
-      version: "vistio"
-    trafficPolicy:
-      tls:
-        mode: DISABLE
-  - name: "vlegacy"
-    labels:
-      version: "vlegacy"
-    trafficPolicy:
-      tls:
-        mode: DISABLE
+    - name: "vistio"
+      labels:
+        version: "vistio"
+      trafficPolicy:
+        tls:
+          mode: DISABLE
+    - name: "vlegacy"
+      labels:
+        version: "vlegacy"
+      trafficPolicy:
+        tls:
+          mode: DISABLE
   trafficPolicy:
     tls:
       mode: DISABLE

@@ -19,8 +19,6 @@ import (
 	"text/template"
 
 	"github.com/Masterminds/sprig/v3"
-
-	"istio.io/istio/pkg/test"
 )
 
 // Parse the given template content.
@@ -30,14 +28,6 @@ func Parse(tpl string) (*template.Template, error) {
 }
 
 // ParseOrFail calls Parse and fails tests if it returns error.
-func ParseOrFail(t test.Failer, tpl string) *template.Template {
-	t.Helper()
-	tpl2, err := Parse(tpl)
-	if err != nil {
-		t.Fatalf("tmpl.ParseOrFail: %v", err)
-	}
-	return tpl2
-}
 
 // MustParse calls Parse and panics if it returns error.
 func MustParse(tpl string) *template.Template {

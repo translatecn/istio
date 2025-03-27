@@ -39,32 +39,11 @@ type Controller struct {
 	hasSynced atomic.Bool
 }
 
-// NewController returns a new ConfigMap watcher controller.
-func NewController(client kube.Client, namespace, name string, callback func(*v1.ConfigMap)) *Controller {
-	c := &Controller{
-		configMapNamespace: namespace,
-		configMapName:      name,
-		callback:           callback,
-	}
-
-	c.configmaps = kclient.NewFiltered[*v1.ConfigMap](client, kclient.Filter{
-		Namespace:     namespace,
-		FieldSelector: fields.OneTermEqualSelector(metav1.ObjectNameField, name).String(),
-	})
-
-	c.queue = controllers.NewQueue("configmap "+name, controllers.WithReconciler(c.processItem))
-	c.configmaps.AddEventHandler(controllers.FilteredObjectSpecHandler(c.queue.AddObject, func(o controllers.Object) bool {
-		// Filter out other configmaps
-		return o.GetName() == name && o.GetNamespace() == namespace
-	}))
-
-	return c
-}
-
 func (c *Controller) Run(stop <-chan struct{}) {
 	// Start informer immediately instead of with the rest. This is because we use configmapwatcher for
 	// single types (so its never shared), and for use cases where we need the results immediately
 	// during startup.
+
 	c.configmaps.Start(stop)
 	if !kube.WaitForCacheSync("configmap "+c.configMapName, stop, c.configmaps.HasSynced) {
 		return
@@ -83,4 +62,24 @@ func (c *Controller) processItem(name types.NamespacedName) error {
 
 	c.hasSynced.Store(true)
 	return nil
+}
+
+func NewConfigmapController(client kube.Client, namespace, name string, callback func(*v1.ConfigMap)) *Controller {
+	c := &Controller{
+		configMapNamespace: namespace,
+		configMapName:      name,
+		callback:           callback,
+	}
+
+	c.configmaps = kclient.NewFiltered[*v1.ConfigMap](client, kclient.Filter{
+		Namespace:     namespace,
+		FieldSelector: fields.OneTermEqualSelector(metav1.ObjectNameField, name).String(),
+	})
+
+	c.queue = controllers.NewQueue("configmap "+name, controllers.WithReconciler(c.processItem))
+	c.configmaps.AddEventHandler(controllers.FilteredObjectSpecHandler(c.queue.AddObject, func(o controllers.Object) bool {
+		return o.GetName() == name && o.GetNamespace() == namespace
+	}))
+
+	return c
 }

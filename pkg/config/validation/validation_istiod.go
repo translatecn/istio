@@ -22,7 +22,7 @@ import (
 
 	"github.com/google/cel-go/cel"
 
-	telemetry "istio.io/api/telemetry/v1alpha1"
+	telemetry "istio.io/istio/istio.io/api/telemetry/v1alpha1"
 )
 
 var celEnv, _ = cel.NewEnv()

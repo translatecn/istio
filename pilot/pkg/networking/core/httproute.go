@@ -29,8 +29,8 @@ import (
 	"google.golang.org/protobuf/types/known/durationpb"
 	wrappers "google.golang.org/protobuf/types/known/wrapperspb"
 
-	meshconfig "istio.io/api/mesh/v1alpha1"
-	networking "istio.io/api/networking/v1alpha3"
+	meshconfig "istio.io/istio/istio.io/api/mesh/v1alpha1"
+	networking "istio.io/istio/istio.io/api/networking/v1alpha3"
 	"istio.io/istio/pilot/pkg/features"
 	"istio.io/istio/pilot/pkg/model"
 	istionetworking "istio.io/istio/pilot/pkg/networking"
@@ -364,6 +364,7 @@ func BuildSidecarOutboundVirtualHosts(node *model.Proxy, push *model.PushContext
 	// egress listener only. A route with sniffing would not have been generated if there
 	// was a sidecar with explicit port (and hence protocol declaration). A route with
 	// sniffing is generated only in the case of the catch all egress listener.
+
 	egressListener := node.SidecarScope.GetEgressListenerForRDS(listenerPort, routeName)
 	// We should never be getting a nil egress listener because the code that setup this RDS
 	// call obviously saw an egress listener
@@ -673,8 +674,8 @@ func appendDomainPort(domains []string, domain string, port int) []string {
 func GenerateAltVirtualHosts(hostname string, port int, proxyDomain string) []string {
 	// If the dns/proxy domain contains `.svc`, only services following the <ns>.svc.<suffix>
 	// naming convention and that share a suffix with the domain should be expanded.
-	if strings.Contains(proxyDomain, ".svc.") {
 
+	if strings.Contains(proxyDomain, ".svc.") {
 		if strings.HasSuffix(hostname, removeSvcNamespace(proxyDomain)) {
 			return generateAltVirtualHostsForKubernetesService(hostname, port, proxyDomain)
 		}
@@ -798,6 +799,7 @@ func getUniqueAndSharedDNSDomain(fqdnHostname, proxyDomain string) (partsUnique 
 	// start collecting the shared bits of DNS suffix.
 	// E.g., foo.ns1.svc.cluster.local -> local,cluster,svc,ns1,foo
 	//       ns2.svc.cluster.local -> local,cluster,svc,ns2
+
 	partsFQDN := strings.Split(fqdnHostname, ".")
 	partsProxyDomain := strings.Split(proxyDomain, ".")
 	partsFQDNInReverse := slices.Reverse(partsFQDN)

@@ -62,6 +62,7 @@ func (n *Node) QueueLatency() *timeseries.Instance {
 
 func (n *Node) calcRequestDuration() time.Duration {
 	// Get the current queue length.
+
 	qLen := n.q.Len()
 	qLatency := n.calcQLatency(qLen)
 

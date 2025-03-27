@@ -4,5 +4,5 @@ metadata:
   name: valid-sidecar-config
 spec:
   egress:
-  - hosts:
-    - "abc/*"
+    - hosts:
+        - "abc/*"

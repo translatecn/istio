@@ -22,12 +22,12 @@ metadata:
     app: jwt-server
 spec:
   ports:
-  - name: http
-    port: 8000
-    targetPort: 8000
-  - name: https
-    port: 8443
-    targetPort: 8443
+    - name: http
+      port: 8000
+      targetPort: 8000
+    - name: https
+      port: 8443
+      targetPort: 8443
   selector:
     app: jwt-server
 ---
@@ -37,7 +37,7 @@ metadata:
   name: jwt-cert-key-secret
 # command to generate certificate
 # use the generated server.crt, server.key by following https://github.com/istio/istio/blob/master/samples/jwt-server/testdata/README.MD
-stringData: 
+stringData:
   server.crt: |
     -----BEGIN CERTIFICATE-----
     MIIDjzCCAnegAwIBAgIUfIuuQDfWakIpZ7bZAuuLUWhSm2AwDQYJKoZIhvcNAQEL
@@ -106,20 +106,20 @@ spec:
         app: jwt-server
     spec:
       containers:
-      - image: gcr.io/istio-testing/jwt-server:0.8
-        imagePullPolicy: IfNotPresent
-        name: jwt-server
-        volumeMounts:
-          - name: certkeysecretresource
-            mountPath: "/app/https/secretresources"
-            readOnly: true
-        args: ["-https", "8443", "-cert", "/app/https/secretresources/server.crt", "-key", "/app/https/secretresources/server.key"]
-        ports:
-        - containerPort: 8000
-        - containerPort: 8443
+        - image: gcr.io/istio-testing/jwt-server:0.8
+          imagePullPolicy: IfNotPresent
+          name: jwt-server
+          volumeMounts:
+            - name: certkeysecretresource
+              mountPath: "/app/https/secretresources"
+              readOnly: true
+          args: [ "-https", "8443", "-cert", "/app/https/secretresources/server.crt", "-key", "/app/https/secretresources/server.key" ]
+          ports:
+            - containerPort: 8000
+            - containerPort: 8443
       volumes:
-      - name: certkeysecretresource
-        secret:
-          secretName: jwt-cert-key-secret
-          defaultMode: 0400
+        - name: certkeysecretresource
+          secret:
+            secretName: jwt-cert-key-secret
+            defaultMode: 0400
 ---

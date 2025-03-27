@@ -14,7 +14,9 @@
 
 package network
 
-import "istio.io/istio/pkg/util/identifier"
+import (
+	"istio.io/istio/pkg/util/identifier"
+)
 
 // ID is the unique identifier for a network.
 type ID string

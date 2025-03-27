@@ -25,7 +25,7 @@ import (
 	hcm "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/http_connection_manager/v3"
 	tcp "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/tcp_proxy/v3"
 
-	meshconfig "istio.io/api/mesh/v1alpha1"
+	meshconfig "istio.io/istio/istio.io/api/mesh/v1alpha1"
 	"istio.io/istio/pilot/pkg/model"
 	"istio.io/istio/pilot/pkg/networking"
 	"istio.io/istio/pilot/pkg/util/protoconv"
@@ -69,14 +69,6 @@ type AccessLogBuilder struct {
 	fileAccesslog         *accesslog.AccessLog
 	listenerFileAccessLog *accesslog.AccessLog
 	hboneFileAccessLog    *accesslog.AccessLog
-}
-
-func newAccessLogBuilder() *AccessLogBuilder {
-	return &AccessLogBuilder{
-		tcpGrpcAccessLog:         tcpGrpcAccessLog(false),
-		httpGrpcAccessLog:        httpGrpcAccessLog(),
-		tcpGrpcListenerAccessLog: tcpGrpcAccessLog(true),
-	}
 }
 
 func (b *AccessLogBuilder) setTCPAccessLog(push *model.PushContext, proxy *model.Proxy, tcp *tcp.TcpProxy, class networking.ListenerClass, svc *model.Service) {
@@ -216,6 +208,7 @@ func (b *AccessLogBuilder) setListenerAccessLog(push *model.PushContext, proxy *
 
 func (b *AccessLogBuilder) buildFileAccessLog(mesh *meshconfig.MeshConfig) *accesslog.AccessLog {
 	// Building the access log is relatively expensive, and changes infrequently, so we amortize the cost via a cache.
+
 	if cal := b.cachedFileAccessLog(); cal != nil {
 		return cal
 	}
@@ -379,4 +372,12 @@ func (b *AccessLogBuilder) reset() {
 	b.fileAccesslog = nil
 	b.listenerFileAccessLog = nil
 	b.mutex.Unlock()
+}
+
+func newAccessLogBuilder() *AccessLogBuilder {
+	return &AccessLogBuilder{
+		tcpGrpcAccessLog:         tcpGrpcAccessLog(false),
+		httpGrpcAccessLog:        httpGrpcAccessLog(),
+		tcpGrpcListenerAccessLog: tcpGrpcAccessLog(true),
+	}
 }

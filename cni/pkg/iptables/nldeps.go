@@ -28,39 +28,17 @@ func RealNlDeps() NetlinkDependencies {
 type realDeps struct{}
 
 func (r *realDeps) AddInpodMarkIPRule(cfg *Config) error {
-	return AddInpodMarkIPRule(cfg)
+	return AddInpodMarkIPRule(cfg) // ✅
 }
 
 func (r *realDeps) DelInpodMarkIPRule(cfg *Config) error {
 	return DelInpodMarkIPRule(cfg)
 }
 
-func (r *realDeps) AddLoopbackRoutes(cfg *Config) error {
-	return AddLoopbackRoutes(cfg)
-}
-
 func (r *realDeps) DelLoopbackRoutes(cfg *Config) error {
 	return DelLoopbackRoutes(cfg)
 }
 
-type emptyDeps struct{}
-
-func EmptyNlDeps() NetlinkDependencies {
-	return &emptyDeps{}
-}
-
-func (r *emptyDeps) AddInpodMarkIPRule(cfg *Config) error {
-	return nil
-}
-
-func (r *emptyDeps) DelInpodMarkIPRule(cfg *Config) error {
-	return nil
-}
-
-func (r *emptyDeps) AddLoopbackRoutes(cfg *Config) error {
-	return nil
-}
-
-func (r *emptyDeps) DelLoopbackRoutes(cfg *Config) error {
-	return nil
+func (r *realDeps) AddLoopbackRoutes(cfg *Config) error {
+	return AddLoopbackRoutes(cfg)
 }

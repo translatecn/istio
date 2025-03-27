@@ -24,10 +24,6 @@ type MockedIpsetDeps struct {
 	mock.Mock
 }
 
-func FakeNLDeps() *MockedIpsetDeps {
-	return &MockedIpsetDeps{}
-}
-
 func (m *MockedIpsetDeps) ipsetIPHashCreate(name string, v6 bool) error {
 	args := m.Called(name, v6)
 	return args.Error(0)

@@ -22,9 +22,9 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/gateway-api/apis/v1beta1"
 
-	"istio.io/api/annotation"
-	"istio.io/api/label"
-	meshconfig "istio.io/api/mesh/v1alpha1"
+	"istio.io/istio/istio.io/api/annotation"
+	"istio.io/istio/istio.io/api/label"
+	meshconfig "istio.io/istio/istio.io/api/mesh/v1alpha1"
 	"istio.io/istio/pilot/pkg/model"
 	"istio.io/istio/pilot/pkg/serviceregistry/provider"
 	"istio.io/istio/pkg/cluster"
@@ -166,11 +166,6 @@ func ConvertService(svc corev1.Service, domainSuffix string, clusterID cluster.I
 	return istioService
 }
 
-// ServiceHostname produces FQDN for a k8s service
-func ServiceHostname(name, namespace, domainSuffix string) host.Name {
-	return host.Name(name + "." + namespace + "." + "svc" + "." + domainSuffix) // Format: "%s.%s.svc.%s"
-}
-
 // ServiceHostnameForKR calls ServiceHostname with the name and namespace of the given kubernetes resource.
 func ServiceHostnameForKR(obj metav1.Object, domainSuffix string) host.Name {
 	return ServiceHostname(obj.GetName(), obj.GetNamespace(), domainSuffix)
@@ -222,9 +217,15 @@ func IsAutoPassthrough(gwLabels map[string]string, l v1beta1.Listener) bool {
 
 func hasListenerMode(l v1beta1.Listener, mode string) bool {
 	// TODO if we add a hybrid mode for detecting HBONE/passthrough, also check that here
+
 	return l.TLS != nil && l.TLS.Options != nil && string(l.TLS.Options[constants.ListenerModeOption]) == mode
 }
 
 func GatewaySA(gw *v1beta1.Gateway) string {
 	return model.GetOrDefault(gw.GetAnnotations()[annotation.GatewayServiceAccount.Name], fmt.Sprintf("%s-%s", gw.Name, gw.Spec.GatewayClassName))
+}
+
+// ServiceHostname produces FQDN for a k8s service
+func ServiceHostname(name, namespace, domainSuffix string) host.Name {
+	return host.Name(name + "." + namespace + "." + "svc" + "." + domainSuffix) // Format: "%s.%s.svc.%s"
 }

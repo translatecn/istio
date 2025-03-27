@@ -32,9 +32,9 @@ import (
 	gateway "sigs.k8s.io/gateway-api/apis/v1beta1"
 	"sigs.k8s.io/yaml"
 
-	"istio.io/api/annotation"
-	"istio.io/api/label"
-	meshapi "istio.io/api/mesh/v1alpha1"
+	"istio.io/istio/istio.io/api/annotation"
+	"istio.io/istio/istio.io/api/label"
+	meshapi "istio.io/istio/istio.io/api/mesh/v1alpha1"
 	"istio.io/istio/pilot/pkg/features"
 	"istio.io/istio/pilot/pkg/model"
 	"istio.io/istio/pkg/cluster"
@@ -49,7 +49,7 @@ import (
 	"istio.io/istio/pkg/kube/kclient"
 	istiolog "istio.io/istio/pkg/log"
 	"istio.io/istio/pkg/maps"
-	"istio.io/istio/pkg/revisions"
+	"istio.io/istio/pkg/revisions_over"
 	"istio.io/istio/pkg/test/util/tmpl"
 	"istio.io/istio/pkg/test/util/yml"
 	"istio.io/istio/pkg/util/sets"
@@ -93,7 +93,7 @@ type DeploymentController struct {
 	services        kclient.Client[*corev1.Service]
 	serviceAccounts kclient.Client[*corev1.ServiceAccount]
 	namespaces      kclient.Client[*corev1.Namespace]
-	tagWatcher      revisions.TagWatcher
+	tagWatcher      revisions_over.TagWatcher
 	revision        string
 }
 
@@ -180,7 +180,7 @@ func getClassInfos() map[gateway.GatewayController]classInfo {
 // NewDeploymentController constructs a DeploymentController and registers required informers.
 // The controller will not start until Run() is called.
 func NewDeploymentController(client kube.Client, clusterID cluster.ID, env *model.Environment,
-	webhookConfig func() inject.WebhookConfig, injectionHandler func(fn func()), tw revisions.TagWatcher, revision string,
+	webhookConfig func() inject.WebhookConfig, injectionHandler func(fn func()), tw revisions_over.TagWatcher, revision string,
 ) *DeploymentController {
 	filter := kclient.Filter{ObjectFilter: kube.FilterIfEnhancedFilteringEnabled(client)}
 	gateways := kclient.NewFiltered[*gateway.Gateway](client, filter)
@@ -272,7 +272,7 @@ func (d *DeploymentController) Run(stop <-chan struct{}) {
 	controllers.ShutdownAll(d.namespaces, d.deployments, d.services, d.serviceAccounts, d.gateways, d.gatewayClasses)
 }
 
-// Reconcile takes in the name of a Gateway and ensures the cluster is in the desired state
+// Reconcile 接受网关的名称，并确保集群处于所需的状态
 func (d *DeploymentController) Reconcile(req types.NamespacedName) error {
 	log := log.WithLabels("gateway", req)
 
@@ -313,6 +313,7 @@ func (d *DeploymentController) Reconcile(req types.NamespacedName) error {
 func (d *DeploymentController) configureIstioGateway(log *istiolog.Scope, gw gateway.Gateway, gi classInfo) error {
 	// If user explicitly sets addresses, we are assuming they are pointing to an existing deployment.
 	// We will not manage it in this case
+
 	if gi.templates == "" {
 		log.Debug("skip gateway class without template")
 		return nil
@@ -388,6 +389,7 @@ func (d *DeploymentController) configureIstioGateway(log *istiolog.Scope, gw gat
 
 func (d *DeploymentController) setLabelOverrides(gw gateway.Gateway, input TemplateInput) {
 	// TODO: Codify this API (i.e how to know if a specific gateway is an Istio waypoint gateway)
+
 	isWaypointGateway := strings.Contains(string(gw.Spec.GatewayClassName), "waypoint")
 
 	var hasAmbientLabel bool
@@ -672,6 +674,7 @@ func extractServicePorts(gw gateway.Gateway) []corev1.ServicePort {
 // We map this to service port name which does not allow period and only 63 chars.
 func sanitizeListenerNameForPort(s string) string {
 	// In theory, this mapping can result in a duplicate, but probably not likely
+
 	s = strings.ReplaceAll(s, ".", "-")
 	if len(s) <= 63 {
 		return s
@@ -693,6 +696,7 @@ func NewUntypedWrapper[T controllers.ComparableObject](c kclient.Client[T]) gett
 
 func (u UntypedWrapper[T]) Get(name, namespace string) controllers.Object {
 	// DO NOT return u.reader.Get directly, or we run into issues with https://go.dev/tour/methods/12
+
 	res := u.reader.Get(name, namespace)
 	if controllers.IsNil(res) {
 		return nil

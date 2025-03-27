@@ -42,6 +42,7 @@ func (c *Config) overwriteRevisionIfEmpty(revision string) {
 	// Overwrite the default namespace label (istio-injection=enabled)
 	// with istio.io/rev=XXX. If a revision label is already provided,
 	// the label will remain as is.
+
 	if c.Revision == "" {
 		c.Revision = revision
 	}
@@ -122,39 +123,18 @@ func GetAll(ctx resource.Context) ([]Instance, error) {
 }
 
 // Setup is a utility function for creating a namespace in a test suite.
-func Setup(ns *Instance, cfg Config) resource.SetupFn {
-	return func(ctx resource.Context) (err error) {
-		*ns, err = New(ctx, cfg)
-		return
-	}
-}
 
 // Getter for a namespace Instance
 type Getter func() Instance
 
 // Get is a utility method that helps in readability of call sites.
 func (g Getter) Get() Instance {
-	return g()
+	// Future creates a Getter for a variable that namespace that will be set at sometime in the future.
+	// This is helpful for configuring a setup chain for a test suite that operates on global variables.	return g()
 }
 
-// Future creates a Getter for a variable that namespace that will be set at sometime in the future.
-// This is helpful for configuring a setup chain for a test suite that operates on global variables.
 func Future(ns *Instance) Getter {
 	return func() Instance {
 		return *ns
 	}
-}
-
-func Dump(ctx resource.Context, name string) {
-	ns := &kubeNamespace{
-		ctx:    ctx,
-		prefix: name,
-		name:   name,
-	}
-	ns.Dump(ctx)
-}
-
-// NilGetter is a Getter that always returns nil.
-var NilGetter = func() Instance {
-	return nil
 }

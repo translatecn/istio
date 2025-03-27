@@ -8,9 +8,9 @@ spec:
     matchLabels:
       "istio": {{.GatewayIstioLabel | default "ingressgateway"}}
   rules:
-  - to:
-    - operation:
-        notPorts: ["100"]
+    - to:
+        - operation:
+            notPorts: [ "100" ]
 ---
 apiVersion: security.istio.io/v1
 kind: AuthorizationPolicy
@@ -22,12 +22,12 @@ spec:
     matchLabels:
       "istio": {{.GatewayIstioLabel | default "ingressgateway"}}
   rules:
-  - to:
-    - operation:
-        ports: ["100"]
-  - to:
-    - operation:
-        ports: ["100"]
+    - to:
+        - operation:
+            ports: [ "100" ]
+    - to:
+        - operation:
+            ports: [ "100" ]
 ---
 # Make sure listener has a least one listener, otherwise there may be no policies
 apiVersion: networking.istio.io/v1
@@ -38,9 +38,9 @@ spec:
   selector:
     istio: {{.GatewayIstioLabel | default "ingressgateway"}}
   servers:
-  - port:
-      number: 18080
-      name: http
-      protocol: HTTP
-    hosts:
-    - "foo.bar"
+    - port:
+        number: 18080
+        name: http
+        protocol: HTTP
+      hosts:
+        - "foo.bar"

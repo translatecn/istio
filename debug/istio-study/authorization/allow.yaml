@@ -1,0 +1,46 @@
+#apiVersion: security.istio.io/v1beta1
+#kind: AuthorizationPolicy
+#metadata:
+#  name: deny-requests-without-authorization
+#  namespace: istio-system
+#spec:
+#  selector:
+#    matchLabels:
+#      istio: ingressgateway
+#  action: DENY # 拒绝
+#  rules:
+#    - from:
+#        - source:
+#            notRequestPrincipals: ["*"] # 不存在任何请求身份的 requests
+#      # 仅强制要求如下 host/path 相关的请求，必须带上 JWT token
+#      to:
+#        - operation:
+#            hosts: ["another-host.com"]
+#            paths: ["/headers"]
+## 返回403
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: httpbin
+  namespace: foo
+spec:
+  selector:
+    matchLabels:
+      app: httpbin
+      version: v1
+  action: ALLOW
+  rules:
+    - from:
+        - source:
+            principals: ["cluster.local/ns/default/sa/sleep"]
+        - source:
+            namespaces: ["dev"]
+      to:
+        - operation:
+            methods: ["GET"]
+      when:
+        - key: request.auth.claims[iss]
+          values: ["https://accounts.google.com"]
+          # notValues: ["https://accounts.google.com"]
+        - key: request.headers[x-token]
+          notValues: [ "admin" ]

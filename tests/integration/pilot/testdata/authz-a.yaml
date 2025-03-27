@@ -5,9 +5,9 @@ metadata:
 spec:
   action: ALLOW
   rules:
-  - to:
-    - operation:
-        methods: ["*"]
+    - to:
+        - operation:
+            methods: [ "*" ]
 ---
 apiVersion: security.istio.io/v1
 kind: AuthorizationPolicy
@@ -16,10 +16,10 @@ metadata:
 spec:
   action: DENY
   rules:
-  - to:
-    - operation:
-        methods: ["*"]
-  - to:
-    - operation:
-        methods: ["*"]
+    - to:
+        - operation:
+            methods: [ "*" ]
+    - to:
+        - operation:
+            methods: [ "*" ]
 ---

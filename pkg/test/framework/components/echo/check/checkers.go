@@ -18,7 +18,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"net/netip"
 	"strconv"
 	"strings"
 
@@ -110,10 +109,6 @@ func ErrorContains(expected string) echo.Checker {
 	}
 }
 
-func ErrorOrStatus(expected int) echo.Checker {
-	return Or(Error(), Status(expected))
-}
-
 func ErrorOrNotStatus(expected int) echo.Checker {
 	return Or(Error(), NotStatus(expected))
 }
@@ -194,14 +189,6 @@ func GRPCStatus(expected codes.Code) echo.Checker {
 }
 
 // BodyContains checks that the response body contains the given string.
-func BodyContains(expected string) echo.Checker {
-	return Each(func(r echoClient.Response) error {
-		if !strings.Contains(r.RawContent, expected) {
-			return fmt.Errorf("want %q in body but not found: %s", expected, r.RawContent)
-		}
-		return nil
-	})
-}
 
 // Forbidden checks that the response indicates that the request was rejected by RBAC.
 func Forbidden(p protocol.Instance) echo.Checker {
@@ -216,18 +203,6 @@ func Forbidden(p protocol.Instance) echo.Checker {
 }
 
 // TooManyRequests checks that at least one message receives a StatusTooManyRequests status code.
-func TooManyRequests() echo.Checker {
-	codeStr := strconv.Itoa(http.StatusTooManyRequests)
-	return func(result echo.CallResult, _ error) error {
-		for _, r := range result.Responses {
-			if codeStr == r.Code {
-				// Successfully received too many requests.
-				return nil
-			}
-		}
-		return errors.New("no request received StatusTooManyRequest error")
-	}
-}
 
 func Host(expected string) echo.Checker {
 	return Each(func(r echoClient.Response) error {
@@ -239,14 +214,6 @@ func Host(expected string) echo.Checker {
 }
 
 // Hostname checks the hostname the request landed on. This differs from Host which is the request we called.
-func Hostname(expected string) echo.Checker {
-	return Each(func(r echoClient.Response) error {
-		if r.Hostname != expected {
-			return fmt.Errorf("expected hostname %s, received %s", expected, r.Hostname)
-		}
-		return nil
-	})
-}
 
 func Protocol(expected string) echo.Checker {
 	return Each(func(r echoClient.Response) error {
@@ -276,60 +243,12 @@ func ProxyProtocolVersion(expected string) echo.Checker {
 }
 
 // DestinationIPv4 checks the request was received by the server over IPv4
-func DestinationIPv4() echo.Checker {
-	return Each(func(r echoClient.Response) error {
-		ip, err := netip.ParseAddr(r.IP)
-		if err != nil {
-			return fmt.Errorf("could not parse IP %q: %v", r.IP, err)
-		}
-		if !ip.Is4() {
-			return fmt.Errorf("expected DestinationIPv4, got %s", ip.String())
-		}
-		return nil
-	})
-}
 
 // DestinationIPv6 checks the request was received by the server over IPv6
-func DestinationIPv6() echo.Checker {
-	return Each(func(r echoClient.Response) error {
-		ip, err := netip.ParseAddr(r.IP)
-		if err != nil {
-			return fmt.Errorf("could not parse IP %q: %v", r.IP, err)
-		}
-		if !ip.Is6() {
-			return fmt.Errorf("expected DestinationIPv6, got %s", ip.String())
-		}
-		return nil
-	})
-}
 
 // SourceIPv4 checks the request was sent by the client over IPv4
-func SourceIPv4() echo.Checker {
-	return Each(func(r echoClient.Response) error {
-		ip, err := netip.ParseAddr(r.IP)
-		if err != nil {
-			return fmt.Errorf("could not parse IP %q: %v", r.IP, err)
-		}
-		if !ip.Is4() {
-			return fmt.Errorf("expected SourceIPv4, got %s", ip.String())
-		}
-		return nil
-	})
-}
 
 // SourceIPv6 checks the request was sent by the client over IPv6
-func SourceIPv6() echo.Checker {
-	return Each(func(r echoClient.Response) error {
-		ip, err := netip.ParseAddr(r.IP)
-		if err != nil {
-			return fmt.Errorf("could not parse IP %q: %v", r.IP, err)
-		}
-		if !ip.Is6() {
-			return fmt.Errorf("expected SourceIPv6, got %s", ip.String())
-		}
-		return nil
-	})
-}
 
 func isHTTPProtocol(r echoClient.Response) bool {
 	return strings.HasPrefix(r.RequestURL, "http://") ||
@@ -354,29 +273,6 @@ func MTLSForHTTP() echo.Checker {
 			return nil
 		}
 		return fmt.Errorf("expected X-Forwarded-Client-Cert but not found: %v", r)
-	})
-}
-
-func PlaintextForHTTP() echo.Checker {
-	return Each(func(r echoClient.Response) error {
-		if !isHTTPProtocol(r) {
-			// Non-HTTP traffic. Fail open, we cannot check mTLS.
-			return nil
-		}
-		if !isMTLS(r) {
-			return nil
-		}
-		return fmt.Errorf("expected plaintext but found X-Forwarded-Client-Cert header: %v", r)
-	})
-}
-
-func Port(expected int) echo.Checker {
-	return Each(func(r echoClient.Response) error {
-		expectedStr := strconv.Itoa(expected)
-		if r.Port != expectedStr {
-			return fmt.Errorf("expected port %s, received %s", expectedStr, r.Port)
-		}
-		return nil
 	})
 }
 
@@ -425,15 +321,6 @@ func ResponseHeaders(expected map[string]string) echo.Checker {
 			outErr = multierror.Append(outErr, responseHeader(r, k, v))
 		}
 		return outErr.ErrorOrNil()
-	})
-}
-
-func Cluster(expected string) echo.Checker {
-	return Each(func(r echoClient.Response) error {
-		if r.Cluster != expected {
-			return fmt.Errorf("expected cluster %s, received %s", expected, r.Cluster)
-		}
-		return nil
 	})
 }
 
@@ -515,11 +402,6 @@ func ReachedClusters(allClusters cluster.Clusters, expectedClusters cluster.Clus
 }
 
 // ReachedSourceCluster is similar to ReachedClusters, except it only checks the reachability of source cluster only
-func ReachedSourceCluster(allClusters cluster.Clusters) echo.Checker {
-	return func(result echo.CallResult, err error) error {
-		return checkReachedSourceClusterOnly(result, allClusters)
-	}
-}
 
 // checkReachedSourceClusterOnly verifies that the only cluster that was reached is the cluster where
 // the source workload resides.
@@ -568,6 +450,7 @@ func checkReachedClusters(result echo.CallResult, allClusters cluster.Clusters, 
 
 func checkReachedNetworks(result echo.CallResult, allClusters cluster.Clusters, expectedByNetwork cluster.ClustersByNetwork) error {
 	// Gather the networks that were reached.
+
 	networkHits := make(map[string]int)
 	for _, rr := range result.Responses {
 		c := allClusters.GetByName(rr.Cluster)
@@ -602,8 +485,9 @@ func isNaked(c echo.Caller) bool {
 }
 
 func clusterFor(c echo.Caller) cluster.Cluster {
+	// Determine the source network of the caller.
+
 	if c != nil {
-		// Determine the source network of the caller.
 		switch from := c.(type) {
 		case echo.Instance:
 			return from.Config().Cluster

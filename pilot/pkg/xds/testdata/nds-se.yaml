@@ -86,10 +86,10 @@ metadata:
   name: cidr
 spec:
   addresses:
-  - 198.51.100.0/31
+    - 198.51.100.0/31
   hosts:
-  - address.internal
+    - address.internal
   ports:
-  - name: tcp
-    number: 8888
-    protocol: TCP
+    - name: tcp
+      number: 8888
+      protocol: TCP

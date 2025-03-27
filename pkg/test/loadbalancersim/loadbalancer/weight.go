@@ -30,13 +30,6 @@ type weightedConnections struct {
 	helper *network2.ConnectionHelper
 }
 
-func newLBConnection(name string, conns []*WeightedConnection) *weightedConnections {
-	return &weightedConnections{
-		conns:  conns,
-		helper: network2.NewConnectionHelper(name),
-	}
-}
-
 func (lb *weightedConnections) AllWeightsEqual() bool {
 	if len(lb.conns) == 0 {
 		return true
@@ -76,32 +69,3 @@ func (lb *weightedConnections) Latency() *timeseries.Instance {
 }
 
 type WeightedConnectionFactory func(src *mesh2.Client, n *mesh2.Node) *WeightedConnection
-
-func EquallyWeightedConnectionFactory() WeightedConnectionFactory {
-	return func(src *mesh2.Client, dest *mesh2.Node) *WeightedConnection {
-		return &WeightedConnection{
-			Connection: src.Mesh().NewConnection(src, dest),
-			Weight:     1,
-		}
-	}
-}
-
-func PriorityWeightedConnectionFactory(selectPriority PrioritySelector, priorityWeightMap map[uint32]uint32) WeightedConnectionFactory {
-	return func(src *mesh2.Client, dest *mesh2.Node) *WeightedConnection {
-		// Select the priority for this node.
-		priority := selectPriority(src, dest)
-
-		// Get the weight for the priority.
-		weight := uint32(1)
-		if priorityWeightMap != nil {
-			if w := priorityWeightMap[priority]; w > 0 {
-				weight = w
-			}
-		}
-
-		return &WeightedConnection{
-			Connection: src.Mesh().NewConnection(src, dest),
-			Weight:     weight,
-		}
-	}
-}

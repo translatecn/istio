@@ -24,7 +24,7 @@ import (
 	"istio.io/istio/pkg/log"
 	"istio.io/istio/pkg/monitoring"
 	istioNetUtil "istio.io/istio/pkg/util/net"
-	"istio.io/istio/pkg/version"
+	"istio.io/istio/pkg/version_over"
 )
 
 type monitor struct {
@@ -57,7 +57,7 @@ func addMonitor(exporter http.Handler, mux *http.ServeMux) {
 	mux.Handle(metricsPath, metricsMiddleware(exporter))
 
 	mux.HandleFunc(versionPath, func(out http.ResponseWriter, req *http.Request) {
-		if _, err := out.Write([]byte(version.Info.String())); err != nil {
+		if _, err := out.Write([]byte(version_over.Info.String())); err != nil {
 			log.Errorf("Unable to write version string: %v", err)
 		}
 	})
@@ -77,9 +77,10 @@ func metricsMiddleware(handler http.Handler) http.Handler {
 // Deprecated: we shouldn't have 2 http ports. Will be removed after code using
 // this port is removed.
 func startMonitor(exporter http.Handler, addr string, mux *http.ServeMux) (*monitor, error) {
+	// get the network stuff setup
+
 	m := &monitor{}
 
-	// get the network stuff setup
 	var listener net.Listener
 	if addr != "" {
 		var err error
@@ -102,8 +103,8 @@ func startMonitor(exporter http.Handler, addr string, mux *http.ServeMux) (*moni
 		}
 	}
 
-	version.Info.RecordComponentBuildTag("pilot")
-	pilotVersion.With(versionTag.Value(version.Info.String())).Record(1)
+	version_over.Info.RecordComponentBuildTag("pilot")
+	pilotVersion.With(versionTag.Value(version_over.Info.String())).Record(1)
 
 	if addr != "" {
 		go func() {
@@ -122,7 +123,9 @@ func (m *monitor) Close() error {
 }
 
 // initMonitor initializes the configuration for the pilot monitoring server.
-func (s *Server) initMonitor(addr string) error { // nolint: unparam
+func (s *Server) initMonitor(addr string) error {
+	// nolint: unparam
+
 	s.addStartFunc("monitoring", func(stop <-chan struct{}) error {
 		monitor, err := startMonitor(s.metricsExporter, addr, s.monitoringMux)
 		if err != nil {

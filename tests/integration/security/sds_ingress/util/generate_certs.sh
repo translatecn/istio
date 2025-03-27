@@ -15,10 +15,13 @@
 # limitations under the License.
 
 WD=$(dirname "$0")
-WD=$(cd "$WD" || exit; pwd)
+WD=$(
+	cd "$WD" || exit
+	pwd
+)
 touch "${WD}/index.txt"
 
-cat > "${WD}/client.conf" <<EOF
+cat >"${WD}/client.conf" <<EOF
 [req]
 req_extensions = v3_req
 distinguished_name = req_distinguished_name
@@ -32,7 +35,7 @@ subjectAltName = @alt_names
 DNS = *.example.com
 EOF
 
-cat > "${WD}/server.conf" <<EOF
+cat >"${WD}/server.conf" <<EOF
 [req]
 req_extensions = v3_req
 distinguished_name = req_distinguished_name
@@ -46,7 +49,7 @@ subjectAltName = @alt_names
 DNS = *.example.com
 EOF
 
-cat > "${WD}/crlA.conf" <<EOF
+cat >"${WD}/crlA.conf" <<EOF
 [ ca ]
 default_ca      = CA_default            # The default ca section
 
@@ -80,9 +83,9 @@ DNS = *.example.com
 EOF
 
 openssl req -new -newkey rsa:4096 -x509 -sha256 \
-        -days 3650 -nodes -out "${WD}/rootA.crt" -keyout "${WD}/rootA.key" \
-        -subj "/C=US/ST=Denial/L=Ether/O=Dis/CN=*.example.com" \
-        -addext "subjectAltName = DNS:*.example.com"
+	-days 3650 -nodes -out "${WD}/rootA.crt" -keyout "${WD}/rootA.key" \
+	-subj "/C=US/ST=Denial/L=Ether/O=Dis/CN=*.example.com" \
+	-addext "subjectAltName = DNS:*.example.com"
 
 openssl genrsa -out "${WD}/clientA.key" 2048
 openssl req -new -key "${WD}/clientA.key" -out "${WD}/clientA.csr" -subj "/CN=*.example.com" -config "${WD}/client.conf"
@@ -92,11 +95,10 @@ openssl genrsa -out "${WD}/serverA.key" 2048
 openssl req -new -key "${WD}/serverA.key" -out "${WD}/serverA.csr" -subj "/CN=*.example.com" -config "${WD}/server.conf"
 openssl x509 -req -days 3650 -CA "${WD}/rootA.crt" -CAkey "${WD}/rootA.key" -set_serial 0 -in "${WD}/serverA.csr" -out "${WD}/serverA.crt" -extensions v3_req -extfile "${WD}/server.conf"
 
-
 openssl req -new -newkey rsa:4096 -x509 -sha256 \
-        -days 3650 -nodes -out "${WD}/rootB.crt" -keyout "${WD}/rootB.key" \
-        -subj "/C=US/ST=Denial/L=Ether/O=Dis/CN=*.example.com" \
-        -addext "subjectAltName = DNS:*.example.com"
+	-days 3650 -nodes -out "${WD}/rootB.crt" -keyout "${WD}/rootB.key" \
+	-subj "/C=US/ST=Denial/L=Ether/O=Dis/CN=*.example.com" \
+	-addext "subjectAltName = DNS:*.example.com"
 
 openssl genrsa -out "${WD}/clientB.key" 2048
 openssl req -new -key "${WD}/clientB.key" -out "${WD}/clientB.csr" -subj "/CN=*.example.com" -config "${WD}/client.conf"
@@ -111,7 +113,7 @@ openssl ca -config "${WD}/crlA.conf" -revoke "${WD}/clientA.crt"
 openssl ca -gencrl -out "${WD}/rootA.crl" -config "${WD}/crlA.conf"
 
 # remove the database entry for the previous revoked certificate, so that we can generate a new dummy CRL entry for an unused client cert, to be used for integration tests
-cat /dev/null > "${WD}/index.txt"
+cat /dev/null >"${WD}/index.txt"
 openssl genrsa -out "${WD}/clientA1.key" 2048
 openssl req -new -key "${WD}/clientA1.key" -out "${WD}/clientA1.csr" -subj "/CN=*.example.com" -config "${WD}/client.conf"
 openssl x509 -req -days 3650 -CA "${WD}/rootA.crt" -CAkey "${WD}/rootA.key" -set_serial 1 -in "${WD}/clientA1.csr" -out "${WD}/clientA1.crt" -extensions v3_req -extfile "${WD}/client.conf"

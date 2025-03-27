@@ -24,8 +24,8 @@ metadata:
     service: liveness
 spec:
   ports:
-  - port: 80
-    name: http
+    - port: 80
+      name: http
   selector:
     app: liveness
 ---
@@ -43,16 +43,16 @@ spec:
         app: liveness
     spec:
       containers:
-      - name: liveness
-        image: registry.k8s.io/busybox
-        args:
-        - /bin/sh
-        - -c
-        - touch /tmp/healthy; sleep 3600
-        livenessProbe:
-          exec:
-            command:
-            - cat
-            - /tmp/healthy
-          initialDelaySeconds: 5
-          periodSeconds: 5
+        - name: liveness
+          image: registry.k8s.io/busybox
+          args:
+            - /bin/sh
+            - -c
+            - touch /tmp/healthy; sleep 3600
+          livenessProbe:
+            exec:
+              command:
+                - cat
+                - /tmp/healthy
+            initialDelaySeconds: 5
+            periodSeconds: 5

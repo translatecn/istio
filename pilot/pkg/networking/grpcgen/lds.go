@@ -30,7 +30,7 @@ import (
 	discovery "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
 	wrappers "google.golang.org/protobuf/types/known/wrapperspb"
 
-	"istio.io/api/label"
+	"istio.io/istio/istio.io/api/label"
 	"istio.io/istio/pilot/pkg/model"
 	"istio.io/istio/pilot/pkg/networking/util"
 	"istio.io/istio/pilot/pkg/security/authn"
@@ -362,8 +362,9 @@ func (ln *listenerName) includesPort(port string) bool {
 }
 
 func (f listenerNames) includes(s string) (listenerName, bool) {
+	// filter is empty, include everything
+
 	if len(f) == 0 {
-		// filter is empty, include everything
 		return listenerName{RequestedNames: sets.New(s)}, true
 	}
 	n, ok := f[s]
@@ -427,6 +428,7 @@ func newListenerNameFilter(names []string, node *model.Proxy) listenerNames {
 
 func tryFindFQDN(name string, node *model.Proxy) string {
 	// no "." - assuming this is a shortname "foo" -> "foo.ns.svc.cluster.local"
+
 	if !strings.Contains(name, ".") {
 		return fmt.Sprintf("%s.%s", name, node.DNSDomain)
 	}

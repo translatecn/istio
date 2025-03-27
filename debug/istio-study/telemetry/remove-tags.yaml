@@ -1,0 +1,34 @@
+#remove-tags.yaml
+apiVersion: telemetry.istio.io/v1alpha1
+kind: Telemetry
+metadata:
+  name: remove-tags
+  namespace: istio-system
+spec:
+  metrics:
+    - providers:
+        - name: prometheus # 指定指标数据的提供者
+      overrides:
+        - match: # 提供覆盖的范围，可用于选择个别指标，以及生成指标的工作负载模式（服务器和/或客户端）。如果未指定，则overrides 将应用于两种操作模式（客户端和服务器）的所有指标。
+            metric: ALL_METRICS # Istio 标准指标之一
+            mode: CLIENT_AND_SERVER # 控制选择的指标生成模式：客户端和/或服务端。
+          tagOverrides: # 要覆盖的标签列表
+            destination_canonical_service:
+              operation: REMOVE
+          # disabled: true  # 是否禁用指标
+  tracing:
+    - providers:
+        - name: skywalking
+      randomSamplingPercentage: 50
+      customTags:
+        "provider":
+          literal:
+            value: "zipkin"
+        "cluster_id":
+          environment:
+            name: ISTIO_META_CLUSTER_ID
+            defaultValue: Kubernetes
+        "group":
+          header:
+            name: x-group
+            defaultValue: "unknown"

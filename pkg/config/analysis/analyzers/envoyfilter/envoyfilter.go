@@ -17,7 +17,7 @@ package envoyfilter
 import (
 	"fmt"
 
-	network "istio.io/api/networking/v1alpha3"
+	network "istio.io/istio/istio.io/api/networking/v1alpha3"
 	"istio.io/istio/pkg/config"
 	"istio.io/istio/pkg/config/analysis"
 	"istio.io/istio/pkg/config/analysis/analyzers/util"
@@ -46,6 +46,7 @@ func (*EnvoyPatchAnalyzer) Metadata() analysis.Metadata {
 // Analyze implements analysis.Analyzer
 func (s *EnvoyPatchAnalyzer) Analyze(c analysis.Context) {
 	// hold the filter names that have a proxyVersion set
+
 	patchFilterNames := make([]string, 0)
 	c.ForEach(gvk.EnvoyFilter, func(r *resource.Instance) bool {
 		names := s.analyzeEnvoyFilterPatch(r, c, patchFilterNames)

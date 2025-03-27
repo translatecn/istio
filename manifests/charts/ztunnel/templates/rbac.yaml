@@ -40,10 +40,10 @@ metadata:
     {{- .Values.annotations | toYaml | nindent 4 }}
 {{- end }}
 rules:
-- apiGroups: ["security.openshift.io"]
-  resources: ["securitycontextconstraints"]
-  resourceNames: ["privileged"]
-  verbs: ["use"]
+  - apiGroups: [ "security.openshift.io" ]
+    resources: [ "securitycontextconstraints" ]
+    resourceNames: [ "privileged" ]
+    verbs: [ "use" ]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
@@ -67,8 +67,8 @@ roleRef:
   kind: ClusterRole
   name: ztunnel
 subjects:
-- kind: ServiceAccount
-  name: ztunnel
-  namespace: {{ .Release.Namespace }}
+  - kind: ServiceAccount
+    name: ztunnel
+    namespace: {{ .Release.Namespace }}
 {{- end }}
 ---

@@ -1,0 +1,75 @@
+a: { }
+connect_timeout:
+  seconds: 10
+default_config:
+  ClusterName:
+    ServiceCluster: istio-proxy
+  binary_path: /usr/local/bin/envoy
+  concurrency: { }
+  config_path: ./etc/istio/proxy
+  control_plane_auth_policy: 1
+  discovery_address: istiod.istio-system.svc:15012
+  drain_duration:
+    seconds: 45
+  envoy_access_log_service: { }
+  envoy_metrics_service: { }
+  gateway_topology: { }
+  hold_application_until_proxy_starts: { }
+  image: { }
+  private_key_provider:
+    Provider: null
+  proxy_admin_port: 15000
+  proxy_headers: { }
+  proxy_stats_matcher: { }
+  readiness_probe: { }
+  sds: { }
+  stat_name_length: 189
+  status_port: 15020
+  termination_drain_duration:
+    seconds: 5
+  tracing:
+    Tracer: null
+default_destination_rule_export_to:
+  - '*'
+default_http_retry_policy: { }
+default_providers: { }
+default_service_export_to:
+  - '*'
+default_virtual_service_export_to:
+  - '*'
+dns_refresh_rate:
+  seconds: 60
+enable_auto_mtls:
+  value: true
+enable_prometheus_merge:
+  value: true
+enable_tracing: true
+extension_providers:
+  - Provider:
+      Prometheus: { }
+    name: prometheus
+  - Provider:
+      Stackdriver: { }
+    name: stackdriver
+  - Provider:
+      EnvoyFileAccessLog:
+        path: /dev/stdout
+    name: envoy
+inbound_traffic_policy: { }
+ingress_class: istio
+ingress_controller_mode: 3
+ingress_service: istio-ingressgateway
+locality_lb_setting:
+  enabled: true
+mesh_mTLS: { }
+outbound_traffic_policy:
+  mode: 1
+path_normalization: { }
+protocol_detection_timeout: { }
+proxy_inbound_listen_port: 15006
+proxy_listen_port: 15001
+root_namespace: istio-system
+tcp_keepalive: { }
+tls_defaults: { }
+trust_domain: cluster.local
+verify_certificate_at_client: { }

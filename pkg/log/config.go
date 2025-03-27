@@ -112,6 +112,7 @@ var (
 
 func init() {
 	// use our defaults for starters so that logging works even before everything is fully configured
+
 	_ = Configure(DefaultOptions())
 }
 
@@ -238,6 +239,7 @@ func formatDate(t time.Time, enc zapcore.PrimitiveArrayEncoder) {
 
 func updateScopes(options *Options) error {
 	// snapshot what's there
+
 	allScopes := Scopes()
 
 	// Join defaultOutputLevels and outputLevels
@@ -415,6 +417,3 @@ func Sync() error {
 }
 
 // Close implements io.Closer.
-func Close() error {
-	return funcs.Load().(patchTable).close()
-}

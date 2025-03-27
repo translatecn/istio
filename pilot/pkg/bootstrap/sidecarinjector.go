@@ -42,7 +42,8 @@ var injectionEnabled = env.Register("INJECT_ENABLED", true, "Enable mutating web
 
 func (s *Server) initSidecarInjector(args *PilotArgs) (*inject.Webhook, error) {
 	// currently the constant: "./var/lib/istio/inject"
-	injectPath := args.InjectionOptions.InjectionDirectory
+
+	injectPath := args.InjectionOptions.InjectionDirectory // var/lib/istio/inject
 	if injectPath == "" || !injectionEnabled.Get() {
 		log.Infof("Skipping sidecar injector, injection path is missing or disabled.")
 		return nil, nil
@@ -58,7 +59,7 @@ func (s *Server) initSidecarInjector(args *PilotArgs) (*inject.Webhook, error) {
 			return nil, err
 		}
 	} else if s.kubeClient != nil {
-		configMapName := getInjectorConfigMapName(args.Revision)
+		configMapName := getInjectorConfigMapName(args.Revision) // istio-sidecar-injector
 		cms := s.kubeClient.Kube().CoreV1().ConfigMaps(args.Namespace)
 		if _, err := cms.Get(context.TODO(), configMapName, metav1.GetOptions{}); err != nil {
 			if errors.IsNotFound(err) {
@@ -80,7 +81,7 @@ func (s *Server) initSidecarInjector(args *PilotArgs) (*inject.Webhook, error) {
 		Env:          s.environment,
 		Mux:          s.httpsMux,
 		Revision:     args.Revision,
-		MultiCluster: s.multiclusterController,
+		MultiCluster: s.secretController,
 	}
 
 	wh, err := inject.NewWebhook(parameters)

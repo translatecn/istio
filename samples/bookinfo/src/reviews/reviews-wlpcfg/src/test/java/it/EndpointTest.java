@@ -23,9 +23,7 @@ import javax.ws.rs.client.Invocation;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.Response;
 
-public class EndpointTest {
-
-    public void testEndpoint(String endpoint, String expectedOutput) {
+public class EndpointTest {    public void testEndpoint(String endpoint, String expectedOutput) {
         String port = System.getProperty("liberty.test.port");
         String war = System.getProperty("war.name");
         String url = "http://localhost:" + port + "/" + war + endpoint;

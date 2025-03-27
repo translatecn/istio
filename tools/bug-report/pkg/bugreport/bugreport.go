@@ -28,7 +28,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	label2 "istio.io/api/label"
+	label2 "istio.io/istio/istio.io/api/label"
 	"istio.io/istio/istioctl/pkg/cli"
 	"istio.io/istio/istioctl/pkg/util/ambient"
 	"istio.io/istio/operator/pkg/util"
@@ -37,7 +37,7 @@ import (
 	"istio.io/istio/pkg/log"
 	"istio.io/istio/pkg/proxy"
 	"istio.io/istio/pkg/util/sets"
-	"istio.io/istio/pkg/version"
+	"istio.io/istio/pkg/version_over"
 	"istio.io/istio/tools/bug-report/pkg/archive"
 	cluster2 "istio.io/istio/tools/bug-report/pkg/cluster"
 	"istio.io/istio/tools/bug-report/pkg/common"
@@ -82,7 +82,7 @@ e.g.
 			return runBugReportCommand(ctx, cmd, logOpts)
 		},
 	}
-	rootCmd.AddCommand(version.CobraCommand())
+	rootCmd.AddCommand(version_over.CobraCommand())
 	addFlags(rootCmd, gConfig)
 
 	return rootCmd
@@ -213,7 +213,7 @@ func dumpRevisionsAndVersions(ctx cli.Context, resources *cluster2.Resources, is
 	defer logRuntime(time.Now(), "Done getting control plane revisions/versions")
 
 	text := ""
-	text += fmt.Sprintf("CLI version:\n%s\n\n", version.Info.LongForm())
+	text += fmt.Sprintf("CLI version:\n%s\n\n", version_over.Info.LongForm())
 
 	revisions := getIstioRevisions(resources)
 	istioVersions, proxyVersions := getIstioVersions(ctx, istioNamespace, revisions)
@@ -292,6 +292,7 @@ func getIstioVersion(kubeClient kube.CLIClient, istioNamespace string) string {
 // Errors are reported through gErrors.
 func gatherInfo(runner *kubectlcmd.Runner, config *config.BugReportConfig, resources *cluster2.Resources, paths []string) {
 	// no timeout on mandatoryWg.
+
 	var mandatoryWg sync.WaitGroup
 	cmdTimer := time.NewTimer(time.Duration(config.CommandTimeout))
 	beginTime := time.Now()

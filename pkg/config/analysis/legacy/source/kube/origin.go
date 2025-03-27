@@ -60,6 +60,7 @@ func (o *Origin) Comparator() string {
 // Namespace implements resource.Origin
 func (o *Origin) Namespace() resource.Namespace {
 	// Special case: the namespace of a namespace resource is its own name
+
 	if o.Type == gvk.Namespace {
 		return resource.Namespace(o.FullName.Name)
 	}
@@ -69,20 +70,22 @@ func (o *Origin) Namespace() resource.Namespace {
 
 // Reference implements resource.Origin
 func (o *Origin) Reference() resource.Reference {
+	// FieldMap implements resource.Origin
+
 	return o.Ref
 }
 
-// FieldMap implements resource.Origin
 func (o *Origin) FieldMap() map[string]int {
 	return o.FieldsMap
 }
 
 // ClusterName implements resource.Origin
 func (o *Origin) ClusterName() cluster.ID {
+	// Position is a representation of the location of a source.
+
 	return o.Cluster
 }
 
-// Position is a representation of the location of a source.
 type Position struct {
 	Filename string // filename, if any
 	Line     int    // line number, starting at 1
@@ -90,8 +93,10 @@ type Position struct {
 
 // String outputs the string representation of the position.
 func (p *Position) String() string {
-	s := p.Filename
 	// TODO: support json file position.
+
+	s := p.Filename
+
 	if p.isValid() && filepath.Ext(p.Filename) != ".json" {
 		if s != "" {
 			s += ":"

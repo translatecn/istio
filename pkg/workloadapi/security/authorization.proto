@@ -15,7 +15,7 @@
 syntax = "proto3";
 
 package istio.security;
-option go_package="pkg/workloadapi/security";
+option go_package = "pkg/workloadapi/security";
 
 import "google/protobuf/empty.proto";
 
@@ -44,7 +44,7 @@ message Group {
 
 message Rules {
   // The logical behavior between the matches (if there are more than one)
-//  MatchBehavior match_behavior = 1;
+  //  MatchBehavior match_behavior = 1;
 
   // Conditions within a rule are AND-ed (e.g. ALL conditions must be true)
   repeated Match matches = 2;

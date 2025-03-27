@@ -136,10 +136,8 @@ var (
 	enableWDSEnv, enableWDSEnvWasSet = env.Register("PEER_METADATA_DISCOVERY", false,
 		"If set to true, enable the peer metadata discovery extension in Envoy").Lookup()
 
-	envoyStatusPortEnv = env.Register("ENVOY_STATUS_PORT", 15021,
-		"Envoy health status port value").Get()
-	envoyPrometheusPortEnv = env.Register("ENVOY_PROMETHEUS_PORT", 15090,
-		"Envoy prometheus redirection port value").Get()
+	envoyStatusPortEnv     = env.Register("ENVOY_STATUS_PORT", 15021, "Envoy health status port value").Get()
+	envoyPrometheusPortEnv = env.Register("ENVOY_PROMETHEUS_PORT", 15090, "Envoy prometheus redirection port value").Get()
 
 	// Defined by https://github.com/grpc/proposal/blob/c5722a35e71f83f07535c6c7c890cf0c58ec90c0/A27-xds-global-load-balancing.md#xdsclient-and-bootstrap-file
 	grpcBootstrapEnv = env.Register("GRPC_XDS_BOOTSTRAP", filepath.Join(constants.ConfigPathDir, "grpc-bootstrap.json"),

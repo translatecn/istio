@@ -29,10 +29,9 @@ type Visitor func(echoClient.Response) error
 
 // Visit is a utility method that just invokes this Visitor function on the given response.
 func (v Visitor) Visit(r echoClient.Response) error {
-	return v(r)
+	// And returns a Visitor that performs a logical AND of this Visitor and the one provided.	return v(r)
 }
 
-// And returns a Visitor that performs a logical AND of this Visitor and the one provided.
 func (v Visitor) And(o Visitor) Visitor {
 	return func(r echoClient.Response) error {
 		if err := v(r); err != nil {

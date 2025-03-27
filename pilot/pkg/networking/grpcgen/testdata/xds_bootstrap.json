@@ -2,8 +2,14 @@
   "xds_servers": [
     {
       "server_uri": "localhost:14057",
-      "channel_creds": [{"type": "insecure"}],
-      "server_features" : ["xds_v3"]
+      "channel_creds": [
+        {
+          "type": "insecure"
+        }
+      ],
+      "server_features": [
+        "xds_v3"
+      ]
     }
   ],
   "node": {

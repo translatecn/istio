@@ -24,7 +24,7 @@ import (
 	endpoint "github.com/envoyproxy/go-control-plane/envoy/config/endpoint/v3"
 	wrappers "google.golang.org/protobuf/types/known/wrapperspb"
 
-	"istio.io/api/networking/v1alpha3"
+	"istio.io/istio/istio.io/api/networking/v1alpha3"
 	"istio.io/istio/pilot/pkg/model"
 	"istio.io/istio/pilot/pkg/networking/util"
 	"istio.io/istio/pkg/util/sets"
@@ -38,8 +38,10 @@ func GetLocalityLbSetting(
 	mesh *v1alpha3.LocalityLoadBalancerSetting,
 	destrule *v1alpha3.LocalityLoadBalancerSetting,
 ) *v1alpha3.LocalityLoadBalancerSetting {
-	var enabled bool
 	// Locality lb is enabled if its not explicitly disabled in mesh global config
+
+	var enabled bool
+
 	if mesh != nil && (mesh.Enabled == nil || mesh.Enabled.Value) {
 		enabled = true
 	}
@@ -72,6 +74,7 @@ func ApplyLocalityLoadBalancer(
 	enableFailover bool,
 ) {
 	// before calling this function localityLB.enabled field has been checked.
+
 	if localityLB == nil || loadAssignment == nil {
 		return
 	}
@@ -165,6 +168,7 @@ func applyLocalityFailover(
 	failover []*v1alpha3.LocalityLoadBalancerSetting_Failover,
 ) {
 	// key is priority, value is the index of the LocalityLbEndpoints in ClusterLoadAssignment
+
 	priorityMap := map[int][]int{}
 
 	// 1. calculate the LocalityLbEndpoints.Priority compared with proxy locality

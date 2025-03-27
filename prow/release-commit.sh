@@ -15,7 +15,10 @@
 # limitations under the License.
 
 WD=$(dirname "$0")
-WD=$(cd "$WD"; pwd)
+WD=$(
+	cd "$WD"
+	pwd
+)
 ROOT=$(dirname "$WD")
 
 set -eux
@@ -50,13 +53,15 @@ VERSION="${NEXT_VERSION}-alpha.${TAG}"
 WORK_DIR="$(mktemp -d)/build"
 mkdir -p "${WORK_DIR}"
 
-MANIFEST=$(cat <<EOF
+MANIFEST=$(
+	cat <<EOF
 version: ${VERSION}
 docker: ${DOCKER_HUB}
 directory: ${WORK_DIR}
 ignoreVulnerability: true
 dependencies:
-${DEPENDENCIES:-$(cat <<EOD
+${DEPENDENCIES:-$(
+		cat <<EOD
   istio:
     localpath: ${ROOT}
   api:
@@ -82,7 +87,7 @@ ${DEPENDENCIES:-$(cat <<EOD
     auto: deps
 architectures: [linux/amd64, linux/arm64]
 EOD
-)}
+	)}
 dashboards:
   istio-mesh-dashboard: 7639
   istio-performance-dashboard: 11829
@@ -105,7 +110,7 @@ release-builder build --manifest <(echo "${MANIFEST}")
 release-builder validate --release "${WORK_DIR}/out"
 
 if [[ -z "${DRY_RUN:-}" ]]; then
-  release-builder publish --release "${WORK_DIR}/out" \
-    --gcsbucket "${GCS_BUCKET}" --gcsaliases "${TAG},${NEXT_VERSION}-dev" \
-    --dockerhub "${DOCKER_HUB}" --helmhub "${HELM_HUB}" --dockertags "${TAG},${VERSION},${NEXT_VERSION}-dev"
+	release-builder publish --release "${WORK_DIR}/out" \
+		--gcsbucket "${GCS_BUCKET}" --gcsaliases "${TAG},${NEXT_VERSION}-dev" \
+		--dockerhub "${DOCKER_HUB}" --helmhub "${HELM_HUB}" --dockertags "${TAG},${VERSION},${NEXT_VERSION}-dev"
 fi

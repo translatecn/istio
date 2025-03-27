@@ -26,8 +26,8 @@ import (
 	envoytype "github.com/envoyproxy/go-control-plane/envoy/type/v3"
 	wrappers "google.golang.org/protobuf/types/known/wrapperspb"
 
-	extensions "istio.io/api/extensions/v1alpha1"
-	networking "istio.io/api/networking/v1alpha3"
+	extensions "istio.io/istio/istio.io/api/extensions/v1alpha1"
+	networking "istio.io/istio/istio.io/api/networking/v1alpha3"
 	"istio.io/istio/pilot/pkg/features"
 	"istio.io/istio/pilot/pkg/model"
 	istionetworking "istio.io/istio/pilot/pkg/networking"
@@ -216,6 +216,7 @@ func (lb *ListenerBuilder) sanitizeFilterChainForHBONE(c *listener.FilterChain) 
 // However, explicit listeners can be used in NONE mode or with Sidecar.Ingress configuration.
 func (lb *ListenerBuilder) buildInboundListeners() []*listener.Listener {
 	// All listeners we build
+
 	var listeners []*listener.Listener
 	// virtualInboundFilterChains builds up all of the filter chains for the virtual inbound listener
 	var virtualInboundFilterChains []*listener.FilterChain
@@ -424,9 +425,7 @@ func (lb *ListenerBuilder) getFilterChainsByServicePort() map[uint32]inboundChai
 func (lb *ListenerBuilder) buildInboundChainConfigs() []inboundChainConfig {
 	var chainsByPort map[uint32]inboundChainConfig
 	// No user supplied sidecar scope or the user supplied one has no ingress listeners.
-	if !lb.node.SidecarScope.HasIngressListener() {
-
-		// We should not create inbound listeners in NONE mode based on the service instances
+	if !lb.node.SidecarScope.HasIngressListener() { // We should not create inbound listeners in NONE mode based on the service instances
 		// Doing so will prevent the workloads from starting as they would be listening on the same port
 		// Users are required to provide the sidecar config to define the inbound listeners
 		if lb.node.GetInterceptionMode() == model.InterceptionNone {
@@ -627,6 +626,7 @@ func needsHTTP(inspectors map[int]enabledInspector) bool {
 // for only some ports.
 func buildTLSInspector(inspectors map[int]enabledInspector) *listener.ListenerFilter {
 	// TODO share logic with HTTP inspector
+
 	defaultEnabled := inspectors[0].TLSInspector
 
 	// We have a split path here based on if the passthrough inspector is enabled
@@ -709,6 +709,7 @@ func buildHTTPInspector(inspectors map[int]enabledInspector) *listener.ListenerF
 func reportInboundConflict(lb *ListenerBuilder, old inboundChainConfig, cc inboundChainConfig) {
 	// If the protocols and service do not match, we have a real conflict. For example, one Service may
 	// define TCP and the other HTTP. Report this up to the user.
+
 	if old.port.Protocol != cc.port.Protocol && old.telemetryMetadata.InstanceHostname != cc.telemetryMetadata.InstanceHostname {
 		lb.push.AddMetric(model.ProxyStatusConflictInboundListener, lb.node.ID, lb.node.ID,
 			fmt.Sprintf("Conflicting inbound listener:%d. existing: %s, incoming: %s", cc.port.TargetPort,
@@ -754,6 +755,7 @@ func buildInboundHBONEPassthroughChain(lb *ListenerBuilder) []*listener.FilterCh
 func buildInboundPassthroughChains(lb *ListenerBuilder) []*listener.FilterChain {
 	// Setup enough slots for common max size (permissive mode is 5 filter chains). This is not
 	// exact, just best effort optimization
+
 	filterChains := make([]*listener.FilterChain, 0, 1+5)
 	filterChains = append(filterChains, buildInboundBlackhole(lb))
 
@@ -852,6 +854,7 @@ func buildSidecarInboundHTTPOpts(lb *ListenerBuilder, cc inboundChainConfig) *ht
 // This should only be used with HTTP; see buildInboundNetworkFilters for TCP
 func (lb *ListenerBuilder) buildInboundNetworkFiltersForHTTP(cc inboundChainConfig) []*listener.Filter {
 	// Add network level WASM filters if any configured.
+
 	httpOpts := buildSidecarInboundHTTPOpts(lb, cc)
 	wasm := lb.push.WasmPluginsByListenerInfo(lb.node, model.WasmPluginListenerInfo{
 		Port:  httpOpts.port,

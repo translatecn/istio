@@ -4,6 +4,7 @@ kind: IstioOperator
 metadata:
   name: install
 spec:
+  hub: registry.cn-hangzhou.aliyuncs.com/acejilam
   components:
     ingressGateways:
       - name: istio-ingressgateway
@@ -39,3 +40,4 @@ spec:
     egressGateways:
       - name: istio-egressgateway
         enabled: true
+

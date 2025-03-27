@@ -197,6 +197,7 @@ type CallOptions struct {
 // sources (in order of precedence): Host header, target's DefaultHostHeader, Address, target's FQDN.
 func (o CallOptions) GetHost() string {
 	// First, use the host header, if specified.
+
 	if h := o.HTTP.Headers.Get(headers.Host); len(h) > 0 {
 		return h
 	}
@@ -233,6 +234,7 @@ func (o CallOptions) DeepCopy() CallOptions {
 // FillDefaults fills out any defaults that haven't been explicitly specified.
 func (o *CallOptions) FillDefaults() error {
 	// Fill in the address if not set.
+
 	if err := o.fillAddress(); err != nil {
 		return err
 	}
@@ -283,8 +285,9 @@ func (o *CallOptions) FillDefaultsOrFail(t test.Failer) {
 }
 
 func (o *CallOptions) fillCallCount() {
+	// Nothing to do.
+
 	if o.Count > 0 {
-		// Nothing to do.
 		return
 	}
 
@@ -318,6 +321,7 @@ func (o *CallOptions) numWorkloads() int {
 
 func (o *CallOptions) fillConnectionParams() {
 	// Overrides connection parameters for scheme.
+
 	switch o.Scheme {
 	case scheme.DNS:
 		o.NewConnectionPerRequest = true
@@ -484,8 +488,3 @@ func (o *CallOptions) fillRetryOptions() {
 	// Now append user-provided options to override the defaults.
 	o.Retry.Options = append(retryOpts, o.Retry.Options...)
 }
-
-const (
-	ForceIPFamilyV4 = "tcp4"
-	ForceIPFamilyV6 = "tcp6"
-)

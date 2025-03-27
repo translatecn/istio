@@ -14,31 +14,5 @@
 
 package util
 
-import (
-	"errors"
-	"strings"
-
-	"github.com/pmezard/go-difflib/difflib"
-)
-
 // Compare compares two byte slices. It returns an error with a
 // contextual diff if they are not equal.
-func Compare(out, model []byte) error {
-	data := strings.TrimSpace(string(out))
-	expected := strings.TrimSpace(string(model))
-
-	if data != expected {
-		diff := difflib.UnifiedDiff{
-			A:       difflib.SplitLines(expected),
-			B:       difflib.SplitLines(data),
-			Context: 2,
-		}
-		text, err := difflib.GetUnifiedDiffString(diff)
-		if err != nil {
-			return err
-		}
-		return errors.New(text)
-	}
-
-	return nil
-}

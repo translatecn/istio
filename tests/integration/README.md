@@ -118,9 +118,7 @@ Go allows you to run sub-tests with `t.Run()`. Similarly, this framework support
 func TestMyLogic(t *testing.T) {
     framework.
         NewTest(t).
-        Run(func(ctx framework.TestContext) {
-
-            // Create a component
+        Run(func(ctx framework.TestContext) {            // Create a component
             g := galley.NewOrFail(ctx, ctx, cfg)
 
             configs := []struct{

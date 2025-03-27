@@ -23,7 +23,7 @@ import (
 
 	clientset "k8s.io/client-go/kubernetes"
 
-	meshconfig "istio.io/api/mesh/v1alpha1"
+	meshconfig "istio.io/istio/istio.io/api/mesh/v1alpha1"
 	"istio.io/istio/pkg/slices"
 	raerror "istio.io/istio/security/pkg/pki/error"
 	"istio.io/istio/security/pkg/pki/util"
@@ -119,6 +119,7 @@ func ValidateCSR(csrPEM []byte, subjectIDs []string) bool {
 // security/pkg/pki/util/generate_csr.go and security/pi/nodeagent/cache/secretcache.go
 func compareCSRs(orgCSR, genCSR *x509.CertificateRequest) bool {
 	// Compare the CSR fields
+
 	if orgCSR == nil || genCSR == nil {
 		return false
 	}
@@ -163,19 +164,6 @@ func compareCSRs(orgCSR, genCSR *x509.CertificateRequest) bool {
 	return len(orgCSR.ExtraExtensions) == 0
 }
 
-// NewIstioRA is a factory method that returns an RA that implements the RegistrationAuthority functionality.
-// the caOptions defines the external provider
-func NewIstioRA(opts *IstioRAOptions) (RegistrationAuthority, error) {
-	if opts.ExternalCAType == ExtCAK8s {
-		istioRA, err := NewKubernetesRA(opts)
-		if err != nil {
-			return nil, fmt.Errorf("failed to create an K8s CA: %v", err)
-		}
-		return istioRA, err
-	}
-	return nil, fmt.Errorf("invalid CA Name %s", opts.ExternalCAType)
-}
-
 // preSign : Validation checks to execute before signing certificates
 func preSign(raOpts *IstioRAOptions, csrPEM []byte, subjectIDs []string, requestedLifetime time.Duration, forCA bool) (time.Duration, error) {
 	if forCA {
@@ -197,4 +185,17 @@ func preSign(raOpts *IstioRAOptions, csrPEM []byte, subjectIDs []string, request
 			"requested TTL %s is greater than the max allowed TTL %s", requestedLifetime, raOpts.MaxCertTTL))
 	}
 	return lifetime, nil
+}
+
+// NewIstioRA is a factory method that returns an RA that implements the RegistrationAuthority functionality.
+// the caOptions defines the external provider
+func NewIstioRA(opts *IstioRAOptions) (RegistrationAuthority, error) {
+	if opts.ExternalCAType == ExtCAK8s {
+		istioRA, err := NewKubernetesRA(opts)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create an K8s CA: %v", err)
+		}
+		return istioRA, err
+	}
+	return nil, fmt.Errorf("invalid CA Name %s", opts.ExternalCAType)
 }

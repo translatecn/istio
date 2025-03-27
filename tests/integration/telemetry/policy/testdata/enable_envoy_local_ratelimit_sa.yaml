@@ -41,8 +41,8 @@ spec:
                     value: 'true'
               descriptors:
                 - entries:
-                  - key: client_id
-                    value: "spiffe://cluster.local/ns/{{ .EchoNamespace }}/sa/clt"
+                    - key: client_id
+                      value: "spiffe://cluster.local/ns/{{ .EchoNamespace }}/sa/clt"
                   token_bucket:
                     max_tokens: 1
                     tokens_per_fill: 1
@@ -58,12 +58,12 @@ spec:
         value:
           route:
             rate_limits:
-            - actions:
-              - extension:
-                  name: custom
-                  typed_config:
-                    "@type": type.googleapis.com/udpa.type.v1.TypedStruct
-                    type_url: type.googleapis.com/envoy.extensions.rate_limit_descriptors.expr.v3.Descriptor
-                    value:
-                      descriptor_key: client_id
-                      text: connection.uri_san_peer_certificate
+              - actions:
+                  - extension:
+                      name: custom
+                      typed_config:
+                        "@type": type.googleapis.com/udpa.type.v1.TypedStruct
+                        type_url: type.googleapis.com/envoy.extensions.rate_limit_descriptors.expr.v3.Descriptor
+                        value:
+                          descriptor_key: client_id
+                          text: connection.uri_san_peer_certificate

@@ -30,14 +30,14 @@ import (
 	"istio.io/istio/cni/pkg/install"
 	udsLog "istio.io/istio/cni/pkg/log"
 	"istio.io/istio/cni/pkg/monitoring"
-	"istio.io/istio/cni/pkg/nodeagent"
+	"istio.io/istio/cni/pkg/nodeagent_over"
 	"istio.io/istio/cni/pkg/repair"
 	"istio.io/istio/cni/pkg/scopes"
-	"istio.io/istio/pkg/collateral"
+	"istio.io/istio/pkg/collateral_over"
 	"istio.io/istio/pkg/ctrlz"
 	"istio.io/istio/pkg/env"
 	istiolog "istio.io/istio/pkg/log"
-	"istio.io/istio/pkg/version"
+	"istio.io/istio/pkg/version_over"
 	iptables "istio.io/istio/tools/istio-iptables/pkg/constants"
 )
 
@@ -65,7 +65,7 @@ var rootCmd = &cobra.Command{
 		ctx := c.Context()
 
 		// Start controlz server
-		_, _ = ctrlz.Run(ctrlzOptions, nil)
+		_, _ = ctrlz.Run(ctrlzOptions, nil) // ✅
 
 		var cfg *config.Config
 		if cfg, err = constructConfig(); err != nil {
@@ -80,6 +80,7 @@ var rootCmd = &cobra.Command{
 
 		// Start UDS log server
 		udsLogger := udsLog.NewUDSLogger(log.GetOutputLevel())
+		//		/var/run/istio-cni/log.sock
 		if err = udsLogger.StartUDSLogServer(filepath.Join(cfg.InstallConfig.CNIAgentRunDir, constants.LogUDSSocketName), ctx.Done()); err != nil {
 			log.Errorf("Failed to start up UDS Log Server: %v", err)
 			return
@@ -88,29 +89,31 @@ var rootCmd = &cobra.Command{
 		// Creates a basic health endpoint server that reports health status
 		// based on atomic flag, as set by installer
 		// TODO nodeagent watch server should affect this too, and drop atomic flag
-		installDaemonReady, watchServerReady := nodeagent.StartHealthServer()
+		installDaemonReady, watchServerReady := nodeagent_over.StartHealthServer()
 
 		if cfg.InstallConfig.AmbientEnabled {
 			// Start ambient controller
 
 			// node agent will spawn a goroutine and watch the K8S API for events,
 			// as well as listen for messages from the CNI binary.
+
+			// /var/run/istio-cni/pluginevent.sock
 			cniEventAddr := filepath.Join(cfg.InstallConfig.CNIAgentRunDir, constants.CNIEventSocketName)
 			log.Infof("Starting ambient node agent with inpod redirect mode on socket %s", cniEventAddr)
-			ambientAgent, err := nodeagent.NewServer(ctx, watchServerReady, cniEventAddr,
-				nodeagent.AmbientArgs{
-					SystemNamespace:   nodeagent.SystemNamespace,
-					Revision:          nodeagent.Revision,
-					ServerSocket:      cfg.InstallConfig.ZtunnelUDSAddress,
-					DNSCapture:        cfg.InstallConfig.AmbientDNSCapture,
-					EnableIPv6:        cfg.InstallConfig.AmbientIPv6,
-					TPROXYRedirection: cfg.InstallConfig.AmbientTPROXYRedirection,
+			ambientAgent, err := nodeagent_over.NewServer(ctx, watchServerReady, cniEventAddr,
+				nodeagent_over.AmbientArgs{
+					SystemNamespace:   nodeagent_over.SystemNamespace,             // istio-system
+					Revision:          nodeagent_over.Revision,                    //
+					ServerSocket:      cfg.InstallConfig.ZtunnelUDSAddress,        // /var/run/ztunnel/ztunnel.sock
+					DNSCapture:        cfg.InstallConfig.AmbientDNSCapture,        // false
+					EnableIPv6:        cfg.InstallConfig.AmbientIPv6,              // true
+					TPROXYRedirection: cfg.InstallConfig.AmbientTPROXYRedirection, // false
 				})
 			if err != nil {
 				return fmt.Errorf("failed to create ambient nodeagent service: %v", err)
 			}
 
-			ambientAgent.Start()
+			ambientAgent.Start() // ✅
 			defer ambientAgent.Stop()
 
 			log.Info("Ambient node agent started, starting installer...")
@@ -161,8 +164,8 @@ func init() {
 	logOptions.AttachCobraFlags(rootCmd)
 	ctrlzOptions.AttachCobraFlags(rootCmd)
 
-	rootCmd.AddCommand(version.CobraCommand())
-	rootCmd.AddCommand(collateral.CobraCommand(rootCmd, collateral.Metadata{
+	rootCmd.AddCommand(version_over.CobraCommand())
+	rootCmd.AddCommand(collateral_over.CobraCommand(rootCmd, collateral_over.Metadata{
 		Title:   "Istio CNI Plugin Installer",
 		Section: "install-cni CLI",
 		Manual:  "Istio CNI Plugin Installer",
@@ -187,24 +190,15 @@ func init() {
 	registerBooleanParameter(constants.RepairEnabled, true, "Whether to enable race condition repair or not")
 	registerBooleanParameter(constants.RepairDeletePods, false, "Controller will delete pods when detecting pod broken by race condition")
 	registerBooleanParameter(constants.RepairLabelPods, false, "Controller will label pods when detecting pod broken by race condition")
-	registerStringParameter(constants.RepairLabelKey, "cni.istio.io/uninitialized",
-		"The key portion of the label which will be set by the race repair if label pods is true")
-	registerStringParameter(constants.RepairLabelValue, "true",
-		"The value portion of the label which will be set by the race repair if label pods is true")
+	registerStringParameter(constants.RepairLabelKey, "cni.istio.io/uninitialized", "The key portion of the label which will be set by the race repair if label pods is true")
+	registerStringParameter(constants.RepairLabelValue, "true", "The value portion of the label which will be set by the race repair if label pods is true")
 	registerStringParameter(constants.RepairNodeName, "", "The name of the managed node (will manage all nodes if unset)")
-	registerStringParameter(constants.RepairSidecarAnnotation, "sidecar.istio.io/status",
-		"An annotation key that indicates this pod contains an istio sidecar. All pods without this annotation will be ignored."+
-			"The value of the annotation is ignored.")
-	registerStringParameter(constants.RepairInitContainerName, "istio-validation",
-		"The name of the istio init container (will crash-loop if CNI is not configured for the pod)")
-	registerStringParameter(constants.RepairInitTerminationMsg, "",
-		"The expected termination message for the init container when crash-looping because of CNI misconfiguration")
-	registerIntegerParameter(constants.RepairInitExitCode, iptables.ValidationErrorCode,
-		"Expected exit code for the init container when crash-looping because of CNI misconfiguration")
-	registerStringParameter(constants.RepairLabelSelectors, "",
-		"A set of label selectors in label=value format that will be added to the pod list filters")
-	registerStringParameter(constants.RepairFieldSelectors, "",
-		"A set of field selectors in label=value format that will be added to the pod list filters")
+	registerStringParameter(constants.RepairSidecarAnnotation, "sidecar.istio.io/status", "An annotation key that indicates this pod contains an istio sidecar. All pods without this annotation will be ignored. The value of the annotation is ignored.")
+	registerStringParameter(constants.RepairInitContainerName, "istio-validation", "The name of the istio init container (will crash-loop if CNI is not configured for the pod)")
+	registerStringParameter(constants.RepairInitTerminationMsg, "", "The expected termination message for the init container when crash-looping because of CNI misconfiguration")
+	registerIntegerParameter(constants.RepairInitExitCode, iptables.ValidationErrorCode, "Expected exit code for the init container when crash-looping because of CNI misconfiguration")
+	registerStringParameter(constants.RepairLabelSelectors, "", "A set of label selectors in label=value format that will be added to the pod list filters")
+	registerStringParameter(constants.RepairFieldSelectors, "", "A set of field selectors in label=value format that will be added to the pod list filters")
 }
 
 func registerStringParameter(name, value, usage string) {
@@ -237,6 +231,21 @@ func bindViper(name string) {
 	}
 }
 
+// REPAIR_RUN_AS_DAEMON : true
+// REPAIR_SIDECAR_ANNOTATION : sidecar.istio.io/status
+// AMBIENT_DNS_CAPTURE : false
+// AMBIENT_ENABLED : true
+// AMBIENT_IPV6 : true
+// CHAINED_CNI_PLUGIN : true
+// CURRENT_AGENT_VERSION : 1.24.3
+// EXCLUDED_NAMESPACES : kube-system
+// REPAIR_BROKEN_POD_LABEL_KEY : cni.istio.io/uninitialized
+// REPAIR_BROKEN_POD_LABEL_VALUE : true
+// REPAIR_DELETE_PODS : false
+// REPAIR_ENABLED : true
+// REPAIR_INIT_CONTAINER_NAME : istio-validation
+// REPAIR_LABEL_PODS : false
+// REPAIR_REPAIR_PODS : true
 func constructConfig() (*config.Config, error) {
 	installCfg := config.InstallConfig{
 		MountedCNINetDir: viper.GetString(constants.MountedCNINetDir),

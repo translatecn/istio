@@ -79,6 +79,7 @@ func serviceName(host string, attributes *model.ServiceAttributes) string {
 // TraceOperation builds the string format: "%s:%d/*" for a given host and port
 func TraceOperation(host string, port int) string {
 	// Format : "%s:%d/*"
+
 	return util.DomainName(host, port) + "/*"
 }
 

@@ -3,6 +3,7 @@ kind: IstioOperator
 metadata:
   name: istio-operator
 spec:
+  hub: registry.cn-hangzhou.aliyuncs.com/acejilam
   profile: ambient
   components:
     ztunnel:
@@ -15,3 +16,4 @@ spec:
           limits:
             cpu: 200m
             memory: 200Mi
+

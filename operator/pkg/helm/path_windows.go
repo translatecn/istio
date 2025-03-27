@@ -16,7 +16,9 @@
 
 package helm
 
-import "strings"
+import (
+	"strings"
+)
 
 func pathJoin(elem ...string) string {
 	elems := make([]string, 0, len(elem))

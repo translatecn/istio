@@ -27,14 +27,15 @@ import (
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/structpb"
 
-	networking "istio.io/api/networking/v1alpha3"
+	networking "istio.io/istio/istio.io/api/networking/v1alpha3"
 	"istio.io/istio/pkg/util/protomarshal"
 )
 
 // nolint: interfacer
 func BuildXDSObjectFromStruct(applyTo networking.EnvoyFilter_ApplyTo, value *structpb.Struct, strict bool) (proto.Message, error) {
+	// for remove ops
+
 	if value == nil {
-		// for remove ops
 		return nil, nil
 	}
 	var obj proto.Message

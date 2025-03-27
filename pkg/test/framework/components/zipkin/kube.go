@@ -166,6 +166,7 @@ func installZipkin(ctx resource.Context, ns string) error {
 
 func installServiceEntry(ctx resource.Context, ns, ingressAddr string) error {
 	// Setup remote access to zipkin in cluster
+
 	yaml := strings.ReplaceAll(remoteZipkinEntry, "{INGRESS_DOMAIN}", ingressAddr)
 	err := ctx.ConfigIstio().YAML(ns, yaml).Apply()
 	if err != nil {
@@ -234,6 +235,7 @@ func (c *kubeComponent) ID() resource.ID {
 
 func (c *kubeComponent) QueryTraces(limit int, spanName, annotationQuery string) ([]Trace, error) {
 	// Get 100 most recent traces
+
 	client := http.Client{
 		Timeout: 5 * time.Second,
 	}

@@ -3,7 +3,7 @@ kind: IstioOperator
 metadata:
   namespace: istio-system
 spec:
-  hub: gcr.io/istio-testing
+  hub: registry.cn-hangzhou.aliyuncs.com/acejilam
   tag: latest
 
   # Turn on default components: base, pilot, and ingress gateway
@@ -14,11 +14,11 @@ spec:
       enabled: true
     # Istio Gateway feature
     ingressGateways:
-    - name: istio-ingressgateway
-      enabled: true
+      - name: istio-ingressgateway
+        enabled: true
     egressGateways:
-    - name: istio-egressgateway
-      enabled: false
+      - name: istio-egressgateway
+        enabled: false
 
   # Most default values come from the helm chart's values.yaml
   # Below are the things that differ
@@ -28,5 +28,5 @@ spec:
       istioNamespace: istio-system
       configValidation: true
     gateways:
-      istio-ingressgateway: {}
-      istio-egressgateway: {}
+      istio-ingressgateway: { }
+      istio-egressgateway: { }

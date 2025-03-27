@@ -209,6 +209,7 @@ func (h *manyCollection[I, O]) index(extract func(o O) []string) kclient.RawInde
 func (h *manyCollection[I, O]) onPrimaryInputEvent(items []Event[I]) {
 	// Between the events being enqueued and now, the input may have changed. Update with latest info.
 	// Note we now have the `blockNewEvents` lock so this is safe; any futures calls will do the same so always have up-to-date information.
+
 	for idx, ev := range items {
 		iKey := GetKey(ev.Latest())
 		iObj := h.parent.GetKey(iKey)
@@ -352,11 +353,6 @@ func WithName(name string) CollectionOption {
 //	type Wrapper struct { Object }
 //	func (w Wrapper) ResourceName() string { return ... }
 //	WithObjectAugmentation(func(o any) any { return Wrapper{o.(Object)} })
-func WithObjectAugmentation(fn func(o any) any) CollectionOption {
-	return func(c *collectionOptions) {
-		c.augmentation = fn
-	}
-}
 
 // WithStop sets a custom stop channel so a collection can be terminated when the channel is closed
 func WithStop(stop <-chan struct{}) CollectionOption {
@@ -370,6 +366,7 @@ func WithStop(stop <-chan struct{}) CollectionOption {
 // For zero-to-one, use NewSingleton. For one-to-many, use NewManyCollection.
 func NewCollection[I, O any](c Collection[I], hf TransformationSingle[I, O], opts ...CollectionOption) Collection[O] {
 	// For implementation simplicity, represent TransformationSingle as a TransformationMulti so we can share an implementation.
+
 	hm := func(ctx HandlerContext, i I) []O {
 		res := hf(ctx, i)
 		if res == nil {
@@ -431,8 +428,10 @@ func newManyCollection[I, O any](cc Collection[I], hf TransformationMulti[I, O],
 }
 
 func (h *manyCollection[I, O]) runQueue() {
-	c := h.parent
 	// Wait for primary dependency to be ready
+
+	c := h.parent
+
 	if !c.Synced().WaitUntilSynced(h.stop) {
 		return
 	}
@@ -455,6 +454,7 @@ func (h *manyCollection[I, O]) runQueue() {
 func (h *manyCollection[I, O]) onSecondaryDependencyEvent(sourceCollection collectionUID, events []Event[any]) {
 	// A secondary dependency changed...
 	// Got an event. Now we need to find out who depends on it..
+
 	changedInputKeys := sets.Set[Key[I]]{}
 	// Check old and new
 	for _, ev := range events {
@@ -580,16 +580,17 @@ func (h *manyCollection[I, O]) name() string {
 
 // nolint: unused // (not true, its to implement an interface)
 func (h *manyCollection[I, O]) uid() collectionUID {
+	// collectionDependencyTracker tracks, for a single transformation call, all dependencies registered.
+	// These are inserted on each call to Fetch().
+	// Once the transformation function is complete, the set of dependencies for the provided input will be replaced
+	// with the set accumulated here.
+	//
+	// Note: this is used instead of passing manyCollection to the transformation function directly because we want to build up some state
+	// for a given transformation call at once, then apply it in a single transaction to the manyCollection.
+
 	return h.id
 }
 
-// collectionDependencyTracker tracks, for a single transformation call, all dependencies registered.
-// These are inserted on each call to Fetch().
-// Once the transformation function is complete, the set of dependencies for the provided input will be replaced
-// with the set accumulated here.
-//
-// Note: this is used instead of passing manyCollection to the transformation function directly because we want to build up some state
-// for a given transformation call at once, then apply it in a single transaction to the manyCollection.
 type collectionDependencyTracker[I, O any] struct {
 	*manyCollection[I, O]
 	d   []*dependency

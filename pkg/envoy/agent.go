@@ -221,7 +221,7 @@ func (a *Agent) terminate() {
 		}
 	}
 	status := <-a.statusCh
-	if status.err == errAbort {
+	if errors.Is(status.err, errAbort) {
 		log.Infof("Envoy aborted normally")
 	} else {
 		log.Warnf("Envoy aborted abnormally")

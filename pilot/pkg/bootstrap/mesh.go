@@ -15,7 +15,6 @@
 package bootstrap
 
 import (
-	"encoding/json"
 	"os"
 
 	"istio.io/istio/pilot/pkg/features"
@@ -23,7 +22,7 @@ import (
 	"istio.io/istio/pkg/config/mesh/kubemesh"
 	"istio.io/istio/pkg/filewatcher"
 	"istio.io/istio/pkg/log"
-	"istio.io/istio/pkg/version"
+	"istio.io/istio/pkg/version_over"
 )
 
 const (
@@ -48,10 +47,10 @@ func (s *Server) initMeshConfiguration(args *PilotArgs, fileWatcher filewatcher.
 	log.Infof("initializing mesh configuration %v", args.MeshConfigFile)
 	defer func() {
 		if s.environment.Watcher != nil {
-			log.Infof("mesh configuration: %s", mesh.PrettyFormatOfMeshConfig(s.environment.Mesh()))
-			log.Infof("version: %s", version.Info.String())
-			argsdump, _ := json.MarshalIndent(args, "", "   ")
-			log.Infof("flags: %s", argsdump)
+			// log.Infof("mesh configuration: %s", mesh.PrettyFormatOfMeshConfig(s.environment.Mesh()))
+			log.Infof("version: %s", version_over.Info.String())
+			// argsdump, _ := json.MarshalIndent(args, "", "   ")
+			// log.Infof("flags: %s", argsdump)
 		}
 	}()
 
@@ -59,8 +58,8 @@ func (s *Server) initMeshConfiguration(args *PilotArgs, fileWatcher filewatcher.
 	multiWatch := features.SharedMeshConfig != ""
 
 	var err error
-	if _, err = os.Stat(args.MeshConfigFile); !os.IsNotExist(err) {
-		s.environment.Watcher, err = mesh.NewFileWatcher(fileWatcher, args.MeshConfigFile, multiWatch)
+	if _, err = os.Stat(args.MeshConfigFile); !os.IsNotExist(err) { // ./etc/istio/config/mesh
+		s.environment.Watcher, err = mesh.NewFileWatcher(fileWatcher, args.MeshConfigFile, multiWatch) // ✅
 		if err == nil {
 			if multiWatch && s.kubeClient != nil {
 				kubemesh.AddUserMeshConfig(
@@ -84,9 +83,8 @@ func (s *Server) initMeshConfiguration(args *PilotArgs, fileWatcher filewatcher.
 
 	// Watch the istio ConfigMap for mesh config changes.
 	// This may be necessary for external Istiod.
-	configMapName := getMeshConfigMapName(args.Revision)
-	multiWatcher := kubemesh.NewConfigMapWatcher(
-		s.kubeClient, args.Namespace, configMapName, configMapKey, multiWatch, s.internalStop)
+	configMapName := getMeshConfigMapName(args.Revision) // default
+	multiWatcher := kubemesh.NewConfigMapWatcher(s.kubeClient, args.Namespace, configMapName, configMapKey, multiWatch, s.internalStop)
 	s.environment.Watcher = multiWatcher
 	s.environment.NetworksWatcher = multiWatcher
 	log.Infof("initializing mesh networks from mesh config watcher")
@@ -94,6 +92,14 @@ func (s *Server) initMeshConfiguration(args *PilotArgs, fileWatcher filewatcher.
 	if multiWatch {
 		kubemesh.AddUserMeshConfig(s.kubeClient, s.environment.Watcher, args.Namespace, configMapKey, features.SharedMeshConfig, s.internalStop)
 	}
+}
+
+func getMeshConfigMapName(revision string) string {
+	name := defaultMeshConfigMapName
+	if revision == "" || revision == "default" {
+		return name
+	}
+	return name + "-" + revision
 }
 
 // initMeshNetworks loads the mesh networks configuration from the file provided
@@ -105,7 +111,7 @@ func (s *Server) initMeshNetworks(args *PilotArgs, fileWatcher filewatcher.FileW
 	log.Info("initializing mesh networks")
 	if args.NetworksConfigFile != "" {
 		var err error
-		s.environment.NetworksWatcher, err = mesh.NewNetworksWatcher(fileWatcher, args.NetworksConfigFile)
+		s.environment.NetworksWatcher, err = mesh.NewNetworksWatcher(fileWatcher, args.NetworksConfigFile) // ./etc/istio/config/meshNetworks
 		if err != nil {
 			log.Info(err)
 		}
@@ -115,12 +121,4 @@ func (s *Server) initMeshNetworks(args *PilotArgs, fileWatcher filewatcher.FileW
 		log.Info("mesh networks configuration not provided")
 		s.environment.NetworksWatcher = mesh.NewFixedNetworksWatcher(nil)
 	}
-}
-
-func getMeshConfigMapName(revision string) string {
-	name := defaultMeshConfigMapName
-	if revision == "" || revision == "default" {
-		return name
-	}
-	return name + "-" + revision
 }

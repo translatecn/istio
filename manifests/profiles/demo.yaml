@@ -1,9 +1,10 @@
 apiVersion: install.istio.io/v1alpha1
 kind: IstioOperator
 spec:
+  hub: registry.cn-hangzhou.aliyuncs.com/acejilam
   components:
     egressGateways:
-    - name: istio-egressgateway
-      enabled: true
+      - name: istio-egressgateway
+        enabled: true
   values:
     profile: demo

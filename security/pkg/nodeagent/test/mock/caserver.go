@@ -27,7 +27,7 @@ import (
 	ghc "google.golang.org/grpc/health/grpc_health_v1"
 	"google.golang.org/grpc/status"
 
-	pb "istio.io/api/security/v1alpha1"
+	pb "istio.io/istio/istio.io/api/security/v1alpha1"
 	"istio.io/istio/pkg/log"
 	"istio.io/istio/pkg/security"
 	caerror "istio.io/istio/security/pkg/pki/error"
@@ -51,27 +51,6 @@ type CAServer struct {
 	rejectCSR       bool
 	emptyCert       bool
 	faultInjectLock *sync.Mutex
-}
-
-func NewCAServerWithKeyCert(port int, key, cert []byte, opts ...grpc.ServerOption) (*CAServer, error) {
-	keyCertBundle, err := util.NewVerifiedKeyCertBundleFromPem(cert, key, nil, cert)
-	if err != nil {
-		caServerLog.Errorf("failed to create CA KeyCertBundle: %+v", err)
-		return nil, err
-	}
-
-	server := &CAServer{
-		certPem:         cert,
-		keyPem:          key,
-		certLifetime:    24 * time.Hour,
-		KeyCertBundle:   keyCertBundle,
-		GRPCServer:      grpc.NewServer(opts...),
-		faultInjectLock: &sync.Mutex{},
-	}
-	// Register CA service at gRPC server.
-	pb.RegisterIstioCertificateServiceServer(server.GRPCServer, server)
-	ghc.RegisterHealthServer(server.GRPCServer, server)
-	return server, server.start(port)
 }
 
 func (s *CAServer) start(port int) error {

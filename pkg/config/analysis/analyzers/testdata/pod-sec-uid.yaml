@@ -9,11 +9,11 @@ spec:
   securityContext:
     runAsUser: 1337
   containers:
-  - name: helloworld
-    image: docker.io/istio/examples-helloworld-v2
-    resources:
-      requests:
-        cpu: "100m"
-    imagePullPolicy: IfNotPresent #Always
-    ports:
-    - containerPort: 5000
+    - name: helloworld
+      image: registry.cn-hangzhou.aliyuncs.com/acejilam/examples-helloworld-v2
+      resources:
+        requests:
+          cpu: "100m"
+      imagePullPolicy: IfNotPresent #Always
+      ports:
+        - containerPort: 5000

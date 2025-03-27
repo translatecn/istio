@@ -7,7 +7,6 @@
 tools/vagrant/.vagrant/
 # Intellij
 *.iml
-.idea/
 .run/
 # Visual Studio Code
 .vscode/
@@ -63,3 +62,8 @@ var/
 .DS_Store
 /manifests/charts/**/charts/
 /manifests/charts/**/Chart.lock
+
+
+# Ignore DevSpace cache and log folder
+.devspace/
+.idea

@@ -31,15 +31,17 @@ type IstioKind struct {
 
 // GetSpec from a wrapper
 func (in *IstioKind) GetSpec() json.RawMessage {
+	// GetStatus from a wrapper
+
 	return in.Spec
 }
 
-// GetStatus from a wrapper
 func (in *IstioKind) GetStatus() *json.RawMessage {
+	// GetObjectMeta from a wrapper
+
 	return in.Status
 }
 
-// GetObjectMeta from a wrapper
 func (in *IstioKind) GetObjectMeta() metav1.ObjectMeta {
 	return in.ObjectMeta
 }

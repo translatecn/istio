@@ -23,5 +23,5 @@ spec:
                 tlsCertificateSdsSecretConfigs:
                   - name: kubernetes://wildcard-cert
                     sdsConfig:
-                      ads: {}
+                      ads: { }
                       resourceApiVersion: V3

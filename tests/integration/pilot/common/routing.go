@@ -35,7 +35,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 
-	"istio.io/api/annotation"
+	"istio.io/istio/istio.io/api/annotation"
 	"istio.io/istio/pilot/pkg/model"
 	"istio.io/istio/pkg/config/host"
 	"istio.io/istio/pkg/config/protocol"
@@ -175,7 +175,9 @@ spec:
 ---
 `
 
-func httpGateway(host string, port int, portName, protocol string, gatewayIstioLabel string) string { //nolint: unparam
+func httpGateway(host string, port int, portName, protocol string, gatewayIstioLabel string) string {
+	//nolint: unparam
+
 	return tmpl.MustEvaluate(gatewayTmpl, struct {
 		GatewayHost       string
 		GatewayPort       int
@@ -192,6 +194,7 @@ func httpGateway(host string, port int, portName, protocol string, gatewayIstioL
 func virtualServiceCases(t TrafficContext) {
 	// reduce the total # of subtests that don't give valuable coverage or just don't work
 	// TODO include proxyless as different features become supported
+
 	t.SetDefaultSourceMatchers(match.NotNaked, match.NotHeadless, match.NotProxylessGRPC)
 	t.SetDefaultTargetMatchers(match.NotNaked, match.NotHeadless, match.NotProxylessGRPC)
 	includeProxyless := []match.Matcher{match.NotNaked, match.NotHeadless}
@@ -1555,6 +1558,7 @@ func trafficLoopCases(t TrafficContext) {
 // autoPassthroughCases tests that we cannot hit unexpected destinations when using AUTO_PASSTHROUGH
 func autoPassthroughCases(t TrafficContext) {
 	// We test the cross product of all Istio ALPNs (or no ALPN), all mTLS modes, and various backends
+
 	alpns := []string{"istio", "istio-peer-exchange", "istio-http/1.0", "istio-http/1.1", "istio-h2", ""}
 	modes := []string{"STRICT", "PERMISSIVE", "DISABLE"}
 
@@ -1639,6 +1643,7 @@ spec:
 
 func gatewayCases(t TrafficContext) {
 	// TODO fix for ambient
+
 	skipEnvoyPeerMeta := skipAmbient(t, "X-Envoy-Peer-Metadata present in response")
 	templateParams := func(protocol protocol.Instance, src echo.Callers, dests echo.Instances, ciphers []string, port string) map[string]any {
 		hostName, dest, portN, cred := "*", dests[0], 80, ""
@@ -2418,6 +2423,7 @@ func XFFGatewayCase(apps *deployment.SingleNamespaceView, gateway string) []Traf
 
 func envoyFilterCases(t TrafficContext) {
 	// Test adding envoyfilter to inbound and outbound route/cluster/listeners
+
 	cfg := `
 apiVersion: networking.istio.io/v1alpha3
 kind: EnvoyFilter
@@ -3366,6 +3372,7 @@ func protocolSniffingCases(t TrafficContext) {
 // Todo merge with security TestReachability code
 func instanceIPTests(t TrafficContext) {
 	// proxyless doesn't get valuable coverage here
+
 	t.SetDefaultTargetMatchers(match.NotProxylessGRPC)
 	t.SetDefaultSourceMatchers(match.NotProxylessGRPC)
 
@@ -3786,6 +3793,7 @@ func VMTestCases(vms echo.Instances) func(t TrafficContext) {
 func TestExternalService(t TrafficContext) {
 	// Let us enable outboundTrafficPolicy REGISTRY_ONLY
 	// on one of the workloads, to verify selective external connectivity
+
 	SidecarScope := fmt.Sprintf(`apiVersion: networking.istio.io/v1
 kind: Sidecar
 metadata:

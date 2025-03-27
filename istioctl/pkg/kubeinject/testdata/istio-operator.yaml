@@ -4,6 +4,7 @@ metadata:
   name: test
   namespace: istio-system
 spec:
+  hub: registry.cn-hangzhou.aliyuncs.com/acejilam
   meshConfig:
     # Set enableTracing to false to disable request tracing.
     enableTracing: true
@@ -20,3 +21,4 @@ spec:
   values:
     global:
       tag: testiop
+

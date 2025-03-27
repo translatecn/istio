@@ -42,6 +42,7 @@ func init() {
 
 func addKnownTypes(scheme *runtime.Scheme) error {
 	// Register Kubernetes Multi-Cluster Services (MCS) objects.
+
 	scheme.AddKnownTypes(MCSSchemeGroupVersion,
 		&mcs.ServiceExport{},
 		&mcs.ServiceExportList{},

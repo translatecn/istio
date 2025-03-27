@@ -6,14 +6,14 @@ metadata:
   name: weighted-extsvc
   namespace: testns
 spec:
-   hosts:
-   - c-weighted.extsvc.com
-   ports:
-   - number: 80
-     name: http
-     protocol: HTTP
-   resolution: STATIC
-   endpoints:
+  hosts:
+    - c-weighted.extsvc.com
+  ports:
+    - number: 80
+      name: http
+      protocol: HTTP
+  resolution: STATIC
+  endpoints:
     - address: 127.0.0.2
       ports:
         http: 7072
@@ -50,11 +50,11 @@ spec:
     - c-weighted.extsvc.com
   http:
     - route:
-      - destination:
-          host: c-weighted.extsvc.com
-          subset: v1
-        weight: 75
-      - destination:
-          host: c-weighted.extsvc.com
-          subset: v2
-        weight: 25
+        - destination:
+            host: c-weighted.extsvc.com
+            subset: v1
+          weight: 75
+        - destination:
+            host: c-weighted.extsvc.com
+            subset: v2
+          weight: 25

@@ -32,10 +32,11 @@ func (e Errors) Error() string {
 
 // String implements the stringer#String method.
 func (e Errors) String() string {
+	// ToError returns an error from Errors.
+
 	return e.Error()
 }
 
-// ToError returns an error from Errors.
 func (e Errors) ToError() error {
 	if len(e) == 0 {
 		return nil
@@ -129,18 +130,3 @@ func ToString(errors []error, separator string) string {
 }
 
 // EqualErrors reports whether a and b are equal, regardless of ordering.
-func EqualErrors(a, b Errors) bool {
-	if len(a) != len(b) {
-		return false
-	}
-	m := make(map[string]bool)
-	for _, e := range b {
-		m[e.Error()] = true
-	}
-	for _, ea := range a {
-		if !m[ea.Error()] {
-			return false
-		}
-	}
-	return true
-}

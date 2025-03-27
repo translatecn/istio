@@ -19,7 +19,7 @@ package config
 import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
-	mcp "istio.io/api/mcp/v1alpha1"
+	mcp "istio.io/istio/istio.io/api/mcp/v1alpha1"
 )
 
 // Convert from model.Config, which has no associated proto, to MCP Resource proto.

@@ -25,11 +25,11 @@ import (
 	"istio.io/istio/pilot/pkg/features"
 	"istio.io/istio/pilot/pkg/serviceregistry/provider"
 	"istio.io/istio/pkg/cmd"
-	"istio.io/istio/pkg/collateral"
+	"istio.io/istio/pkg/collateral_over"
 	"istio.io/istio/pkg/config/constants"
 	"istio.io/istio/pkg/ctrlz"
 	"istio.io/istio/pkg/log"
-	"istio.io/istio/pkg/version"
+	"istio.io/istio/pkg/version_over"
 )
 
 var (
@@ -57,8 +57,8 @@ func NewRootCommand() *cobra.Command {
 	discoveryCmd := newDiscoveryCommand()
 	addFlags(discoveryCmd)
 	rootCmd.AddCommand(discoveryCmd)
-	rootCmd.AddCommand(version.CobraCommand())
-	rootCmd.AddCommand(collateral.CobraCommand(rootCmd, collateral.Metadata{
+	rootCmd.AddCommand(version_over.CobraCommand())
+	rootCmd.AddCommand(collateral_over.CobraCommand(rootCmd, collateral_over.Metadata{
 		Title:   "Istio Pilot Discovery",
 		Section: "pilot-discovery CLI",
 		Manual:  "Istio Pilot Discovery",
@@ -126,18 +126,9 @@ func addFlags(c *cobra.Command) {
 	})
 
 	// Process commandline args.
-	c.PersistentFlags().StringSliceVar(&serverArgs.RegistryOptions.Registries, "registries",
-		[]string{string(provider.Kubernetes)},
-		fmt.Sprintf("Comma separated list of platform service registries to read from (choose one or more from {%s, %s})",
-			provider.Kubernetes, provider.Mock))
 	c.PersistentFlags().StringVar(&serverArgs.RegistryOptions.ClusterRegistriesNamespace, "clusterRegistriesNamespace",
 		serverArgs.RegistryOptions.ClusterRegistriesNamespace, "Namespace for ConfigMap which stores clusters configs")
-	c.PersistentFlags().StringVar(&serverArgs.RegistryOptions.KubeConfig, "kubeconfig", "",
-		"Use a Kubernetes configuration file instead of in-cluster configuration")
-	c.PersistentFlags().StringVar(&serverArgs.MeshConfigFile, "meshConfig", "./etc/istio/config/mesh",
-		"File name for Istio mesh configuration. If not specified, a default mesh will be used.")
-	c.PersistentFlags().StringVar(&serverArgs.NetworksConfigFile, "networksConfig", "./etc/istio/config/meshNetworks",
-		"File name for Istio mesh networks configuration. If not specified, a default mesh networks will be used.")
+
 	c.PersistentFlags().StringVarP(&serverArgs.Namespace, "namespace", "n", bootstrap.PodNamespace,
 		"Select a namespace where the controller resides. If not set, uses ${POD_NAMESPACE} environment variable")
 	c.PersistentFlags().StringVar(&serverArgs.CniNamespace, "cniNamespace", bootstrap.PodNamespace,
@@ -150,10 +141,6 @@ func addFlags(c *cobra.Command) {
 		"Directory to watch for updates to config yaml files. If specified, the files will be used as the source of config, rather than a CRD client.")
 	c.PersistentFlags().StringVar(&serverArgs.RegistryOptions.KubeOptions.DomainSuffix, "domain", constants.DefaultClusterLocalDomain,
 		"DNS domain suffix")
-	c.PersistentFlags().StringVar((*string)(&serverArgs.RegistryOptions.KubeOptions.ClusterID), "clusterID", features.ClusterName,
-		"The ID of the cluster that this Istiod instance resides")
-	c.PersistentFlags().StringToStringVar(&serverArgs.RegistryOptions.KubeOptions.ClusterAliases, "clusterAliases", map[string]string{},
-		"Alias names for clusters")
 
 	// using address, so it can be configured as localhost:.. (possibly UDS in future)
 	c.PersistentFlags().StringVar(&serverArgs.ServerOptions.HTTPAddr, "httpAddr", ":8080",
@@ -166,8 +153,6 @@ func addFlags(c *cobra.Command) {
 		"Discovery service secured gRPC address")
 	c.PersistentFlags().StringVar(&serverArgs.ServerOptions.MonitoringAddr, "monitoringAddr", ":15014",
 		"HTTP address to use for pilot's self-monitoring information")
-	c.PersistentFlags().BoolVar(&serverArgs.ServerOptions.EnableProfiling, "profile", true,
-		"Enable profiling via web interface host:port/debug/pprof")
 
 	// Use TLS certificates if provided.
 	c.PersistentFlags().StringVar(&serverArgs.ServerOptions.TLSOptions.CaCertFile, "caCertFile", "",
@@ -187,6 +172,15 @@ func addFlags(c *cobra.Command) {
 
 	c.PersistentFlags().IntVar(&serverArgs.RegistryOptions.KubeOptions.KubernetesAPIBurst, "kubernetesApiBurst", 160,
 		"Maximum burst for throttle when communicating with the kubernetes API")
+	c.PersistentFlags().StringToStringVar(&serverArgs.RegistryOptions.KubeOptions.ClusterAliases, "clusterAliases", map[string]string{}, "Alias names for clusters")
+	c.PersistentFlags().BoolVar(&serverArgs.ServerOptions.EnableProfiling, "profile", true, "Enable profiling via web interface host:port/debug/pprof")
+	c.PersistentFlags().StringVar(&serverArgs.MeshConfigFile, "meshConfig", "./etc/istio/config/mesh", "File name for Istio mesh configuration. If not specified, a default mesh will be used.")
+	c.PersistentFlags().StringVar(&serverArgs.NetworksConfigFile, "networksConfig", "./etc/istio/config/meshNetworks", "File name for Istio mesh networks configuration. If not specified, a default mesh networks will be used.")
+
+	c.PersistentFlags().StringVar(&serverArgs.RegistryOptions.KubeConfig, "kubeconfig", "", "Use a Kubernetes configuration file instead of in-cluster configuration")
+
+	c.PersistentFlags().StringSliceVar(&serverArgs.RegistryOptions.Registries, "registries", []string{string(provider.Kubernetes)}, fmt.Sprintf("Comma separated list of platform service registries to read from (choose one or more from {%s, %s})", provider.Kubernetes, provider.Mock))
+	c.PersistentFlags().StringVar((*string)(&serverArgs.RegistryOptions.KubeOptions.ClusterID), "clusterID", features.ClusterName, "The ID of the cluster that this Istiod instance resides")
 
 	// Attach the Istio logging options to the command.
 	loggingOptions.AttachCobraFlags(c)

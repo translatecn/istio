@@ -21,7 +21,6 @@ import (
 	"path"
 	"path/filepath"
 	"runtime"
-	"strings"
 
 	"istio.io/istio/pkg/log"
 )
@@ -154,12 +153,3 @@ func ReadDepsSHA(name string) (string, error) {
 }
 
 // ReadVersion returns the contents of the $ROOTDIR/VERSION file
-func ReadVersion() (string, error) {
-	f := filepath.Join(IstioSrc, "VERSION")
-	v, err := os.ReadFile(f)
-	if err != nil {
-		return "", err
-	}
-
-	return strings.TrimSuffix(string(v), "\n"), nil
-}

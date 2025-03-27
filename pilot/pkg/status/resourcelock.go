@@ -21,9 +21,9 @@ import (
 
 	"k8s.io/apimachinery/pkg/runtime/schema"
 
-	v1alpha12 "istio.io/api/analysis/v1alpha1"
-	"istio.io/api/meta/v1alpha1"
-	networking "istio.io/api/networking/v1alpha3"
+	v1alpha12 "istio.io/istio/istio.io/api/analysis/v1alpha1"
+	"istio.io/istio/istio.io/api/meta/v1alpha1"
+	networking "istio.io/istio/istio.io/api/networking/v1alpha3"
 	"istio.io/istio/pkg/config"
 	"istio.io/istio/pkg/config/analysis/diag"
 	"istio.io/istio/pkg/util/sets"
@@ -243,11 +243,9 @@ type NopStatusManipulator struct {
 	inner any
 }
 
-func (n *NopStatusManipulator) SetObservedGeneration(i int64) {
-}
+func (n *NopStatusManipulator) SetObservedGeneration(i int64) {}
 
-func (n *NopStatusManipulator) SetValidationMessages(msgs diag.Messages) {
-}
+func (n *NopStatusManipulator) SetValidationMessages(msgs diag.Messages) {}
 
 func (n *NopStatusManipulator) Unwrap() any {
 	return n.inner
@@ -275,6 +273,7 @@ func (i *IstioGenerationProvider) Unwrap() any {
 
 func (i *IstioGenerationProvider) SetValidationMessages(msgs diag.Messages) {
 	// zero out analysis messages, as this is the sole controller for those
+
 	i.ValidationMessages = []*v1alpha12.AnalysisMessageBase{}
 	for _, msg := range msgs {
 		i.ValidationMessages = append(i.ValidationMessages, msg.AnalysisMessageBase())
@@ -299,6 +298,7 @@ func (i *ServiceEntryGenerationProvider) Unwrap() any {
 
 func (i *ServiceEntryGenerationProvider) SetValidationMessages(msgs diag.Messages) {
 	// zero out analysis messages, as this is the sole controller for those
+
 	i.ValidationMessages = []*v1alpha12.AnalysisMessageBase{}
 	for _, msg := range msgs {
 		i.ValidationMessages = append(i.ValidationMessages, msg.AnalysisMessageBase())

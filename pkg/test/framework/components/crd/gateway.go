@@ -25,7 +25,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"istio.io/istio/pkg/test/env"
-	"istio.io/istio/pkg/test/framework"
 	"istio.io/istio/pkg/test/framework/resource"
 	"istio.io/istio/pkg/test/framework/resource/config/apply"
 	"istio.io/istio/pkg/test/util/retry"
@@ -42,16 +41,6 @@ func SupportsGatewayAPI(t resource.Context) bool {
 }
 
 var errSkip = errors.New("not supported; requires CRDv1 support")
-
-func DeployGatewayAPIOrSkip(ctx framework.TestContext) {
-	res := DeployGatewayAPI(ctx)
-	if res == errSkip {
-		ctx.Skip(errSkip.Error())
-	}
-	if res != nil {
-		ctx.Fatal(res)
-	}
-}
 
 func DeployGatewayAPI(ctx resource.Context) error {
 	if !SupportsGatewayAPI(ctx) {

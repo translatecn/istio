@@ -17,7 +17,7 @@ kind: CustomResourceDefinition
 metadata:
   name: serviceexports.{{ .Group }}
 spec:
-  group: {{ .Group }}
+  group: { { .Group } }
   scope: Namespaced
   names:
     plural: serviceexports
@@ -26,11 +26,11 @@ spec:
     shortNames:
       - svcex
   versions:
-    - name: {{ .Version }}
+    - name: { { .Version } }
       served: true
       storage: true
       subresources:
-        status: {}
+        status: { }
       additionalPrinterColumns:
         - name: Age
           type: date

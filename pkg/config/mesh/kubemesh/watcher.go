@@ -19,17 +19,36 @@ import (
 
 	v1 "k8s.io/api/core/v1"
 
-	meshconfig "istio.io/api/mesh/v1alpha1"
+	meshconfig "istio.io/istio/istio.io/api/mesh/v1alpha1"
 	"istio.io/istio/pkg/config/mesh"
 	"istio.io/istio/pkg/kube"
 	"istio.io/istio/pkg/kube/watcher/configmapwatcher"
 	"istio.io/istio/pkg/log"
 )
 
-// NewConfigMapWatcher creates a new Watcher for changes to the given ConfigMap.
+func ReadConfigMap(cm *v1.ConfigMap, key string) (*meshconfig.MeshConfig, error) {
+	if cm == nil {
+		log.Info("no ConfigMap found, using default MeshConfig config")
+		return mesh.DefaultMeshConfig(), nil
+	}
+
+	cfgYaml, exists := cm.Data[key]
+	if !exists {
+		return nil, fmt.Errorf("missing ConfigMap key %q", key)
+	}
+
+	meshConfig, err := mesh.ApplyMeshConfigDefaults(cfgYaml)
+	if err != nil {
+		return nil, fmt.Errorf("failed reading MeshConfig config: %v. YAML:\n%s", err, cfgYaml)
+	}
+
+	log.Info("Loaded MeshConfig config from Kubernetes API server.")
+	return meshConfig, nil
+}
+
 func NewConfigMapWatcher(client kube.Client, namespace, name, key string, multiWatch bool, stop <-chan struct{}) *mesh.MultiWatcher {
 	w := mesh.NewMultiWatcher(mesh.DefaultMeshConfig())
-	c := configmapwatcher.NewController(client, namespace, name, func(cm *v1.ConfigMap) {
+	c := configmapwatcher.NewConfigmapController(client, namespace, name, func(cm *v1.ConfigMap) {
 		meshNetworks, err := ReadNetworksConfigMap(cm, "meshNetworks")
 		if err != nil {
 			// Keep the last known config in case there's a misconfiguration issue.
@@ -37,7 +56,7 @@ func NewConfigMapWatcher(client kube.Client, namespace, name, key string, multiW
 			return
 		}
 		if meshNetworks != nil {
-			w.SetNetworks(meshNetworks)
+			w.SetNetworks(meshNetworks) // ✅
 		}
 		if multiWatch {
 			meshConfig := meshConfigMapData(cm, key)
@@ -63,8 +82,28 @@ func NewConfigMapWatcher(client kube.Client, namespace, name, key string, multiW
 	return w
 }
 
+func ReadNetworksConfigMap(cm *v1.ConfigMap, key string) (*meshconfig.MeshNetworks, error) {
+	if cm == nil {
+		log.Info("no ConfigMap found, using existing MeshNetworks config")
+		return nil, nil
+	}
+
+	cfgYaml, exists := cm.Data[key]
+	if !exists {
+		return nil, nil
+	}
+
+	meshNetworks, err := mesh.ParseMeshNetworks(cfgYaml)
+	if err != nil {
+		return nil, fmt.Errorf("failed reading MeshNetworks config: %v. YAML:\n%s", err, cfgYaml)
+	}
+
+	log.Info("Loaded MeshNetworks config from Kubernetes API server.")
+	return meshNetworks, nil
+}
+
 func AddUserMeshConfig(client kube.Client, watcher mesh.Watcher, namespace, key, userMeshConfig string, stop <-chan struct{}) {
-	c := configmapwatcher.NewController(client, namespace, userMeshConfig, func(cm *v1.ConfigMap) {
+	c := configmapwatcher.NewConfigmapController(client, namespace, userMeshConfig, func(cm *v1.ConfigMap) {
 		meshConfig := meshConfigMapData(cm, key)
 		watcher.HandleUserMeshConfig(meshConfig)
 	})
@@ -86,44 +125,4 @@ func meshConfigMapData(cm *v1.ConfigMap, key string) string {
 	}
 
 	return cfgYaml
-}
-
-func ReadConfigMap(cm *v1.ConfigMap, key string) (*meshconfig.MeshConfig, error) {
-	if cm == nil {
-		log.Info("no ConfigMap found, using default MeshConfig config")
-		return mesh.DefaultMeshConfig(), nil
-	}
-
-	cfgYaml, exists := cm.Data[key]
-	if !exists {
-		return nil, fmt.Errorf("missing ConfigMap key %q", key)
-	}
-
-	meshConfig, err := mesh.ApplyMeshConfigDefaults(cfgYaml)
-	if err != nil {
-		return nil, fmt.Errorf("failed reading MeshConfig config: %v. YAML:\n%s", err, cfgYaml)
-	}
-
-	log.Info("Loaded MeshConfig config from Kubernetes API server.")
-	return meshConfig, nil
-}
-
-func ReadNetworksConfigMap(cm *v1.ConfigMap, key string) (*meshconfig.MeshNetworks, error) {
-	if cm == nil {
-		log.Info("no ConfigMap found, using existing MeshNetworks config")
-		return nil, nil
-	}
-
-	cfgYaml, exists := cm.Data[key]
-	if !exists {
-		return nil, nil
-	}
-
-	meshNetworks, err := mesh.ParseMeshNetworks(cfgYaml)
-	if err != nil {
-		return nil, fmt.Errorf("failed reading MeshNetworks config: %v. YAML:\n%s", err, cfgYaml)
-	}
-
-	log.Info("Loaded MeshNetworks config from Kubernetes API server.")
-	return meshNetworks, nil
 }

@@ -26,6 +26,7 @@ import (
 
 func isMCPAddr(addr string) bool {
 	// A bit inexact but should be good enough.
+
 	return strings.Contains(addr, ".googleapis.com/") || strings.Contains(addr, ".googleapis.com:443/")
 }
 

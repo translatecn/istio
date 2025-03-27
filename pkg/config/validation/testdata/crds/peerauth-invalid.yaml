@@ -39,7 +39,7 @@ spec:
   selector:
     matchLabels:
       foo: bar
-  portLevelMtls: {}
+  portLevelMtls: { }
 ---
 _err: port must be between 1-65535
 apiVersion: security.istio.io/v1

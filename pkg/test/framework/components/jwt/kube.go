@@ -80,6 +80,7 @@ func newKubeServer(ctx resource.Context, ns namespace.Instance) (server *serverI
 
 func readDeploymentYAML() (string, error) {
 	// Read the samples file.
+
 	filePath := filepath.Join(env.IstioSrc, "samples/jwt-server", "jwt-server.yaml")
 	data, err := os.ReadFile(filePath)
 	if err != nil {

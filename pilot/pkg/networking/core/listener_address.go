@@ -88,6 +88,7 @@ func getPassthroughBindIPs(ipMode model.IPMode) []string {
 // This will make the inbound listener bind to instance_ip:port instead of 0.0.0.0:port where applicable.
 func getSidecarInboundBindIPs(node *model.Proxy) []string {
 	// Return the IP if its a global unicast address.
+
 	if len(node.GlobalUnicastIP) > 0 {
 		return []string{node.GlobalUnicastIP}
 	}

@@ -14,7 +14,9 @@
 
 package endpoint
 
-import "encoding/json"
+import (
+	"encoding/json"
+)
 
 // Mirror types from grpc to avoid pulling in a bunch of deps
 

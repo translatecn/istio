@@ -39,10 +39,10 @@ import (
 	yamlDecoder "k8s.io/apimachinery/pkg/util/yaml"
 	"sigs.k8s.io/yaml"
 
-	"istio.io/api/annotation"
-	"istio.io/api/label"
-	meshconfig "istio.io/api/mesh/v1alpha1"
-	proxyConfig "istio.io/api/networking/v1beta1"
+	"istio.io/istio/istio.io/api/annotation"
+	"istio.io/istio/istio.io/api/label"
+	meshconfig "istio.io/istio/istio.io/api/mesh/v1alpha1"
+	proxyConfig "istio.io/istio/istio.io/api/networking/v1beta1"
 	opconfig "istio.io/istio/operator/pkg/apis"
 	"istio.io/istio/pilot/pkg/features"
 	"istio.io/istio/pkg/config"
@@ -193,146 +193,6 @@ func UnmarshalConfig(yml []byte) (Config, error) {
 	return injectConfig, nil
 }
 
-func injectRequired(ignored []string, config *Config, podSpec *corev1.PodSpec, metadata metav1.ObjectMeta) bool { // nolint: lll
-	log := log.WithLabels("pod", metadata.Namespace+"/"+potentialPodName(metadata))
-	// Skip injection when host networking is enabled. The problem is
-	// that the iptables changes are assumed to be within the pod when,
-	// in fact, they are changing the routing at the host level. This
-	// often results in routing failures within a node which can
-	// affect the network provider within the cluster causing
-	// additional pod failures.
-	if podSpec.HostNetwork {
-		return false
-	}
-
-	// skip special kubernetes system namespaces
-	for _, namespace := range ignored {
-		if metadata.Namespace == namespace {
-			return false
-		}
-	}
-
-	annos := metadata.GetAnnotations()
-
-	var useDefault bool
-	var inject bool
-
-	objectSelector := annos[annotation.SidecarInject.Name]
-	if lbl, labelPresent := metadata.GetLabels()[label.SidecarInject.Name]; labelPresent {
-		// The label is the new API; if both are present we prefer the label
-		objectSelector = lbl
-	}
-	switch strings.ToLower(objectSelector) {
-	// http://yaml.org/type/bool.html
-	case "y", "yes", "true", "on":
-		inject = true
-	case "":
-		useDefault = true
-	}
-
-	// If an annotation is not explicitly given, check the LabelSelectors, starting with NeverInject
-	if useDefault {
-		for _, neverSelector := range config.NeverInjectSelector {
-			selector, err := metav1.LabelSelectorAsSelector(&neverSelector)
-			if err != nil {
-				log.Warnf("Invalid selector for NeverInjectSelector: %v (%v)", neverSelector, err)
-			} else if !selector.Empty() && selector.Matches(labels.Set(metadata.Labels)) {
-				log.Debugf("Explicitly disabling injection for pod %s/%s due to pod labels matching NeverInjectSelector config map entry.",
-					metadata.Namespace, potentialPodName(metadata))
-				inject = false
-				useDefault = false
-				break
-			}
-		}
-	}
-
-	// If there's no annotation nor a NeverInjectSelector, check the AlwaysInject one
-	if useDefault {
-		for _, alwaysSelector := range config.AlwaysInjectSelector {
-			selector, err := metav1.LabelSelectorAsSelector(&alwaysSelector)
-			if err != nil {
-				log.Warnf("Invalid selector for AlwaysInjectSelector: %v (%v)", alwaysSelector, err)
-			} else if !selector.Empty() && selector.Matches(labels.Set(metadata.Labels)) {
-				log.Debugf("Explicitly enabling injection for pod %s/%s due to pod labels matching AlwaysInjectSelector config map entry.",
-					metadata.Namespace, potentialPodName(metadata))
-				inject = true
-				useDefault = false
-				break
-			}
-		}
-	}
-
-	var required bool
-	switch config.Policy {
-	default: // InjectionPolicyOff
-		log.Errorf("Illegal value for autoInject:%s, must be one of [%s,%s]. Auto injection disabled!",
-			config.Policy, InjectionPolicyDisabled, InjectionPolicyEnabled)
-		required = false
-	case InjectionPolicyDisabled:
-		if useDefault {
-			required = false
-		} else {
-			required = inject
-		}
-	case InjectionPolicyEnabled:
-		if useDefault {
-			required = true
-		} else {
-			required = inject
-		}
-	}
-
-	if log.DebugEnabled() {
-		// Build a log message for the annotations.
-		annotationStr := ""
-		for name := range AnnotationValidation {
-			value, ok := annos[name]
-			if !ok {
-				value = "(unset)"
-			}
-			annotationStr += fmt.Sprintf("%s:%s ", name, value)
-		}
-
-		log.Debugf("Sidecar injection policy for %v/%v: namespacePolicy:%v useDefault:%v inject:%v required:%v %s",
-			metadata.Namespace,
-			potentialPodName(metadata),
-			config.Policy,
-			useDefault,
-			inject,
-			required,
-			annotationStr)
-	}
-
-	return required
-}
-
-// ProxyImage constructs image url in a backwards compatible way.
-// values based name => {{ .Values.global.hub }}/{{ .Values.global.proxy.image }}:{{ .Values.global.tag }}
-func ProxyImage(values *opconfig.Values, image *proxyConfig.ProxyImage, annotations map[string]string) string {
-	imageName := "proxyv2"
-	global := values.GetGlobal()
-
-	tag := ""
-	if global.GetTag() != nil { // Tag is an interface but we need the string form.
-		tag = fmt.Sprintf("%v", global.GetTag().AsInterface())
-	}
-
-	imageType := global.GetVariant()
-	if image != nil {
-		imageType = image.ImageType
-	}
-
-	if global.GetProxy() != nil && global.GetProxy().GetImage() != "" {
-		imageName = global.GetProxy().GetImage()
-	}
-
-	if it, ok := annotations[annotation.SidecarProxyImageType.Name]; ok {
-		imageType = it
-	}
-
-	return imageURL(global.GetHub(), imageName, tag, imageType)
-}
-
 func InboundTrafficPolicyMode(meshConfig *meshconfig.MeshConfig) string {
 	switch meshConfig.GetInboundTrafficPolicy().GetMode() {
 	case meshconfig.MeshConfig_InboundTrafficPolicy_LOCALHOST:
@@ -341,16 +201,6 @@ func InboundTrafficPolicyMode(meshConfig *meshconfig.MeshConfig) string {
 		return "passthrough"
 	}
 	return "passthrough"
-}
-
-// imageURL creates url from parts.
-// imageType is appended if not empty
-// if imageType is already present in the tag, then it is replaced.
-// docker.io/istio/proxyv2:1.12-distroless
-// gcr.io/gke-release/asm/proxyv2:1.11.2-asm.17-distroless
-// docker.io/istio/proxyv2:1.12
-func imageURL(hub, imageName, tag, imageType string) string {
-	return hub + "/" + imageName + ":" + updateImageTypeIfPresent(tag, imageType)
 }
 
 // KnownImageTypes are image types that istio pubishes.
@@ -375,194 +225,12 @@ func updateImageTypeIfPresent(tag string, imageType string) string {
 	return tag + "-" + imageType
 }
 
-func extractClusterAndNetwork(params InjectionParameters) (string, string) {
-	metadata := &params.pod.ObjectMeta
-	cluster := params.valuesConfig.asStruct.GetGlobal().GetMultiCluster().GetClusterName()
-	// TODO allow overriding the values.global network in injection with the system namespace label
-	network := params.valuesConfig.asStruct.GetGlobal().GetNetwork()
-	// params may be set from webhook URL, take priority over values yaml
-	if params.proxyEnvs["ISTIO_META_CLUSTER_ID"] != "" {
-		cluster = params.proxyEnvs["ISTIO_META_CLUSTER_ID"]
-	}
-	if params.proxyEnvs["ISTIO_META_NETWORK"] != "" {
-		network = params.proxyEnvs["ISTIO_META_NETWORK"]
-	}
-	// explicit label takes highest precedence
-	if n, ok := metadata.Labels[label.TopologyNetwork.Name]; ok {
-		network = n
-	}
-	return cluster, network
-}
-
-// RunTemplate renders the sidecar template
-// Returns the raw string template, as well as the parse pod form
-func RunTemplate(params InjectionParameters) (mergedPod *corev1.Pod, templatePod *corev1.Pod, err error) {
-	metadata := &params.pod.ObjectMeta
-	meshConfig := params.meshConfig
-
-	if err := validateAnnotations(metadata.GetAnnotations()); err != nil {
-		log.Errorf("Injection failed due to invalid annotations: %v", err)
-		return nil, nil, err
-	}
-
-	cluster, network := extractClusterAndNetwork(params)
-
-	// use network in values for template, and proxy env variables
-	if cluster != "" {
-		params.proxyEnvs["ISTIO_META_CLUSTER_ID"] = cluster
-	}
-	if network != "" {
-		params.proxyEnvs["ISTIO_META_NETWORK"] = network
-	}
-
-	strippedPod, err := reinsertOverrides(stripPod(params))
-	if err != nil {
-		return nil, nil, err
-	}
-
-	proxyUID, proxyGID := GetProxyIDs(params.namespace)
-
-	// When changing this, make sure to change TemplateInput in deploymentcontroller.go
-	data := SidecarTemplateData{
-		TypeMeta:                 params.typeMeta,
-		DeploymentMeta:           params.deployMeta,
-		ObjectMeta:               strippedPod.ObjectMeta,
-		Spec:                     strippedPod.Spec,
-		ProxyConfig:              params.proxyConfig,
-		MeshConfig:               meshConfig,
-		Values:                   params.valuesConfig.asMap,
-		Revision:                 params.revision,
-		ProxyImage:               ProxyImage(params.valuesConfig.asStruct, params.proxyConfig.Image, strippedPod.Annotations),
-		ProxyUID:                 proxyUID,
-		ProxyGID:                 proxyGID,
-		InboundTrafficPolicyMode: InboundTrafficPolicyMode(meshConfig),
-		CompliancePolicy:         common_features.CompliancePolicy,
-	}
-	if params.valuesConfig.asMap == nil {
-		return nil, nil, fmt.Errorf("failed to parse values.yaml; check Istiod logs for errors")
-	}
-
-	mergedPod = params.pod
-	templatePod = &corev1.Pod{}
-	for _, templateName := range selectTemplates(params) {
-		parsedTemplate, f := params.templates[templateName]
-		if !f {
-			return nil, nil, fmt.Errorf("requested template %q not found; have %v",
-				templateName, strings.Join(knownTemplates(params.templates), ", "))
-		}
-		bbuf, err := runTemplate(parsedTemplate, data)
-		if err != nil {
-			return nil, nil, err
-		}
-
-		templatePod, err = applyOverlayYAML(templatePod, bbuf.Bytes())
-		if err != nil {
-			return nil, nil, fmt.Errorf("failed applying injection overlay: %v", err)
-		}
-		// This is a bit of a weird hack. With NativeSidecars, the container will be under initContainers in the template pod.
-		// But we may have injection customizations (https://istio.io/latest/docs/setup/additional-setup/sidecar-injection/#customizing-injection);
-		// these will be in the `containers` field.
-		// So if we see the proxy container in `containers` in the original pod, and in `initContainers` in the template pod,
-		// move the container.
-		// The sidecar.istio.io/nativeSidecar annotation takes precedence over the global feature flag.
-		native := features.EnableNativeSidecars.Get()
-		if mergedPod.Annotations["sidecar.istio.io/nativeSidecar"] == "true" {
-			native = true
-		} else if mergedPod.Annotations["sidecar.istio.io/nativeSidecar"] == "false" {
-			native = false
-		}
-		if native &&
-			FindContainer(ProxyContainerName, templatePod.Spec.InitContainers) != nil &&
-			FindContainer(ProxyContainerName, mergedPod.Spec.Containers) != nil {
-			mergedPod = mergedPod.DeepCopy()
-			mergedPod.Spec.Containers, mergedPod.Spec.InitContainers = moveContainer(mergedPod.Spec.Containers, mergedPod.Spec.InitContainers, ProxyContainerName)
-		}
-		mergedPod, err = applyOverlayYAML(mergedPod, bbuf.Bytes())
-		if err != nil {
-			return nil, nil, fmt.Errorf("failed parsing generated injected YAML (check Istio sidecar injector configuration): %v", err)
-		}
-	}
-
-	return mergedPod, templatePod, nil
-}
-
 func knownTemplates(t Templates) []string {
 	keys := make([]string, 0, len(t))
 	for k := range t {
 		keys = append(keys, k)
 	}
 	return keys
-}
-
-func selectTemplates(params InjectionParameters) []string {
-	if a, f := params.pod.Annotations[annotation.InjectTemplates.Name]; f {
-		names := []string{}
-		for _, tmplName := range strings.Split(a, ",") {
-			name := strings.TrimSpace(tmplName)
-			names = append(names, name)
-		}
-		return resolveAliases(params, names)
-	}
-	return resolveAliases(params, params.defaultTemplate)
-}
-
-func resolveAliases(params InjectionParameters, names []string) []string {
-	ret := []string{}
-	for _, name := range names {
-		if al, f := params.aliases[name]; f {
-			ret = append(ret, al...)
-		} else {
-			ret = append(ret, name)
-		}
-	}
-	return ret
-}
-
-func stripPod(req InjectionParameters) *corev1.Pod {
-	pod := req.pod.DeepCopy()
-	prevStatus := injectionStatus(pod)
-	if prevStatus == nil {
-		return req.pod
-	}
-	// We found a previous status annotation. Possibly we are re-injecting the pod
-	// To ensure idempotency, remove our injected containers first
-	for _, c := range prevStatus.Containers {
-		pod.Spec.Containers = modifyContainers(pod.Spec.Containers, c, Remove)
-	}
-	for _, c := range prevStatus.InitContainers {
-		pod.Spec.InitContainers = modifyContainers(pod.Spec.InitContainers, c, Remove)
-	}
-
-	targetPort := strconv.Itoa(int(req.meshConfig.GetDefaultConfig().GetStatusPort()))
-	if cur, f := getPrometheusPort(pod); f {
-		// We have already set the port, assume user is controlling this or, more likely, re-injected
-		// the pod.
-		if cur == targetPort {
-			clearPrometheusAnnotations(pod)
-		}
-	}
-	delete(pod.Annotations, annotation.SidecarStatus.Name)
-
-	return pod
-}
-
-func injectionStatus(pod *corev1.Pod) *SidecarInjectionStatus {
-	var statusBytes []byte
-	if pod.ObjectMeta.Annotations != nil {
-		if value, ok := pod.ObjectMeta.Annotations[annotation.SidecarStatus.Name]; ok {
-			statusBytes = []byte(value)
-		}
-	}
-	if statusBytes == nil {
-		return nil
-	}
-
-	// default case when injected pod has explicit status
-	var iStatus SidecarInjectionStatus
-	if err := json.Unmarshal(statusBytes, &iStatus); err != nil {
-		return nil
-	}
-	return &iStatus
 }
 
 func parseDryTemplate(tmplStr string, funcMap map[string]any) (*template.Template, error) {
@@ -869,17 +537,357 @@ func potentialPodName(metadata metav1.ObjectMeta) string {
 	return ""
 }
 
-// overwriteClusterInfo updates cluster name and network from url path
-// This is needed when webconfig config runs on a different cluster than webhook
-func overwriteClusterInfo(pod *corev1.Pod, params InjectionParameters) {
-	c := FindSidecar(pod)
-	if c == nil {
+func injectRequired(ignored []string, config *Config, podSpec *corev1.PodSpec, metadata metav1.ObjectMeta) bool {
+	// nolint: lll
+
+	log := log.WithLabels("pod", metadata.Namespace+"/"+potentialPodName(metadata))
+	// Skip injection when host networking is enabled. The problem is
+	// that the iptables changes are assumed to be within the pod when,
+	// in fact, they are changing the routing at the host level. This
+	// often results in routing failures within a node which can
+	// affect the network provider within the cluster causing
+	// additional pod failures.
+	if podSpec.HostNetwork {
+		return false
+	}
+
+	// skip special kubernetes system namespaces
+	for _, namespace := range ignored {
+		if metadata.Namespace == namespace {
+			return false
+		}
+	}
+
+	annos := metadata.GetAnnotations()
+
+	var useDefault bool
+	var inject bool
+
+	objectSelector := annos[annotation.SidecarInject.Name]
+	if lbl, labelPresent := metadata.GetLabels()[label.SidecarInject.Name]; labelPresent {
+		// The label is the new API; if both are present we prefer the label
+		objectSelector = lbl
+	}
+	switch strings.ToLower(objectSelector) {
+	// http://yaml.org/type/bool.html
+	case "y", "yes", "true", "on":
+		inject = true
+	case "":
+		useDefault = true
+	}
+
+	// If an annotation is not explicitly given, check the LabelSelectors, starting with NeverInject
+	if useDefault {
+		for _, neverSelector := range config.NeverInjectSelector {
+			selector, err := metav1.LabelSelectorAsSelector(&neverSelector)
+			if err != nil {
+				log.Warnf("Invalid selector for NeverInjectSelector: %v (%v)", neverSelector, err)
+			} else if !selector.Empty() && selector.Matches(labels.Set(metadata.Labels)) {
+				log.Debugf("Explicitly disabling injection for pod %s/%s due to pod labels matching NeverInjectSelector config map entry.",
+					metadata.Namespace, potentialPodName(metadata))
+				inject = false
+				useDefault = false
+				break
+			}
+		}
+	}
+
+	// If there's no annotation nor a NeverInjectSelector, check the AlwaysInject one
+	if useDefault {
+		for _, alwaysSelector := range config.AlwaysInjectSelector {
+			selector, err := metav1.LabelSelectorAsSelector(&alwaysSelector)
+			if err != nil {
+				log.Warnf("Invalid selector for AlwaysInjectSelector: %v (%v)", alwaysSelector, err)
+			} else if !selector.Empty() && selector.Matches(labels.Set(metadata.Labels)) {
+				log.Debugf("Explicitly enabling injection for pod %s/%s due to pod labels matching AlwaysInjectSelector config map entry.",
+					metadata.Namespace, potentialPodName(metadata))
+				inject = true
+				useDefault = false
+				break
+			}
+		}
+	}
+
+	var required bool
+	switch config.Policy {
+	default: // InjectionPolicyOff
+		log.Errorf("Illegal value for autoInject:%s, must be one of [%s,%s]. Auto injection disabled!", config.Policy, InjectionPolicyDisabled, InjectionPolicyEnabled)
+		required = false
+	case InjectionPolicyDisabled:
+		if useDefault {
+			required = false
+		} else {
+			required = inject
+		}
+	case InjectionPolicyEnabled:
+		if useDefault {
+			required = true
+		} else {
+			required = inject
+		}
+	}
+
+	if log.DebugEnabled() {
+		// Build a log message for the annotations.
+		annotationStr := ""
+		for name := range AnnotationValidation {
+			value, ok := annos[name]
+			if !ok {
+				value = "(unset)"
+			}
+			annotationStr += fmt.Sprintf("%s:%s ", name, value)
+		}
+
+		log.Debugf("Sidecar injection policy for %v/%v: namespacePolicy:%v useDefault:%v inject:%v required:%v %s",
+			metadata.Namespace,
+			potentialPodName(metadata),
+			config.Policy,
+			useDefault,
+			inject,
+			required,
+			annotationStr)
+	}
+
+	return required
+}
+
+func extractClusterAndNetwork(params InjectionParameters) (string, string) {
+	metadata := &params.pod.ObjectMeta
+	cluster := params.valuesConfig.asStruct.GetGlobal().GetMultiCluster().GetClusterName()
+	// TODO allow overriding the values.global network in injection with the system namespace label
+	network := params.valuesConfig.asStruct.GetGlobal().GetNetwork()
+	// params may be set from webhook URL, take priority over values yaml
+	if params.proxyEnvs["ISTIO_META_CLUSTER_ID"] != "" {
+		cluster = params.proxyEnvs["ISTIO_META_CLUSTER_ID"]
+	}
+	if params.proxyEnvs["ISTIO_META_NETWORK"] != "" {
+		network = params.proxyEnvs["ISTIO_META_NETWORK"]
+	}
+	// explicit label takes highest precedence
+	if n, ok := metadata.Labels[label.TopologyNetwork.Name]; ok {
+		network = n
+	}
+	return cluster, network
+}
+
+func stripPod(req InjectionParameters) *corev1.Pod {
+	pod := req.pod.DeepCopy()
+	prevStatus := injectionStatus(pod)
+	if prevStatus == nil {
+		return req.pod
+	}
+	// We found a previous status annotation. Possibly we are re-injecting the pod
+	// To ensure idempotency, remove our injected containers first
+	for _, c := range prevStatus.Containers {
+		pod.Spec.Containers = modifyContainers(pod.Spec.Containers, c, Remove)
+	}
+	for _, c := range prevStatus.InitContainers {
+		pod.Spec.InitContainers = modifyContainers(pod.Spec.InitContainers, c, Remove)
+	}
+
+	targetPort := strconv.Itoa(int(req.meshConfig.GetDefaultConfig().GetStatusPort()))
+	if cur, f := getPrometheusPort(pod); f {
+		// We have already set the port, assume user is controlling this or, more likely, re-injected
+		// the pod.
+		if cur == targetPort {
+			clearPrometheusAnnotations(pod)
+		}
+	}
+	delete(pod.Annotations, annotation.SidecarStatus.Name)
+
+	return pod
+}
+
+func injectionStatus(pod *corev1.Pod) *SidecarInjectionStatus {
+	var statusBytes []byte
+	if pod.ObjectMeta.Annotations != nil {
+		if value, ok := pod.ObjectMeta.Annotations[annotation.SidecarStatus.Name]; ok {
+			statusBytes = []byte(value)
+		}
+	}
+	if statusBytes == nil {
+		return nil
+	}
+
+	// default case when injected pod has explicit status
+	var iStatus SidecarInjectionStatus
+	if err := json.Unmarshal(statusBytes, &iStatus); err != nil {
+		return nil
+	}
+	return &iStatus
+}
+
+// GetProxyIDs returns the UID and GID to be used in the RunAsUser and RunAsGroup fields in the template
+// Inspects the namespace metadata for hints and fallbacks to the usual value of 1337.
+func GetProxyIDs(namespace *corev1.Namespace) (uid int64, gid int64) {
+	uid = constants.DefaultProxyUIDInt
+	gid = constants.DefaultProxyUIDInt
+
+	if namespace == nil {
 		return
 	}
-	if len(params.proxyEnvs) > 0 {
-		log.Debugf("Updating cluster envs based on inject url: %s\n", params.proxyEnvs)
-		updateClusterEnvs(c, params.proxyEnvs)
+
+	// Check for OpenShift specifics and returns the max number in the range specified in the namespace annotation
+	if _, uidMax, err := getPreallocatedUIDRange(namespace); err == nil {
+		uid = *uidMax
 	}
+	if groups, err := getPreallocatedSupplementalGroups(namespace); err == nil && len(groups) > 0 {
+		gid = groups[0].Max
+	}
+
+	return
+}
+
+// ProxyImage constructs image url in a backwards compatible way.
+// values based name => {{ .Values.global.hub }}/{{ .Values.global.proxy.image }}:{{ .Values.global.tag }}
+func ProxyImage(values *opconfig.Values, image *proxyConfig.ProxyImage, annotations map[string]string) string {
+	imageName := "proxyv2"
+	global := values.GetGlobal()
+
+	tag := ""
+	if global.GetTag() != nil { // Tag is an interface but we need the string form.
+		tag = fmt.Sprintf("%v", global.GetTag().AsInterface())
+	}
+
+	imageType := global.GetVariant()
+	if image != nil {
+		imageType = image.ImageType
+	}
+
+	if global.GetProxy() != nil && global.GetProxy().GetImage() != "" {
+		imageName = global.GetProxy().GetImage()
+	}
+
+	if it, ok := annotations[annotation.SidecarProxyImageType.Name]; ok {
+		imageType = it
+	}
+
+	return imageURL(global.GetHub(), imageName, tag, imageType)
+}
+
+// imageURL creates url from parts.
+// imageType is appended if not empty
+// if imageType is already present in the tag, then it is replaced.
+// docker.io/istio/proxyv2:1.12-distroless
+// gcr.io/gke-release/asm/proxyv2:1.11.2-asm.17-distroless
+// docker.io/istio/proxyv2:1.12
+func imageURL(hub, imageName, tag, imageType string) string {
+	return hub + "/" + imageName + ":" + updateImageTypeIfPresent(tag, imageType)
+}
+
+func selectTemplates(params InjectionParameters) []string {
+	if a, f := params.pod.Annotations[annotation.InjectTemplates.Name]; f {
+		names := []string{}
+		for _, tmplName := range strings.Split(a, ",") {
+			name := strings.TrimSpace(tmplName)
+			names = append(names, name)
+		}
+		return resolveAliases(params, names)
+	}
+	return resolveAliases(params, params.defaultTemplate)
+}
+
+func resolveAliases(params InjectionParameters, names []string) []string {
+	ret := []string{}
+	for _, name := range names {
+		if al, f := params.aliases[name]; f {
+			ret = append(ret, al...)
+		} else {
+			ret = append(ret, name)
+		}
+	}
+	return ret
+}
+
+// RunTemplate renders the sidecar template
+// Returns the raw string template, as well as the parse pod form
+func RunTemplate(params InjectionParameters) (mergedPod *corev1.Pod, templatePod *corev1.Pod, err error) {
+	metadata := &params.pod.ObjectMeta
+	meshConfig := params.meshConfig
+
+	if err := validateAnnotations(metadata.GetAnnotations()); err != nil {
+		log.Errorf("Injection failed due to invalid annotations: %v", err)
+		return nil, nil, err
+	}
+
+	cluster, network := extractClusterAndNetwork(params)
+
+	// use network in values for template, and proxy env variables
+	if cluster != "" {
+		params.proxyEnvs["ISTIO_META_CLUSTER_ID"] = cluster
+	}
+	if network != "" {
+		params.proxyEnvs["ISTIO_META_NETWORK"] = network
+	}
+
+	strippedPod, err := reinsertOverrides(stripPod(params))
+	if err != nil {
+		return nil, nil, err
+	}
+
+	proxyUID, proxyGID := GetProxyIDs(params.namespace)
+
+	// When changing this, make sure to change TemplateInput in deploymentcontroller.go
+	data := SidecarTemplateData{
+		TypeMeta:                 params.typeMeta,
+		DeploymentMeta:           params.deployMeta,
+		ObjectMeta:               strippedPod.ObjectMeta,
+		Spec:                     strippedPod.Spec,
+		ProxyConfig:              params.proxyConfig,
+		MeshConfig:               meshConfig,
+		Values:                   params.valuesConfig.asMap,
+		Revision:                 params.revision,
+		ProxyImage:               ProxyImage(params.valuesConfig.asStruct, params.proxyConfig.Image, strippedPod.Annotations),
+		ProxyUID:                 proxyUID,
+		ProxyGID:                 proxyGID,
+		InboundTrafficPolicyMode: InboundTrafficPolicyMode(meshConfig),
+		CompliancePolicy:         common_features.CompliancePolicy,
+	}
+	if params.valuesConfig.asMap == nil {
+		return nil, nil, fmt.Errorf("failed to parse values.yaml; check Istiod logs for errors")
+	}
+
+	mergedPod = params.pod
+	templatePod = &corev1.Pod{}
+	for _, templateName := range selectTemplates(params) {
+		parsedTemplate, f := params.templates[templateName]
+		if !f {
+			return nil, nil, fmt.Errorf("requested template %q not found; have %v", templateName, strings.Join(knownTemplates(params.templates), ", "))
+		}
+		bbuf, err := runTemplate(parsedTemplate, data)
+		if err != nil {
+			return nil, nil, err
+		}
+
+		templatePod, err = applyOverlayYAML(templatePod, bbuf.Bytes())
+		if err != nil {
+			return nil, nil, fmt.Errorf("failed applying injection overlay: %v", err)
+		}
+		// This is a bit of a weird hack. With NativeSidecars, the container will be under initContainers in the template pod.
+		// But we may have injection customizations (https://istio.io/latest/docs/setup/additional-setup/sidecar-injection/#customizing-injection);
+		// these will be in the `containers` field.
+		// So if we see the proxy container in `containers` in the original pod, and in `initContainers` in the template pod,
+		// move the container.
+		// The sidecar.istio.io/nativeSidecar annotation takes precedence over the global feature flag.
+		native := features.EnableNativeSidecars.Get()
+		if mergedPod.Annotations["sidecar.istio.io/nativeSidecar"] == "true" {
+			native = true
+		} else if mergedPod.Annotations["sidecar.istio.io/nativeSidecar"] == "false" {
+			native = false
+		}
+		if native &&
+			FindContainer(ProxyContainerName, templatePod.Spec.InitContainers) != nil &&
+			FindContainer(ProxyContainerName, mergedPod.Spec.Containers) != nil {
+			mergedPod = mergedPod.DeepCopy()
+			mergedPod.Spec.Containers, mergedPod.Spec.InitContainers = moveContainer(mergedPod.Spec.Containers, mergedPod.Spec.InitContainers, ProxyContainerName)
+		}
+		mergedPod, err = applyOverlayYAML(mergedPod, bbuf.Bytes())
+		if err != nil {
+			return nil, nil, fmt.Errorf("failed parsing generated injected YAML (check Istio sidecar injector configuration): %v", err)
+		}
+	}
+
+	return mergedPod, templatePod, nil
 }
 
 func updateClusterEnvs(container *corev1.Container, newKVs map[string]string) {
@@ -903,23 +911,15 @@ func updateClusterEnvs(container *corev1.Container, newKVs map[string]string) {
 	container.Env = envVars
 }
 
-// GetProxyIDs returns the UID and GID to be used in the RunAsUser and RunAsGroup fields in the template
-// Inspects the namespace metadata for hints and fallbacks to the usual value of 1337.
-func GetProxyIDs(namespace *corev1.Namespace) (uid int64, gid int64) {
-	uid = constants.DefaultProxyUIDInt
-	gid = constants.DefaultProxyUIDInt
-
-	if namespace == nil {
+// overwriteClusterInfo updates cluster name and network from url path
+// This is needed when webconfig config runs on a different cluster than webhook
+func overwriteClusterInfo(pod *corev1.Pod, params InjectionParameters) {
+	c := FindSidecar(pod)
+	if c == nil {
 		return
 	}
-
-	// Check for OpenShift specifics and returns the max number in the range specified in the namespace annotation
-	if _, uidMax, err := getPreallocatedUIDRange(namespace); err == nil {
-		uid = *uidMax
+	if len(params.proxyEnvs) > 0 {
+		log.Debugf("Updating cluster envs based on inject url: %s\n", params.proxyEnvs)
+		updateClusterEnvs(c, params.proxyEnvs)
 	}
-	if groups, err := getPreallocatedSupplementalGroups(namespace); err == nil && len(groups) > 0 {
-		gid = groups[0].Max
-	}
-
-	return
 }

@@ -44,9 +44,10 @@ type ProxyArgs struct {
 
 // NewProxyArgs constructs proxyArgs with default values.
 func NewProxyArgs() ProxyArgs {
+	// Apply Default Values.
+
 	p := ProxyArgs{}
 
-	// Apply Default Values.
 	p.applyDefaults()
 
 	return p

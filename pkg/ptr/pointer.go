@@ -21,10 +21,11 @@ import (
 // Of returns a pointer to the input. In most cases, callers should just do &t. However, in some cases
 // Go cannot take a pointer. For example, `ptr.Of(f())`.
 func Of[T any](t T) *T {
+	// OrEmpty returns *t if its non-nil, or else an empty T
+
 	return &t
 }
 
-// OrEmpty returns *t if its non-nil, or else an empty T
 func OrEmpty[T any](t *T) T {
 	if t != nil {
 		return *t
