@@ -17,8 +17,9 @@ package tokenreview
 import (
 	"context"
 	"fmt"
-	"istio.io/istio/pkg/security"
 	"strings"
+
+	"istio.io/istio/pkg/security"
 
 	k8sauth "k8s.io/api/authentication/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

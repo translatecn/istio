@@ -764,12 +764,8 @@ Accepted values:
 	}
 
 	TrafficNodeSelector = Instance{
-		Name: "traffic.istio.io/nodeSelector",
-		Description: "This annotation is a set of node-labels " +
-			"(key1=value,key2=value). If the annotated Service is of " +
-			"type NodePort and is a multi-network gateway (see " +
-			"topology.istio.io/network), the addresses for selected " +
-			"nodes will be used for cross-network communication.",
+		Name:          "traffic.istio.io/nodeSelector",
+		Description:   "此注释是一组节点标签（键1=值，键2=值）。如果被注释的Service为NodePort类型，并且是多网络网关（参见 topology.istio.io/network），那么选定节点的地址将用于跨网络通信。",
 		FeatureStatus: Stable,
 		Hidden:        false,
 		Deprecated:    false,

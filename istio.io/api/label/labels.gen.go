@@ -359,34 +359,14 @@ Valid options: "true", "false"
 
 	TopologyNetwork = Instance{
 		Name: "topology.istio.io/network",
-		Description: `A label used to identify the network for one or more pods. This is used
-internally by Istio to group pods resident in the same L3 domain/network.
-Istio assumes that pods in the same network are directly reachable from
-one another. When pods are in different networks, an Istio Gateway
-(e.g. east-west gateway) is typically used to establish connectivity
-(with AUTO_PASSTHROUGH mode). This label can be applied to the following
-resources to help automate Istio's multi-network configuration.
+		Description: `用于标识一个或多个 Pod 所在网络的标签。此标签由 Istio 在内部使用，用于将处于同一 L3 域/网络中的 Pod 进行分组。
+Istio 假定处于同一网络中的 Pod 相互直接可达。当 Pod 处于不同网络时，通常会使用 Istio 网关（例如东向/西向网关）来建立连接（采用 AUTO_PASSTHROUGH 模式）。此标签可应用于以下资源，以帮助实现 Istio 多网络配置的自动化。
 
-* Istio System Namespace: Applying this label to the system namespace
-  establishes a default network for pods managed by the control plane.
-  This is typically configured during control plane installation using an
-  admin-specified value.
+* Istio 系统命名空间：将此标签应用于系统命名空间可为由控制平面管理的 Pod 建立默认网络。这通常在控制平面安装期间使用管理员指定的值进行配置。
 
-* Pod: Applying this label to a pod allows overriding the default network
-  on a per-pod basis. This is typically applied to the pod via webhook
-  injection, but can also be manually specified on the pod by the service
-  owner. The Istio installation in each cluster configures webhook injection
-  using an admin-specified value.
+* Pod：将此标签应用于 Pod 可以在每个 Pod 的层面上覆盖默认网络设置。这通常通过 Webhook 注入的方式应用于 Pod，但服务所有者也可以在 Pod 上手动指定该设置。每个集群中的 Istio 安装使用管理员指定的值来配置 Webhook 注入。
 
-* Gateway Service: Applying this label to the Service for an Istio Gateway,
-  indicates that Istio should use this service as the gateway for the
-  network, when configuring cross-network traffic. Istio will configure
-  pods residing outside of the network to access the Gateway service
-  via "spec.externalIPs", "status.loadBalancer.ingress[].ip", or in the case
-  of a NodePort service, the Node's address. The label is configured when
-  installing the gateway (e.g. east-west gateway) and should match either
-  the default network for the control plane (as specified by the Istio System
-  Namespace label) or the network of the targeted pods.`,
+* 网关服务：将此标签应用于 Istio 网关所服务的项目，表明 Istio 在配置跨网络流量时应将此服务用作网络的网关。Istio 会将位于网络之外的 Pod 配置为通过“spec.externalIPs”、“status.loadBalancer.ingress[].ip”（对于 NodePort 服务，为 Node 的地址）来访问网关服务。当安装网关（例如东向网关）时配置此标签，并且应与控制平面的默认网络（如 Istio 系统命名空间标签指定的那样）或目标 Pod 的网络相匹配。`,
 		FeatureStatus: Beta,
 		Hidden:        false,
 		Deprecated:    false,

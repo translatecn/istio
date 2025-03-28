@@ -22,7 +22,7 @@ for i in $(seq "${NUM_CLUSTERS}"); do
 					--name="cluster${i}" |
 					kubectl apply --validate=false --context="cluster${j}" -f -
 			else
-				istioctl x create-remote-secret \
+				istioctl create-remote-secret \
 					--context="cluster${i}" \
 					--name="cluster${i}" |
 					kubectl apply --validate=false --context="cluster${j}" -f -
