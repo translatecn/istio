@@ -28,10 +28,10 @@ import (
 	"sigs.k8s.io/yaml"
 
 	"istio.io/istio/pkg/log"
+	pkgversion "istio.io/istio/pkg/over_version"
 	testenv "istio.io/istio/pkg/test/env"
 	"istio.io/istio/pkg/tracing"
 	"istio.io/istio/pkg/util/sets"
-	pkgversion "istio.io/istio/pkg/version_over"
 )
 
 func main() {

@@ -22,7 +22,7 @@ import (
 
 	"istio.io/istio/operator/pkg/util/clog"
 	"istio.io/istio/pkg/kube"
-	pkgVersion "istio.io/istio/pkg/version_over"
+	pkgVersion "istio.io/istio/pkg/over_version"
 )
 
 const (

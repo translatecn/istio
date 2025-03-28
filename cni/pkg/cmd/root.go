@@ -37,7 +37,7 @@ import (
 	"istio.io/istio/pkg/ctrlz"
 	"istio.io/istio/pkg/env"
 	istiolog "istio.io/istio/pkg/log"
-	"istio.io/istio/pkg/version_over"
+	"istio.io/istio/pkg/over_version"
 	iptables "istio.io/istio/tools/istio-iptables/pkg/constants"
 )
 
@@ -164,7 +164,7 @@ func init() {
 	logOptions.AttachCobraFlags(rootCmd)
 	ctrlzOptions.AttachCobraFlags(rootCmd)
 
-	rootCmd.AddCommand(version_over.CobraCommand())
+	rootCmd.AddCommand(over_version.CobraCommand())
 	rootCmd.AddCommand(collateral_over.CobraCommand(rootCmd, collateral_over.Metadata{
 		Title:   "Istio CNI Plugin Installer",
 		Section: "install-cni CLI",

@@ -52,9 +52,9 @@ import (
 	"istio.io/istio/pkg/kube/mcs"
 	"istio.io/istio/pkg/lazy"
 	"istio.io/istio/pkg/log"
+	"istio.io/istio/pkg/over_version"
 	"istio.io/istio/pkg/sleep"
 	"istio.io/istio/pkg/test/util/yml"
-	"istio.io/istio/pkg/version_over"
 	v1 "k8s.io/api/core/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	kubeExtClient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
@@ -159,7 +159,7 @@ type CLIClient interface {
 	AllDiscoveryDo(ctx context.Context, namespace, path string) (map[string][]byte, error)
 
 	// GetIstioVersions gets the version for each Istio control plane component.
-	GetIstioVersions(ctx context.Context, namespace string) (*version_over.MeshInfo, error)
+	GetIstioVersions(ctx context.Context, namespace string) (*over_version.MeshInfo, error)
 
 	// PodsForSelector finds pods matching selector.
 	PodsForSelector(ctx context.Context, namespace string, labelSelectors ...string) (*v1.PodList, error)
@@ -695,7 +695,7 @@ func (c *client) GetIstioPods(ctx context.Context, namespace string, opts metav1
 	return pl.Items, nil
 }
 
-func (c *client) GetIstioVersions(ctx context.Context, namespace string) (*version_over.MeshInfo, error) {
+func (c *client) GetIstioVersions(ctx context.Context, namespace string) (*over_version.MeshInfo, error) {
 	pods, err := c.GetIstioPods(ctx, namespace, metav1.ListOptions{
 		LabelSelector: "app=istiod",
 		FieldSelector: RunningStatus,
@@ -715,10 +715,10 @@ func (c *client) GetIstioVersions(ctx context.Context, namespace string) (*versi
 	}
 
 	var errs error
-	res := version_over.MeshInfo{}
+	res := over_version.MeshInfo{}
 	for _, pod := range readyPods {
 		component := pod.Labels["istio"]
-		server := version_over.ServerInfo{
+		server := over_version.ServerInfo{
 			Component: component,
 			Revision:  pod.GetLabels()[label.IoIstioRev.Name],
 		}
@@ -732,7 +732,7 @@ func (c *client) GetIstioVersions(ctx context.Context, namespace string) (*versi
 			)
 			continue
 		}
-		var v version_over.Version
+		var v over_version.Version
 		err = json.Unmarshal(result, &v)
 		if err == nil && v.ClientVersion.Version != "" {
 			server.Info = *v.ClientVersion
@@ -1099,7 +1099,7 @@ func istioScheme() *runtime.Scheme {
 	return scheme
 }
 
-func setServerInfoWithIstiodVersionInfo(serverInfo *version_over.BuildInfo, istioInfo string) {
+func setServerInfoWithIstiodVersionInfo(serverInfo *over_version.BuildInfo, istioInfo string) {
 	versionParts := strings.Split(istioInfo, "-")
 	nParts := len(versionParts)
 	if nParts >= 3 {

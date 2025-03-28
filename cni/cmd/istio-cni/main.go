@@ -25,7 +25,7 @@ import (
 
 	"istio.io/istio/cni/pkg/plugin"
 	"istio.io/istio/pkg/log"
-	istioversion "istio.io/istio/pkg/version_over"
+	istioversion "istio.io/istio/pkg/over_version"
 )
 
 func main() {

@@ -35,7 +35,7 @@ import (
 	"istio.io/istio/pkg/kube/informerfactory"
 	ktypes "istio.io/istio/pkg/kube/kubetypes"
 	"istio.io/istio/pkg/log"
-	"istio.io/istio/pkg/typemap"
+	"istio.io/istio/pkg/over_typemap"
 )
 
 type ClientGetter interface {
@@ -62,7 +62,7 @@ type ClientGetter interface {
 }
 
 func GetInformerFiltered[T runtime.Object](c ClientGetter, opts ktypes.InformerOptions) informerfactory.StartableInformer {
-	reg := typemap.Get[TypeRegistration[T]](registerTypes)
+	reg := over_typemap.Get[TypeRegistration[T]](registerTypes)
 	if reg != nil {
 		// This is registered type
 		tr := *reg
@@ -172,7 +172,7 @@ func stripUnusedFields(obj any) (any, error) {
 	return obj, nil
 }
 
-var registerTypes = typemap.NewTypeMap()
+var registerTypes = over_typemap.NewTypeMap()
 
 // Register provides the TypeRegistration to the underlying
 // store to enable dynamic object translation

@@ -33,8 +33,8 @@ import (
 	"istio.io/istio/istioctl/pkg/multixds"
 	"istio.io/istio/pilot/pkg/model"
 	"istio.io/istio/pilot/pkg/xds"
+	istioVersion "istio.io/istio/pkg/over_version"
 	"istio.io/istio/pkg/proxy"
-	istioVersion "istio.io/istio/pkg/version_over"
 )
 
 func NewVersionCommand(ctx cli.Context) *cobra.Command {

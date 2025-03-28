@@ -38,7 +38,7 @@ import (
 	"istio.io/istio/istioctl/pkg/xds"
 	pilotxds "istio.io/istio/pilot/pkg/xds"
 	"istio.io/istio/pkg/kube"
-	istioversion "istio.io/istio/pkg/version_over"
+	istioversion "istio.io/istio/pkg/over_version"
 )
 
 const (

@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gw-staging
+  namespace: sample
+spec:
+  selector:
+    matchLabels:
+      app: gw-staging
+  template:
+    metadata:
+      annotations:
+        inject.istio.io/templates: gateway
+        proxy.istio.io/config: '"proxyStatsMatcher": { "inclusionRegexps": [ ".*rate_limited.*",
+          ".*ejections.*" ], "inclusionPrefixes": [ "sni_inspector" ], "inclusionSuffixes":
+          [ "downstream_cx_active", "downstream_cx_destroy", "downstream_cx_idle_timeout",
+          "downstream_cx_overflow", "downstream_cx_total", "request_latency_ms", "requests_total",
+          "upstream_cx_active", "upstream_cx_connect_timeout", "upstream_cx_destroy",
+          "upstream_cx_idle_timeout", "upstream_cx_overflow", "upstream_cx_total",
+          "early_data_received_count_total", "downstream_pre_cx_active", "total_listeners_draining"]}'
+        sidecar.istio.io/proxyImage: ecr.com:sha-1-21-5-multiarch-distroless
+        traffic.sidecar.istio.io/includeInboundPorts: ""
+      creationTimestamp: null
+      labels:
+        app: gw-staging
+        istio.io/rev: 1-21-5-airbnb1
+        kube-role: gw-staging
+      name: gw-staging
+    spec:
+      containers:
+        - image: auto
+          name: istio-proxy
+        - image: ecr.com/gw:ac01f37-8f0beb0
+          name: ext-authz
+      initContainers:
+        - image: ecr.com/config-templater:2022-11-02-sha
+          imagePullPolicy: IfNotPresent
+          name: 30-config-templater-init

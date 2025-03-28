@@ -29,7 +29,7 @@ import (
 	"istio.io/istio/pkg/config/constants"
 	"istio.io/istio/pkg/ctrlz"
 	"istio.io/istio/pkg/log"
-	"istio.io/istio/pkg/version_over"
+	"istio.io/istio/pkg/over_version"
 )
 
 var (
@@ -57,7 +57,7 @@ func NewRootCommand() *cobra.Command {
 	discoveryCmd := newDiscoveryCommand()
 	addFlags(discoveryCmd)
 	rootCmd.AddCommand(discoveryCmd)
-	rootCmd.AddCommand(version_over.CobraCommand())
+	rootCmd.AddCommand(over_version.CobraCommand())
 	rootCmd.AddCommand(collateral_over.CobraCommand(rootCmd, collateral_over.Metadata{
 		Title:   "Istio Pilot Discovery",
 		Section: "pilot-discovery CLI",

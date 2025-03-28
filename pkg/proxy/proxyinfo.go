@@ -21,7 +21,7 @@ import (
 
 	"istio.io/istio/pilot/pkg/xds"
 	"istio.io/istio/pkg/kube"
-	istioVersion "istio.io/istio/pkg/version_over"
+	istioVersion "istio.io/istio/pkg/over_version"
 )
 
 type sidecarSyncStatus struct {

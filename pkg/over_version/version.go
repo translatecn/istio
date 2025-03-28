@@ -13,7 +13,7 @@
 // limitations under the License.
 
 // Package version provides build version information.
-package version_over
+package over_version
 
 import (
 	"fmt"

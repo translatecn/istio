@@ -39,10 +39,10 @@ import (
 	"istio.io/istio/pkg/kube/labels"
 	"istio.io/istio/pkg/log"
 	"istio.io/istio/pkg/model"
+	"istio.io/istio/pkg/over_version"
 	"istio.io/istio/pkg/ptr"
 	"istio.io/istio/pkg/security"
 	"istio.io/istio/pkg/util/sets"
-	"istio.io/istio/pkg/version_over"
 )
 
 const (
@@ -724,7 +724,7 @@ func GetNodeMetaData(options MetadataOptions) (*model.Node, error) {
 
 func SetIstioVersion(meta *model.BootstrapNodeMetadata) *model.BootstrapNodeMetadata {
 	if meta.IstioVersion == "" {
-		meta.IstioVersion = version_over.Info.Version
+		meta.IstioVersion = over_version.Info.Version
 	}
 	return meta
 }

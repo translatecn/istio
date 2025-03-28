@@ -33,7 +33,7 @@ import (
 	"istio.io/istio/operator/pkg/util/clog"
 	"istio.io/istio/operator/pkg/values"
 	"istio.io/istio/pkg/kube"
-	pkgversion "istio.io/istio/pkg/version_over"
+	pkgversion "istio.io/istio/pkg/over_version"
 )
 
 // GenerateManifest produces fully rendered Kubernetes objects from rendering Helm charts.

@@ -35,9 +35,9 @@ import (
 	"istio.io/istio/pkg/kube"
 	"istio.io/istio/pkg/kube/inject"
 	"istio.io/istio/pkg/log"
+	"istio.io/istio/pkg/over_version"
 	"istio.io/istio/pkg/proxy"
 	"istio.io/istio/pkg/util/sets"
-	"istio.io/istio/pkg/version_over"
 	"istio.io/istio/tools/bug-report/pkg/archive"
 	cluster2 "istio.io/istio/tools/bug-report/pkg/cluster"
 	"istio.io/istio/tools/bug-report/pkg/common"
@@ -82,7 +82,7 @@ e.g.
 			return runBugReportCommand(ctx, cmd, logOpts)
 		},
 	}
-	rootCmd.AddCommand(version_over.CobraCommand())
+	rootCmd.AddCommand(over_version.CobraCommand())
 	addFlags(rootCmd, gConfig)
 
 	return rootCmd
@@ -213,7 +213,7 @@ func dumpRevisionsAndVersions(ctx cli.Context, resources *cluster2.Resources, is
 	defer logRuntime(time.Now(), "Done getting control plane revisions/versions")
 
 	text := ""
-	text += fmt.Sprintf("CLI version:\n%s\n\n", version_over.Info.LongForm())
+	text += fmt.Sprintf("CLI version:\n%s\n\n", over_version.Info.LongForm())
 
 	revisions := getIstioRevisions(resources)
 	istioVersions, proxyVersions := getIstioVersions(ctx, istioNamespace, revisions)

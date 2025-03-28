@@ -37,11 +37,11 @@ import (
 	"istio.io/istio/operator/pkg/webhook"
 	"istio.io/istio/pkg/kube"
 	"istio.io/istio/pkg/kube/controllers"
+	"istio.io/istio/pkg/over_version"
 	"istio.io/istio/pkg/ptr"
 	"istio.io/istio/pkg/slices"
 	"istio.io/istio/pkg/util/istiomultierror"
 	"istio.io/istio/pkg/util/sets"
-	"istio.io/istio/pkg/version_over"
 )
 
 type Installer struct {
@@ -320,7 +320,7 @@ func getOwnerLabels(iop values.Map, c string) map[string]string {
 	labels := make(map[string]string)
 
 	labels[manifest.OperatorManagedLabel] = "Reconcile"
-	labels[manifest.OperatorVersionLabel] = version_over.Info.Version
+	labels[manifest.OperatorVersionLabel] = over_version.Info.Version
 	if n := iop.GetPathString("metadata.name"); n != "" {
 		labels[manifest.OwningResourceName] = n
 	}

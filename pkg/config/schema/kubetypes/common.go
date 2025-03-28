@@ -22,8 +22,8 @@ import (
 
 	"istio.io/istio/pkg/config"
 	"istio.io/istio/pkg/config/schema/gvk"
+	"istio.io/istio/pkg/over_typemap"
 	"istio.io/istio/pkg/ptr"
-	"istio.io/istio/pkg/typemap"
 )
 
 func MustGVRFromType[T runtime.Object]() schema.GroupVersionResource {
@@ -34,7 +34,7 @@ func MustGVRFromType[T runtime.Object]() schema.GroupVersionResource {
 		}
 		return gr
 	}
-	if rp := typemap.Get[RegisterType[T]](registeredTypes); rp != nil {
+	if rp := over_typemap.Get[RegisterType[T]](registeredTypes); rp != nil {
 		return (*rp).GetGVR()
 	}
 	panic("unknown kind: " + ptr.TypeName[T]())
@@ -44,7 +44,7 @@ func MustGVKFromType[T runtime.Object]() (cfg config.GroupVersionKind) {
 	if gvk, ok := getGvk(ptr.Empty[T]()); ok {
 		return gvk
 	}
-	if rp := typemap.Get[RegisterType[T]](registeredTypes); rp != nil {
+	if rp := over_typemap.Get[RegisterType[T]](registeredTypes); rp != nil {
 		return (*rp).GetGVK()
 	}
 	panic("unknown kind: " + cfg.String())
@@ -54,7 +54,7 @@ func MustToGVR[T runtime.Object](cfg config.GroupVersionKind) schema.GroupVersio
 	if r, ok := gvk.ToGVR(cfg); ok {
 		return r
 	}
-	if rp := typemap.Get[RegisterType[T]](registeredTypes); rp != nil {
+	if rp := over_typemap.Get[RegisterType[T]](registeredTypes); rp != nil {
 		return (*rp).GetGVR()
 	}
 	panic("unknown kind: " + cfg.String())
@@ -67,10 +67,10 @@ func GvkFromObject(obj runtime.Object) config.GroupVersionKind {
 	panic("unknown kind: " + obj.GetObjectKind().GroupVersionKind().String())
 }
 
-var registeredTypes = typemap.NewTypeMap()
+var registeredTypes = over_typemap.NewTypeMap()
 
 func Register[T runtime.Object](reg RegisterType[T]) {
-	typemap.Set[RegisterType[T]](registeredTypes, reg)
+	over_typemap.Set[RegisterType[T]](registeredTypes, reg)
 }
 
 type RegisterType[T runtime.Object] interface {

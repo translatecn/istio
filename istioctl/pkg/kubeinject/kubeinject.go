@@ -53,7 +53,7 @@ import (
 	"istio.io/istio/pkg/kube"
 	"istio.io/istio/pkg/kube/inject"
 	"istio.io/istio/pkg/log"
-	"istio.io/istio/pkg/version_over"
+	"istio.io/istio/pkg/over_version"
 )
 
 const (
@@ -255,7 +255,7 @@ func getMeshConfigFromConfigMap(ctx cli.Context, command, revision string) (*mes
 	cfg, err := mesh.ApplyMeshConfigDefaults(configYaml)
 	if err != nil {
 		err = multierror.Append(err, fmt.Errorf("istioctl version %s cannot parse mesh config.  Install istioctl from the latest Istio release",
-			version_over.Info.Version))
+			over_version.Info.Version))
 	}
 	return cfg, err
 }

@@ -39,10 +39,10 @@ import (
 	istioagent "istio.io/istio/pkg/istio-agent"
 	"istio.io/istio/pkg/log"
 	"istio.io/istio/pkg/model"
+	"istio.io/istio/pkg/over_version"
 	"istio.io/istio/pkg/slices"
 	"istio.io/istio/pkg/util/protomarshal"
 	"istio.io/istio/pkg/util/sets"
-	"istio.io/istio/pkg/version_over"
 	cleaniptables "istio.io/istio/tools/istio-clean-iptables/pkg/cmd"
 	iptables "istio.io/istio/tools/istio-iptables/pkg/cmd"
 	iptableslog "istio.io/istio/tools/istio-iptables/pkg/log"
@@ -80,7 +80,7 @@ func NewRootCommand(sds istioagent.SDSServiceFactory) *cobra.Command {
 	rootCmd.AddCommand(proxyCmd)
 	rootCmd.AddCommand(requestCmd)                               // ✅
 	rootCmd.AddCommand(waitCmd)                                  // ✅
-	rootCmd.AddCommand(version_over.CobraCommand())              // ✅
+	rootCmd.AddCommand(over_version.CobraCommand())              // ✅
 	rootCmd.AddCommand(iptables.GetCommand(loggingOptions))      // ✅
 	rootCmd.AddCommand(cleaniptables.GetCommand(loggingOptions)) // ✅
 	rootCmd.AddCommand(collateral_over.CobraCommand(rootCmd, collateral_over.Metadata{
@@ -105,7 +105,7 @@ func newProxyCommand(sds istioagent.SDSServiceFactory) *cobra.Command {
 		PersistentPreRunE: configureLogging,
 		RunE: func(c *cobra.Command, args []string) error {
 			cmd.PrintFlags(c.Flags())
-			log.Infof("Version %s", version_over.Info.String())
+			log.Infof("Version %s", over_version.Info.String())
 			raiseLimits()
 
 			err := initProxy(args)

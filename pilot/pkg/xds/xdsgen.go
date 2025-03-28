@@ -28,7 +28,7 @@ import (
 	v3 "istio.io/istio/pilot/pkg/xds/v3"
 	"istio.io/istio/pkg/env"
 	"istio.io/istio/pkg/lazy"
-	istioversion "istio.io/istio/pkg/version_over"
+	istioversion "istio.io/istio/pkg/over_version"
 	"istio.io/istio/pkg/xds"
 )
 

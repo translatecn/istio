@@ -23,8 +23,8 @@ import (
 	commonFeatures "istio.io/istio/pkg/features"
 	"istio.io/istio/pkg/log"
 	"istio.io/istio/pkg/monitoring"
+	"istio.io/istio/pkg/over_version"
 	istioNetUtil "istio.io/istio/pkg/util/net"
-	"istio.io/istio/pkg/version_over"
 )
 
 type monitor struct {
@@ -57,7 +57,7 @@ func addMonitor(exporter http.Handler, mux *http.ServeMux) {
 	mux.Handle(metricsPath, metricsMiddleware(exporter))
 
 	mux.HandleFunc(versionPath, func(out http.ResponseWriter, req *http.Request) {
-		if _, err := out.Write([]byte(version_over.Info.String())); err != nil {
+		if _, err := out.Write([]byte(over_version.Info.String())); err != nil {
 			log.Errorf("Unable to write version string: %v", err)
 		}
 	})
@@ -103,8 +103,8 @@ func startMonitor(exporter http.Handler, addr string, mux *http.ServeMux) (*moni
 		}
 	}
 
-	version_over.Info.RecordComponentBuildTag("pilot")
-	pilotVersion.With(versionTag.Value(version_over.Info.String())).Record(1)
+	over_version.Info.RecordComponentBuildTag("pilot")
+	pilotVersion.With(versionTag.Value(over_version.Info.String())).Record(1)
 
 	if addr != "" {
 		go func() {

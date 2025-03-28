@@ -38,8 +38,8 @@ import (
 	"istio.io/istio/pilot/pkg/config/kube/crd"
 	"istio.io/istio/pilot/pkg/features"
 	"istio.io/istio/pkg/config"
+	istioversion "istio.io/istio/pkg/over_version"
 	"istio.io/istio/pkg/util/sets"
-	istioversion "istio.io/istio/pkg/version_over"
 )
 
 var cronJobNameRegexp = regexp.MustCompile(`(.+)-\d{8,10}$`)

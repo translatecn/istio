@@ -19,7 +19,7 @@ import (
 
 	"istio.io/istio/pkg/ctrlz/fw"
 	"istio.io/istio/pkg/ctrlz/topics/assets"
-	"istio.io/istio/pkg/version_over"
+	"istio.io/istio/pkg/over_version"
 )
 
 type versionTopic struct{}
@@ -41,10 +41,10 @@ func (versionTopic) Activate(context fw.TopicContext) {
 	tmpl := assets.ParseTemplate(context.Layout(), "templates/version.html")
 
 	_ = context.HTMLRouter().StrictSlash(true).NewRoute().Path("/").HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-		fw.RenderHTML(w, tmpl, &version_over.Info)
+		fw.RenderHTML(w, tmpl, &over_version.Info)
 	})
 
 	_ = context.JSONRouter().StrictSlash(true).NewRoute().Methods("GET").Path("/").HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-		fw.RenderJSON(w, http.StatusOK, &version_over.Info)
+		fw.RenderJSON(w, http.StatusOK, &over_version.Info)
 	})
 }

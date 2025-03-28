@@ -22,7 +22,7 @@ import (
 	"istio.io/istio/pkg/config/mesh/kubemesh"
 	"istio.io/istio/pkg/filewatcher"
 	"istio.io/istio/pkg/log"
-	"istio.io/istio/pkg/version_over"
+	"istio.io/istio/pkg/over_version"
 )
 
 const (
@@ -48,7 +48,7 @@ func (s *Server) initMeshConfiguration(args *PilotArgs, fileWatcher filewatcher.
 	defer func() {
 		if s.environment.Watcher != nil {
 			// log.Infof("mesh configuration: %s", mesh.PrettyFormatOfMeshConfig(s.environment.Mesh()))
-			log.Infof("version: %s", version_over.Info.String())
+			log.Infof("version: %s", over_version.Info.String())
 			// argsdump, _ := json.MarshalIndent(args, "", "   ")
 			// log.Infof("flags: %s", argsdump)
 		}
