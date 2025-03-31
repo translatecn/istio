@@ -7,8 +7,8 @@ metadata:
     service: helloworld
 spec:
   ports:
-  - port: 5000
-    name: http
+    - port: 5000
+      name: http
   selector:
     app: helloworld
 ---
@@ -61,11 +61,11 @@ spec:
         version: v2
     spec:
       containers:
-      - name: helloworld
-        image: registry.cn-hangzhou.aliyuncs.com/acejilam/examples-helloworld-v2
-        resources:
-          requests:
-            cpu: "100m"
-        imagePullPolicy: IfNotPresent #Always
-        ports:
-        - containerPort: 5000
+        - name: helloworld
+          image: docker.io/istio/examples-helloworld-v2
+          resources:
+            requests:
+              cpu: "100m"
+          imagePullPolicy: IfNotPresent #Always
+          ports:
+            - containerPort: 5000
