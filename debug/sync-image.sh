@@ -1,4 +1,5 @@
 docker login harbor.ls.com -u admin -p Harbor12345
+
 l() {
 	image=$1
 	docker pull $image

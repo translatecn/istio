@@ -100,14 +100,14 @@ func (sg *StatusGen) handleInternalRequest(_ *model.Proxy, w *model.WatchedResou
 }
 
 // isSidecar ad-hoc method to see if connection represents a sidecar
-func isProxy(con *ConnectionServer) bool {
+func isProxy(con *Connection) bool {
 	return con != nil &&
 		con.proxy != nil &&
 		con.proxy.Metadata != nil &&
 		con.proxy.Metadata.ProxyConfig != nil
 }
 
-func isZtunnel(con *ConnectionServer) bool {
+func isZtunnel(con *Connection) bool {
 	return con != nil &&
 		con.proxy != nil &&
 		con.proxy.Metadata != nil &&

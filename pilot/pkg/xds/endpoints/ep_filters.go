@@ -177,7 +177,6 @@ func (b *EndpointBuilder) EndpointsByNetworkFilter(endpoints []*LocalityEndpoint
 //     where the exported endpoints reside, we ensure that we only send traffic to exported endpoints.
 func (b *EndpointBuilder) selectNetworkGateways(nw network.ID, c cluster.ID) []model.NetworkGateway {
 	// Get the gateways for this network+cluster combination.
-
 	gws := b.gateways().GatewaysForNetworkAndCluster(nw, c)
 	if len(gws) == 0 {
 		// No match for network+cluster, just match the network.
@@ -200,7 +199,6 @@ func (b *EndpointBuilder) scaleEndpointLBWeight(ep *endpoint.LbEndpoint, scaleFa
 // Apply the weight for this endpoint to the network gateways.
 func splitWeightAmongGateways(weight uint32, gateways []model.NetworkGateway, gatewayWeights map[model.NetworkGateway]uint32) {
 	// Spread the weight across the gateways.
-
 	weightPerGateway := weight / uint32(len(gateways))
 	for _, gateway := range gateways {
 		gatewayWeights[gateway] += weightPerGateway
@@ -213,7 +211,6 @@ func splitWeightAmongGateways(weight uint32, gateways []model.NetworkGateway, ga
 func (b *EndpointBuilder) EndpointsWithMTLSFilter(endpoints []*LocalityEndpoints) []*LocalityEndpoints {
 	// A new array of endpoints to be returned that will have both local and
 	// remote gateways (if any)
-
 	filtered := make([]*LocalityEndpoints, 0)
 
 	// Go through all cluster endpoints and add those with mTLS enabled

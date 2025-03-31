@@ -36,7 +36,7 @@ import (
 	"istio.io/istio/operator/pkg/util"
 	"istio.io/istio/operator/pkg/values"
 	"istio.io/istio/pkg/slices"
-	"istio.io/istio/pkg/test/util/yml"
+	"istio.io/istio/pkg/util/yml"
 )
 
 // Render produces a set of fully rendered manifests from Helm.

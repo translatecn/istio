@@ -29,7 +29,7 @@ import (
 	"istio.io/istio/operator/pkg/util/clog"
 	"istio.io/istio/pkg/kube"
 	"istio.io/istio/pkg/ptr"
-	"istio.io/istio/pkg/test/util/tmpl"
+	"istio.io/istio/pkg/util/tmpl"
 )
 
 //go:embed readme.tpl

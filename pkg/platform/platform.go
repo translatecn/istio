@@ -21,7 +21,6 @@ import (
 const (
 	Default   = ""
 	OpenShift = "openshift"
-	GCP       = "gcp"
 )
 
 var Platform = env.Register("PLATFORM", Default, "Platform where Istio is deployed. Possible values are \"openshift\" and \"gcp\"")

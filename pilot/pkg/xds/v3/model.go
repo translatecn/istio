@@ -29,10 +29,10 @@ const (
 	HealthInfoType             = model.HealthInfoType
 	ProxyConfigType            = model.ProxyConfigType
 	DebugType                  = model.DebugType
-
-	AddressType               = model.AddressType
-	WorkloadType              = model.WorkloadType
-	WorkloadAuthorizationType = model.WorkloadAuthorizationType
+	BootstrapType              = model.BootstrapType
+	AddressType                = model.AddressType
+	WorkloadType               = model.WorkloadType
+	WorkloadAuthorizationType  = model.WorkloadAuthorizationType
 
 	// nolint
 	HttpProtocolOptionsType = "envoy.extensions.upstreams.http.v3.HttpProtocolOptions"

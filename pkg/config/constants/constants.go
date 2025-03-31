@@ -112,8 +112,6 @@ const (
 
 	TestVMLabel = "istio.io/test-vm"
 
-	TestVMVersionLabel = "istio.io/test-vm-version"
-
 	// Label to skip config comparison.
 	AlwaysPushLabel = "internal.istio.io/always-push"
 

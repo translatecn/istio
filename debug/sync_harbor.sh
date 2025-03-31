@@ -1,23 +1,32 @@
-docker login harbor.ls.com -u admin -p Harbor12345
+#echo "${HOST_IP} harbor.ls.com" >/etc/hosts
+#skopeo login -u admin harbor.ls.com -p Harbor12345 --tls-verify=false
+
+docker login -u admin harbor.ls.com -p Harbor12345
+
+curl -k -u "admin:Harbor12345" -X POST -H "Content-Type: application/json" "https://harbor.ls.com/api/v2.0/projects/" -d '{"project_name": "acejilam", "public": true}'
+
+set -ex
 
 t() {
-	image=$1
+	old_image=$1
 	new_name=$(echo $1 | sed 's#registry.cn-hangzhou.aliyuncs.com#harbor.ls.com#g')
+#	skopeo copy --override-os linux --insecure-policy docker://${old_image} docker://${new_name} --src-tls-verify=false --dest-tls-verify=false
+
 	echo $new_name
-	until docker pull $image; do
-		echo "docker pull $image, retrying in 5 seconds..."
+	until docker pull $old_image; do
+		echo "docker pull $old_image, retrying in 5 seconds..."
 		sleep 5
 	done
 
-	docker tag $image $new_name
+	docker tag $old_image $new_name
 
 	until docker push $new_name; do
 		echo "docker push $new_name, retrying in 5 seconds..."
 		sleep 5
 	done
-
 }
 
+t registry.cn-hangzhou.aliyuncs.com/acejilam/metrics-server:v0.7.2
 t registry.cn-hangzhou.aliyuncs.com/acejilam/k8s-sidecar:1.27.5
 t registry.cn-hangzhou.aliyuncs.com/acejilam/kiali:v2.0
 t registry.cn-hangzhou.aliyuncs.com/acejilam/loki:3.2.0
@@ -35,7 +44,6 @@ t registry.cn-hangzhou.aliyuncs.com/acejilam/flagger-loadtester:0.35.0
 t registry.cn-hangzhou.aliyuncs.com/acejilam/metrics-server:v0.6.3
 t registry.cn-hangzhou.aliyuncs.com/acejilam/prometheus-config-reloader:v0.76.0
 t registry.cn-hangzhou.aliyuncs.com/acejilam/prometheus:v2.54.1
-
 t registry.cn-hangzhou.aliyuncs.com/acejilam/skywalking-oap-server:9.7.0
 t registry.cn-hangzhou.aliyuncs.com/acejilam/skywalking-ui:9.1.0
 t registry.cn-hangzhou.aliyuncs.com/acejilam/podinfo:6.0.0

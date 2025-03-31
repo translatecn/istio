@@ -127,6 +127,33 @@ func recordXDSClients(version string, delta float64) {
 	xdsClients.With(versionTag.Value(version)).Record(xdsClientTracker[version])
 }
 
+// triggerMetric is a precomputed monitoring.Metric for each trigger type. This saves on a lot of allocations
+var triggerMetric = map[model.TriggerReason]monitoring.Metric{
+	model.EndpointUpdate:  pushTriggers.With(typeTag.Value(string(model.EndpointUpdate))),
+	model.ConfigUpdate:    pushTriggers.With(typeTag.Value(string(model.ConfigUpdate))),
+	model.ServiceUpdate:   pushTriggers.With(typeTag.Value(string(model.ServiceUpdate))),
+	model.ProxyUpdate:     pushTriggers.With(typeTag.Value(string(model.ProxyUpdate))),
+	model.GlobalUpdate:    pushTriggers.With(typeTag.Value(string(model.GlobalUpdate))),
+	model.UnknownTrigger:  pushTriggers.With(typeTag.Value(string(model.UnknownTrigger))),
+	model.DebugTrigger:    pushTriggers.With(typeTag.Value(string(model.DebugTrigger))),
+	model.SecretTrigger:   pushTriggers.With(typeTag.Value(string(model.SecretTrigger))),
+	model.NetworksTrigger: pushTriggers.With(typeTag.Value(string(model.NetworksTrigger))),
+	model.ProxyRequest:    pushTriggers.With(typeTag.Value(string(model.ProxyRequest))),
+	model.NamespaceUpdate: pushTriggers.With(typeTag.Value(string(model.NamespaceUpdate))),
+	model.ClusterUpdate:   pushTriggers.With(typeTag.Value(string(model.ClusterUpdate))),
+}
+
+func recordPushTriggers(reasons model.ReasonStats) {
+	for r, cnt := range reasons {
+		t, f := triggerMetric[r]
+		if f {
+			t.RecordInt(int64(cnt))
+		} else {
+			pushTriggers.With(typeTag.Value(string(r))).Increment()
+		}
+	}
+}
+
 func isUnexpectedError(err error) bool {
 	s, ok := status.FromError(err)
 	// Unavailable or canceled code will be sent when a connection is closing down. This is very normal,
@@ -158,31 +185,4 @@ func recordSendError(xdsType string, err error) bool {
 func recordPushTime(xdsType string, duration time.Duration) {
 	pushTime.With(typeTag.Value(v3.GetMetricType(xdsType))).Record(duration.Seconds())
 	pushes.With(typeTag.Value(v3.GetMetricType(xdsType))).Increment()
-}
-
-// triggerMetric is a precomputed monitoring.Metric for each trigger type. This saves on a lot of allocations
-var triggerMetric = map[model.TriggerReason]monitoring.Metric{
-	model.EndpointUpdate:  pushTriggers.With(typeTag.Value(string(model.EndpointUpdate))),
-	model.ConfigUpdate:    pushTriggers.With(typeTag.Value(string(model.ConfigUpdate))),
-	model.ServiceUpdate:   pushTriggers.With(typeTag.Value(string(model.ServiceUpdate))),
-	model.ProxyUpdate:     pushTriggers.With(typeTag.Value(string(model.ProxyUpdate))),
-	model.GlobalUpdate:    pushTriggers.With(typeTag.Value(string(model.GlobalUpdate))),
-	model.UnknownTrigger:  pushTriggers.With(typeTag.Value(string(model.UnknownTrigger))),
-	model.DebugTrigger:    pushTriggers.With(typeTag.Value(string(model.DebugTrigger))),
-	model.SecretTrigger:   pushTriggers.With(typeTag.Value(string(model.SecretTrigger))),
-	model.NetworksTrigger: pushTriggers.With(typeTag.Value(string(model.NetworksTrigger))),
-	model.ProxyRequest:    pushTriggers.With(typeTag.Value(string(model.ProxyRequest))),
-	model.NamespaceUpdate: pushTriggers.With(typeTag.Value(string(model.NamespaceUpdate))),
-	model.ClusterUpdate:   pushTriggers.With(typeTag.Value(string(model.ClusterUpdate))),
-}
-
-func recordPushTriggers(reasons model.ReasonStats) {
-	for r, cnt := range reasons {
-		t, f := triggerMetric[r]
-		if f {
-			t.RecordInt(int64(cnt))
-		} else {
-			pushTriggers.With(typeTag.Value(string(r))).Increment()
-		}
-	}
 }

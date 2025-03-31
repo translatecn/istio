@@ -27,11 +27,12 @@ import (
 	"strings"
 	"time"
 
+	testenv "istio.io/istio/pkg/util/env"
+
 	"golang.org/x/sync/errgroup"
 
 	"istio.io/istio/pkg/log"
 	"istio.io/istio/pkg/ptr"
-	testenv "istio.io/istio/pkg/test/env"
 	"istio.io/istio/pkg/util/image"
 	"istio.io/istio/pkg/util/sets"
 )

@@ -21,10 +21,11 @@ import (
 	"path/filepath"
 	"time"
 
+	testenv "istio.io/istio/pkg/util/env"
+
 	"golang.org/x/sync/errgroup"
 
 	"istio.io/istio/pkg/log"
-	testenv "istio.io/istio/pkg/test/env"
 	"istio.io/istio/pkg/tracing"
 	"istio.io/istio/pkg/util/sets"
 	"istio.io/istio/tools/docker-builder/builder"

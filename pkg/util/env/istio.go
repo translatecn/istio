@@ -1,0 +1,114 @@
+//  Copyright Istio Authors
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+
+package env
+
+import (
+	"encoding/json"
+	"fmt"
+	"os"
+	"path"
+	"path/filepath"
+	"runtime"
+
+	"istio.io/istio/pkg/log"
+)
+
+var (
+	// TARGET_OUT environment variable
+	// nolint: revive, stylecheck
+	TARGET_OUT Variable = "TARGET_OUT"
+
+	// LOCAL_OUT environment variable
+	// nolint: revive, stylecheck
+	LOCAL_OUT Variable = "LOCAL_OUT"
+
+	// REPO_ROOT environment variable
+	// nolint: revive, stylecheck
+	REPO_ROOT Variable = "REPO_ROOT"
+
+	// IstioSrc is the location of istio source ($TOP/src/istio.io/istio
+	IstioSrc = REPO_ROOT.ValueOrDefaultFunc(getDefaultIstioSrc)
+
+	// LocalOut is the location of the output directory for the OS we are running in,
+	// not necessarily the OS we are building for
+	LocalOut = verifyFile(LOCAL_OUT, LOCAL_OUT.ValueOrDefaultFunc(getDefaultIstioOut))
+)
+
+var (
+	_, b, _, _ = runtime.Caller(0)
+
+	// Root folder of this project
+	// This relies on the fact this file is 3 levels up from the root; if this changes, adjust the path below
+	Root = filepath.Join(filepath.Dir(b), "../../..")
+)
+
+func getDefaultIstioSrc() string {
+	return Root
+}
+
+func getSampleFile(p string) string {
+	return fmt.Sprintf("samples/%s", p)
+}
+
+func getInstallationFile(p string) string {
+	return fmt.Sprintf("pkg/test/framework/components/%s", p)
+}
+
+func getDefaultIstioOut() string {
+	return fmt.Sprintf("%s/out/%s_%s", IstioSrc, runtime.GOOS, runtime.GOARCH)
+}
+
+func verifyFile(v Variable, f string) string {
+	if !fileExists(f) {
+		log.Warnf("unable to resolve %s. Dir %s does not exist", v, f)
+		return ""
+	}
+	return f
+}
+
+func fileExists(f string) bool {
+	return CheckFileExists(f) == nil
+}
+
+func CheckFileExists(path string) error {
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		return err
+	}
+	return nil
+}
+
+func ReadDepsSHA(name string) (string, error) {
+	type DepsFile struct {
+		Name          string `json:"name"`
+		LastStableSHA string `json:"lastStableSHA"`
+	}
+	f := filepath.Join(IstioSrc, "istio.deps")
+	depJSON, err := os.ReadFile(f)
+	if err != nil {
+		return "", err
+	}
+	var deps []DepsFile
+	if err := json.Unmarshal(depJSON, &deps); err != nil {
+		return "", err
+	}
+	for _, d := range deps {
+		if d.Name == name {
+			return d.LastStableSHA, nil
+		}
+	}
+	return "", fmt.Errorf("%s not found", name)
+}
+
+// ReadVersion returns the contents of the $ROOTDIR/VERSION file

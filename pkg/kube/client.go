@@ -54,7 +54,7 @@ import (
 	"istio.io/istio/pkg/log"
 	"istio.io/istio/pkg/over_version"
 	"istio.io/istio/pkg/sleep"
-	"istio.io/istio/pkg/test/util/yml"
+	"istio.io/istio/pkg/util/yml"
 	v1 "k8s.io/api/core/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	kubeExtClient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
@@ -1071,14 +1071,6 @@ var (
 	IstioScheme = istioScheme()
 	IstioCodec  = serializer.NewCodecFactory(IstioScheme)
 )
-
-// FakeIstioScheme is an IstioScheme that has List type registered.
-var FakeIstioScheme = func() *runtime.Scheme {
-	s := istioScheme()
-	// Workaround https://github.com/kubernetes/kubernetes/issues/107823
-	s.AddKnownTypeWithName(schema.GroupVersionKind{Group: "fake-metadata-client-group", Version: "v1", Kind: "List"}, &metav1.List{})
-	return s
-}()
 
 func istioScheme() *runtime.Scheme {
 	scheme := runtime.NewScheme()

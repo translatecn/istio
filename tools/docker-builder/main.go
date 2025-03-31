@@ -24,12 +24,13 @@ import (
 	"strings"
 	"time"
 
+	testenv "istio.io/istio/pkg/util/env"
+
 	"github.com/spf13/cobra"
 	"sigs.k8s.io/yaml"
 
 	"istio.io/istio/pkg/log"
 	pkgversion "istio.io/istio/pkg/over_version"
-	testenv "istio.io/istio/pkg/test/env"
 	"istio.io/istio/pkg/tracing"
 	"istio.io/istio/pkg/util/sets"
 )
@@ -280,7 +281,7 @@ func RunMake(ctx context.Context, args Args, arch string, c ...string) error {
 	cmd.Env = env
 	cmd.Stderr = os.Stderr
 	cmd.Stdout = os.Stdout
-	cmd.Dir = testenv.IstioSrc
+	cmd.Dir = env.IstioSrc
 	if err := cmd.Run(); err != nil {
 		return err
 	}

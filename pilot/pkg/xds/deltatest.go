@@ -37,7 +37,7 @@ var knownOptimizationGaps = sets.New(
 // response returned the optimal result. Checks include correctness checks (e.g. if a config changed,
 // we must include it) and possible optimizations (e.g. we sent a config, but it was not changed).
 func (s *DiscoveryServer) compareDiff(
-	con *ConnectionServer,
+	con *Connection,
 	w *model.WatchedResource,
 	sotwRes model.Resources,
 	deltaRes model.Resources,

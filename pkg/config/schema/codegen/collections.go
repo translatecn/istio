@@ -23,10 +23,11 @@ import (
 	"sort"
 	"strings"
 
+	"istio.io/istio/pkg/util/env"
+
 	"github.com/stoewer/go-strcase"
 
 	"istio.io/istio/pkg/config/schema/ast"
-	"istio.io/istio/pkg/test/env"
 	"istio.io/istio/pkg/util/sets"
 )
 

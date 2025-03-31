@@ -41,6 +41,7 @@ read -ra DOCKER_RUN_OPTIONS <<<"${DOCKER_RUN_OPTIONS:-}"
 [[ -t 0 ]] && DOCKER_RUN_OPTIONS+=("-it")
 [[ ${UID} -ne 0 ]] && DOCKER_RUN_OPTIONS+=(-u "${UID}:${DOCKER_GID}")
 
+set -x
 # $CONTAINER_OPTIONS becomes an empty arg when quoted, so SC2086 is disabled for the
 # following command only
 # shellcheck disable=SC2086

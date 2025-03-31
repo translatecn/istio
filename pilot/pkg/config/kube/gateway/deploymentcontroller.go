@@ -50,9 +50,9 @@ import (
 	istiolog "istio.io/istio/pkg/log"
 	"istio.io/istio/pkg/maps"
 	"istio.io/istio/pkg/revisions_over"
-	"istio.io/istio/pkg/test/util/tmpl"
-	"istio.io/istio/pkg/test/util/yml"
 	"istio.io/istio/pkg/util/sets"
+	"istio.io/istio/pkg/util/tmpl"
+	"istio.io/istio/pkg/util/yml"
 )
 
 // DeploymentController implements a controller that materializes a Gateway into an in cluster gateway proxy

@@ -22,9 +22,10 @@ import (
 	"strconv"
 	"strings"
 
+	testenv "istio.io/istio/pkg/util/env"
+
 	"istio.io/istio/pkg/env"
 	"istio.io/istio/pkg/log"
-	testenv "istio.io/istio/pkg/test/env"
 	"istio.io/istio/pkg/util/sets"
 )
 

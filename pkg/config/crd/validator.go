@@ -42,8 +42,8 @@ import (
 	"sigs.k8s.io/yaml"
 
 	"istio.io/istio/pkg/slices"
-	"istio.io/istio/pkg/test/util/yml"
 	"istio.io/istio/pkg/util/sets"
+	"istio.io/istio/pkg/util/yml"
 )
 
 // Validator returns a new validator for custom resources

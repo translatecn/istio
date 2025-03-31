@@ -52,7 +52,7 @@ spec:
       serviceAccountName: sleep
       containers:
       - name: sleep
-        image: harbor.ls.com/acejilam/curl
+        image: registry.cn-hangzhou.aliyuncs.com/acejilam/curl
         command: ["/bin/sleep", "infinity"]
         imagePullPolicy: IfNotPresent
         volumeMounts:

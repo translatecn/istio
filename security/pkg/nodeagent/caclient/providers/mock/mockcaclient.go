@@ -23,8 +23,6 @@ import (
 	"istio.io/istio/security/pkg/pki/util"
 )
 
-var sampleKeyCertsPath = "../../../../samples/certs/"
-
 // CAClient is the mocked CAClient for testing.
 type CAClient struct {
 	SignInvokeCount uint64

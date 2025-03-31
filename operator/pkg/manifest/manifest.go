@@ -21,7 +21,7 @@ import (
 	"sigs.k8s.io/yaml"
 
 	"istio.io/istio/operator/pkg/component"
-	"istio.io/istio/pkg/test/util/yml"
+	"istio.io/istio/pkg/util/yml"
 )
 
 type Manifest struct {

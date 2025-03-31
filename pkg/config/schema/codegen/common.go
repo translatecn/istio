@@ -25,9 +25,10 @@ import (
 	"strings"
 	"text/template"
 
+	"istio.io/istio/pkg/util/env"
+
 	"istio.io/istio/pilot/pkg/features"
 	"istio.io/istio/pkg/config/schema/ast"
-	"istio.io/istio/pkg/test/env"
 )
 
 func Run() error {

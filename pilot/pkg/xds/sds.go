@@ -171,7 +171,6 @@ func (s *SecretGen) Generate(proxy *model.Proxy, w *model.WatchedResource, req *
 
 func (s *SecretGen) generate(sr SecretResource, configClusterSecrets, proxyClusterSecrets credscontroller.Controller, proxy *model.Proxy) *discovery.Resource {
 	// Fetch the appropriate cluster's secret, based on the credential type
-
 	var secretController credscontroller.Controller
 	switch sr.ResourceType {
 	case credentials.KubernetesGatewaySecretType:
@@ -464,7 +463,6 @@ func NewSecretGen(sc credscontroller.MulticlusterController, cache model.XdsCach
 ) *SecretGen {
 	// TODO: Currently we only have a single credentials controller (Kubernetes). In the future, we will need a mapping
 	// of resource type to secret controller (ie kubernetes:// -> KubernetesController, vault:// -> VaultController)
-
 	return &SecretGen{
 		secrets:       sc,
 		cache:         cache,

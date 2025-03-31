@@ -11,8 +11,9 @@ cd istio-setup
 bash ./install-istio.sh
 bash ./enable-endpoint-discovery.sh
 cd -
-cd testing
+cd example
 bash ./deploy-application.sh
+bash ./deploy-monitoring.sh
 cd -
 
 kubectl --context cluster1 -n sample exec -it deployment/helloworld-v2 -- bash -c 'while true; do curl http://helloworld.sample:5000/hello; done'
