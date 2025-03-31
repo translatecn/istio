@@ -26,6 +26,11 @@ t() {
 	done
 }
 
+t registry.cn-hangzhou.aliyuncs.com/acejilam/frr:9.1.0
+t registry.cn-hangzhou.aliyuncs.com/acejilam/metallb_controller:v0.14.9
+t registry.cn-hangzhou.aliyuncs.com/acejilam/metallb_speaker:v0.14.9
+t registry.cn-hangzhou.aliyuncs.com/acejilam/nginx:1.14.2
+
 t registry.cn-hangzhou.aliyuncs.com/acejilam/metrics-server:v0.7.2
 t registry.cn-hangzhou.aliyuncs.com/acejilam/k8s-sidecar:1.27.5
 t registry.cn-hangzhou.aliyuncs.com/acejilam/kiali:v2.0
@@ -36,9 +41,6 @@ t registry.cn-hangzhou.aliyuncs.com/acejilam/install-cni:1.24.3-distroless
 t registry.cn-hangzhou.aliyuncs.com/acejilam/pilot:1.24.3-distroless
 t registry.cn-hangzhou.aliyuncs.com/acejilam/proxyv2:1.24.3-distroless
 t registry.cn-hangzhou.aliyuncs.com/acejilam/ztunnel:1.24.3-distroless
-t registry.cn-hangzhou.aliyuncs.com/acejilam/frr:9.1.0
-t registry.cn-hangzhou.aliyuncs.com/acejilam/metallb_controller:v0.14.9
-t registry.cn-hangzhou.aliyuncs.com/acejilam/metallb_speaker:v0.14.9
 t registry.cn-hangzhou.aliyuncs.com/acejilam/flagger:1.40.0
 t registry.cn-hangzhou.aliyuncs.com/acejilam/flagger-loadtester:0.35.0
 t registry.cn-hangzhou.aliyuncs.com/acejilam/metrics-server:v0.6.3
@@ -58,9 +60,22 @@ t registry.cn-hangzhou.aliyuncs.com/acejilam/examples-bookinfo-reviews-v2:1.20.2
 t registry.cn-hangzhou.aliyuncs.com/acejilam/examples-bookinfo-reviews-v3:1.20.2
 t registry.cn-hangzhou.aliyuncs.com/acejilam/grafana:11.2.2-security-01
 t registry.cn-hangzhou.aliyuncs.com/acejilam/mygo:v1.24.0
-t registry.cn-hangzhou.aliyuncs.com/acejilam/nginx:1.14.2
 t registry.cn-hangzhou.aliyuncs.com/acejilam/dnsutils:1.3
 t registry.cn-hangzhou.aliyuncs.com/acejilam/centos:7
 t registry.cn-hangzhou.aliyuncs.com/acejilam/go-httpbin:v2.15.0
 t registry.cn-hangzhou.aliyuncs.com/acejilam/curl:latest
 t registry.cn-hangzhou.aliyuncs.com/acejilam/buildpack-deps:24.04
+
+t registry.cn-hangzhou.aliyuncs.com/acejilam/microservices-demo-adservice:v0.9.0
+t registry.cn-hangzhou.aliyuncs.com/acejilam/microservices-demo-cartservice:v0.9.0
+t registry.cn-hangzhou.aliyuncs.com/acejilam/microservices-demo-checkoutservice:v0.9.0
+t registry.cn-hangzhou.aliyuncs.com/acejilam/microservices-demo-currencyservice:v0.9.0
+t registry.cn-hangzhou.aliyuncs.com/acejilam/microservices-demo-emailservice:v0.9.0
+t registry.cn-hangzhou.aliyuncs.com/acejilam/microservices-demo-frontend:v0.9.0
+t registry.cn-hangzhou.aliyuncs.com/acejilam/busybox:latest
+t registry.cn-hangzhou.aliyuncs.com/acejilam/microservices-demo-loadgenerator:v0.9.0
+t registry.cn-hangzhou.aliyuncs.com/acejilam/microservices-demo-paymentservice:v0.9.0
+t registry.cn-hangzhou.aliyuncs.com/acejilam/microservices-demo-productcatalogservice:v0.9.0
+t registry.cn-hangzhou.aliyuncs.com/acejilam/microservices-demo-recommendationservice:v0.9.0
+t registry.cn-hangzhou.aliyuncs.com/acejilam/redis:alpine
+t registry.cn-hangzhou.aliyuncs.com/acejilam/microservices-demo-shippingservice:v0.9.0

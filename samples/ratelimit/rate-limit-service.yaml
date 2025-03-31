@@ -64,7 +64,7 @@ spec:
         app: redis
     spec:
       containers:
-        - image: redis:alpine
+        - image: registry.cn-hangzhou.aliyuncs.com/acejilam/redis:alpine
           imagePullPolicy: IfNotPresent
           name: redis
           ports:

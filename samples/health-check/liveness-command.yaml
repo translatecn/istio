@@ -44,7 +44,7 @@ spec:
     spec:
       containers:
         - name: liveness
-          image: registry.k8s.io/busybox
+          image: registry.cn-hangzhou.aliyuncs.com/acejilam/busybox
           args:
             - /bin/sh
             - -c
