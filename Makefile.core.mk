@@ -202,8 +202,7 @@ endif
 # This allows conditional compilation to avoid pulling in costly dependencies to the agent, such as XDS and k8s.
 AGENT_BINARIES:=./pilot/cmd/pilot-agent
 STANDARD_BINARIES:=./istioctl/cmd/istioctl \
-  ./pilot/cmd/pilot-discovery \
-  ./samples/extauthz/cmd/extauthz
+  ./pilot/cmd/pilot-discovery
 
 # These are binaries that require Linux to build, and should
 # be skipped on other platforms. Notably this includes the current Linux-only Istio CNI plugin

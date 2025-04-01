@@ -14,10 +14,5 @@
 
 package xds
 
-import (
-	v3 "istio.io/istio/pilot/pkg/xds/v3"
-	"istio.io/istio/pkg/util/sets"
-)
-
 // EventType represents the type of object we are tracking, mapping to envoy TypeUrl.
 type EventType = string
