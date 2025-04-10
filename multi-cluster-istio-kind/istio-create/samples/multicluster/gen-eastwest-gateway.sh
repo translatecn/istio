@@ -51,7 +51,7 @@ kind: IstioOperator
 metadata:
   name: eastwest
 spec:
-  hub: registry.cn-hangzhou.aliyuncs.com/acejilam
+  hub: ccr.ccs.tencentyun.com/acejilam
   revision: "${REVISION}"
   profile: empty
   components:

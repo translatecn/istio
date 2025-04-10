@@ -10,4 +10,4 @@ kubectl get pods -n test --show-labels | drop-age.py
 kubectl get canaries.flagger.app -n test | drop-age.py
 
 #k -n test scale deployment/podinfo --replicas=2
-#k -n test set image deployment/podinfo podinfod=registry.cn-hangzhou.aliyuncs.com/acejilam/podinfo:6.0.1
+#k -n test set image deployment/podinfo podinfod=ccr.ccs.tencentyun.com/acejilam/podinfo:6.0.1

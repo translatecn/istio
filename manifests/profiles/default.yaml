@@ -3,7 +3,7 @@ kind: IstioOperator
 metadata:
   namespace: istio-system
 spec:
-  hub: registry.cn-hangzhou.aliyuncs.com/acejilam
+  hub: ccr.ccs.tencentyun.com/acejilam
   tag: latest
 
   # Turn on default components: base, pilot, and ingress gateway

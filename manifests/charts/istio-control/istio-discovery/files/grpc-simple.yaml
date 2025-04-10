@@ -4,7 +4,7 @@ metadata:
 spec:
   initContainers:
     - name: grpc-bootstrap-init
-      image: registry.cn-hangzhou.aliyuncs.com/acejilam/busybox:1.28
+      image: ccr.ccs.tencentyun.com/acejilam/busybox:1.28
       volumeMounts:
         - mountPath: /var/lib/grpc/data/
           name: grpc-io-proxyless-bootstrap

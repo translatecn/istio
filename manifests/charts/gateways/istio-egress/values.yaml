@@ -145,7 +145,7 @@ _internal_defaults_do_not_set:
     # Default hub for Istio images.
     # Releases are published to docker hub under 'istio' project.
     # Dev builds from prow are on gcr.io
-    hub: registry.cn-hangzhou.aliyuncs.com/acejilam
+    hub: ccr.ccs.tencentyun.com/acejilam
 
     # Default tag for Istio images.
     tag: latest

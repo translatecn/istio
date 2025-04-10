@@ -1,4 +1,4 @@
-FROM registry.cn-hangzhou.aliyuncs.com/acejilam/tinygo AS build
+FROM ccr.ccs.tencentyun.com/acejilam/tinygo AS build
 WORKDIR /src
 
 COPY . .

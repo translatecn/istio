@@ -33,7 +33,7 @@ spec:
     spec:
       containers:
       - name: helloworld
-        image: registry.cn-hangzhou.aliyuncs.com/acejilam/examples-helloworld-v1
+        image: ccr.ccs.tencentyun.com/acejilam/examples-helloworld-v1
         resources:
           requests:
             cpu: "100m"

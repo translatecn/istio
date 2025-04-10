@@ -1,22 +1,22 @@
 import os
 
 rs = [
-    ['kiwigrid/k8s-sidecar', 'registry.cn-hangzhou.aliyuncs.com/acejilam/k8s-sidecar'],
-    ['ghcr.io/prometheus-operator/', 'registry.cn-hangzhou.aliyuncs.com/acejilam/'],
-    ['prom/prometheus', 'registry.cn-hangzhou.aliyuncs.com/acejilam/prometheus'],
-    ['hub: gcr.io/istio-testing', 'hub: registry.cn-hangzhou.aliyuncs.com/acejilam'],
-    ['docker.io/istio/', 'registry.cn-hangzhou.aliyuncs.com/acejilam/'],
-    ['docker.io/istio', 'registry.cn-hangzhou.aliyuncs.com/acejilam'],
-    ['image: apache/', 'image: registry.cn-hangzhou.aliyuncs.com/acejilam/'],
-    ['docker.io/jaegertracing', 'registry.cn-hangzhou.aliyuncs.com/acejilam'],
-    ['docker.io/grafana', 'registry.cn-hangzhou.aliyuncs.com/acejilam'],
-    ['docker.io/mccutchen', 'registry.cn-hangzhou.aliyuncs.com/acejilam'],
-    ['image: hiroakis/', 'image: registry.cn-hangzhou.aliyuncs.com/acejilam/'],
-    ['image: hiroakis/', 'image: registry.cn-hangzhou.aliyuncs.com/acejilam/'],
-    ['image: curlimages/curl', 'image: registry.cn-hangzhou.aliyuncs.com/acejilam/curl'],
-    ['image: busybox', 'image: registry.cn-hangzhou.aliyuncs.com/acejilam/busybox'],
-    ['image: ghcr.io/spiffe/', 'image: registry.cn-hangzhou.aliyuncs.com/acejilam/'],
-    ['image: registry.k8s.io/sig-storage/', 'image: registry.cn-hangzhou.aliyuncs.com/acejilam/'],
+    ['kiwigrid/k8s-sidecar', 'ccr.ccs.tencentyun.com/acejilam/k8s-sidecar'],
+    ['ghcr.io/prometheus-operator/', 'ccr.ccs.tencentyun.com/acejilam/'],
+    ['prom/prometheus', 'ccr.ccs.tencentyun.com/acejilam/prometheus'],
+    ['hub: gcr.io/istio-testing', 'hub: ccr.ccs.tencentyun.com/acejilam'],
+    ['docker.io/istio/', 'ccr.ccs.tencentyun.com/acejilam/'],
+    ['docker.io/istio', 'ccr.ccs.tencentyun.com/acejilam'],
+    ['image: apache/', 'image: ccr.ccs.tencentyun.com/acejilam/'],
+    ['docker.io/jaegertracing', 'ccr.ccs.tencentyun.com/acejilam'],
+    ['docker.io/grafana', 'ccr.ccs.tencentyun.com/acejilam'],
+    ['docker.io/mccutchen', 'ccr.ccs.tencentyun.com/acejilam'],
+    ['image: hiroakis/', 'image: ccr.ccs.tencentyun.com/acejilam/'],
+    ['image: hiroakis/', 'image: ccr.ccs.tencentyun.com/acejilam/'],
+    ['image: curlimages/curl', 'image: ccr.ccs.tencentyun.com/acejilam/curl'],
+    ['image: busybox', 'image: ccr.ccs.tencentyun.com/acejilam/busybox'],
+    ['image: ghcr.io/spiffe/', 'image: ccr.ccs.tencentyun.com/acejilam/'],
+    ['image: registry.k8s.io/sig-storage/', 'image: ccr.ccs.tencentyun.com/acejilam/'],
     ['''  volumeClaimTemplates:
     - apiVersion: v1
       kind: PersistentVolumeClaim
@@ -53,7 +53,7 @@ for cd, _dirs, files in os.walk(ISTIO_PATH):
             skip = True
             with open(path, 'r', encoding='utf8') as f:
                 data = f.read()
-                if 'install.istio.io/v1alpha1' in data and 'hub: registry.cn-hangzhou.aliyuncs.com/acejilam' not in data:
+                if 'install.istio.io/v1alpha1' in data and 'hub: ccr.ccs.tencentyun.com/acejilam' not in data:
                     skip = False
             if not skip:
                 with open(path, 'w', encoding='utf8') as f:
@@ -66,7 +66,7 @@ for cd, _dirs, files in os.walk(ISTIO_PATH):
                         if 'spec:' in line and install:
                             spec = True
                         if spec and install:
-                            f.write('  hub: registry.cn-hangzhou.aliyuncs.com/acejilam\n')
+                            f.write('  hub: ccr.ccs.tencentyun.com/acejilam\n')
                             install = False
                             spec = False
 

@@ -1,6 +1,6 @@
 docker rm whoami1 whoami2 --force
-docker run -d -p 8001:80 --name whoami1 registry.cn-hangzhou.aliyuncs.com/acejilam/whoami:v1.10.1 --verbose
-docker run -d -p 8002:80 --name whoami2 registry.cn-hangzhou.aliyuncs.com/acejilam/whoami:v1.10.1 --verbose
+docker run -d -p 8001:80 --name whoami1 ccr.ccs.tencentyun.com/acejilam/whoami:v1.10.1 --verbose
+docker run -d -p 8002:80 --name whoami2 ccr.ccs.tencentyun.com/acejilam/whoami:v1.10.1 --verbose
 
 export W1=$(ipconfig getifaddr en0)
 yq -i '.spec.address = env(W1) ' ./WorkloadEntry1.yaml

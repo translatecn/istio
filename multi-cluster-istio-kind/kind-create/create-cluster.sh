@@ -37,7 +37,7 @@ function create_clusters() {
 	if [[ "${KIND_IMAGE}" ]]; then
 		image_arg="--image=${KIND_IMAGE}"
 	elif [[ "${KIND_TAG}" ]]; then
-		image_arg="--image=registry.cn-hangzhou.aliyuncs.com/acejilam/node:${KIND_TAG}"
+		image_arg="--image=ccr.ccs.tencentyun.com/acejilam/node:${KIND_TAG}"
 	fi
 	for i in $(seq "${num_clusters}"); do
 		kind delete cluster --name "cluster${i}"

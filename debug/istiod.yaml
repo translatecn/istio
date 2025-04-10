@@ -78,7 +78,7 @@ spec:
             optional: true
       containers:
         - name: discovery
-          image: registry.cn-hangzhou.aliyuncs.com/acejilam/pilot:1.24.3
+          image: ccr.ccs.tencentyun.com/acejilam/pilot:1.24.3
           args:
             - discovery
             - '--monitoringAddr=:15014'

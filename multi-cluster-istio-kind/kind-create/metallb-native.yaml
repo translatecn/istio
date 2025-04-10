@@ -1863,7 +1863,7 @@ spec:
               value: memberlist
             - name: METALLB_DEPLOYMENT
               value: controller
-          image: registry.cn-hangzhou.aliyuncs.com/acejilam/metallb_controller:v0.13.12
+          image: ccr.ccs.tencentyun.com/acejilam/metallb_controller:v0.13.12
           livenessProbe:
             failureThreshold: 3
             httpGet:
@@ -1956,7 +1956,7 @@ spec:
               value: app=metallb,component=speaker
             - name: METALLB_ML_SECRET_KEY_PATH
               value: /etc/ml_secret_key
-          image: registry.cn-hangzhou.aliyuncs.com/acejilam/metallb_speaker:v0.13.12
+          image: ccr.ccs.tencentyun.com/acejilam/metallb_speaker:v0.13.12
           livenessProbe:
             failureThreshold: 3
             httpGet:

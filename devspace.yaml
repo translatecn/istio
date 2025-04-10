@@ -20,7 +20,7 @@ pipelines:
 
 #images:
 #  app:
-#    image: registry.cn-hangzhou.aliyuncs.com/acejilam/centos:7
+#    image: ccr.ccs.tencentyun.com/acejilam/centos:7
 #    dockerfile: ./debug/Dockerfile
 
 
@@ -36,8 +36,8 @@ deployments:
 dev:
   app:
     # Replace the container image with this dev-optimized image (allows to skip image building during development)
-    devImage: registry.cn-hangzhou.aliyuncs.com/acejilam/mygo:v1.24.0
-    imageSelector: registry.cn-hangzhou.aliyuncs.com/acejilam/pilot:1.24.3
+    devImage: ccr.ccs.tencentyun.com/acejilam/mygo:v1.24.0
+    imageSelector: ccr.ccs.tencentyun.com/acejilam/pilot:1.24.3
     # Sync files between the local filesystem and the development container
     sync:
       - path: ./:/data
