@@ -1,9 +1,6 @@
 #echo "${HOST_IP} harbor.ls.com" >/etc/hosts
 #skopeo login -u admin harbor.ls.com -p Harbor12345 --tls-verify=false
 
-docker login -u admin harbor.ls.com -p Harbor12345
-
-curl -k -u "admin:Harbor12345" -X POST -H "Content-Type: application/json" "https://harbor.ls.com/api/v2.0/projects/" -d '{"project_name": "acejilam", "public": true}'
 
 set -ex
 
